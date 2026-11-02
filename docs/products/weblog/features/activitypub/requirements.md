@@ -281,9 +281,9 @@ The response is an authentication failure and not a 5xx response. This includes 
 
 An entry that becomes deliverable produces one Create. The audiences are the Public collection and the followers collection. `to` includes Public. `cc` includes the followers collection.
 
-The object id is the canonical URL and does not change when the title changes. An article object has type Article and is not also sent as a Note. A note or bookmark object has type Note.
+The object id is the canonical URL and does not change when the title changes. The id is not the title string. A title string would break remote references when the owner renames the entry. An article object has type Article and is not also sent as a Note. A note or bookmark object has type Note. Mastodon-family clients may display an Article more weakly than a Note. This version accepts that difference. Whether the display is insufficient is checked on a real client after publication. Changing the article object to a Note before that check is not decided.
 
-The object `content` is HTML made from the stored plain-text body. Page links in that HTML are anchors. The stored body is not rewritten. A bookmark's Note also includes a link to the stored external URL. Article `summary` is the first 100 characters of the plain-text body. A shorter body uses the whole body. The summary does not add an ellipsis. A Note does not get that summary. `published` is the entry's publishedAt. `attributedTo` is the actor id.
+The object `content` is HTML made from the stored plain-text body. Page links in that HTML are anchors. The stored body is not rewritten. A bookmark's Note also includes a link to the stored external URL. The receiver's link preview for that bookmark is left to the external URL. Article `summary` is the first 100 characters of the plain-text body. A shorter body uses the whole body. The summary does not add an ellipsis. A Note does not get that summary. `published` is the entry's publishedAt. `attributedTo` is the actor id.
 
 A body change that leaves the entry deliverable produces one Update for the same object id. A title-only change does not produce Update. A change that only edits the bookmark URL does not produce Update.
 
@@ -374,12 +374,12 @@ A follower's actor ID and inbox address are collected so this host can deliver. 
 - **Cloudflare Workers KV**
   - **Related user stories:** Reject a bad signature, Follow this host
   - **Reason for dependency:** A short-lived cache may hold a remote key. The cache is not the record of followers or jobs.
-  - **Contractual and usage decisions:** The Free plan allows 1,000 writes a day. The source is [KV limits](https://developers.cloudflare.com/kv/platform/limits/), last updated 2026-10-30. When that allowance is exhausted, this feature writes no further cache entries that day. Verification still fetches the remote key. A fetch that cannot be used is the authentication failure above. The app does not move onto a paid plan.
+  - **Contractual and usage decisions:** The Free plan allows 100,000 reads a day. The source is the [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page, updated 2026-10-02. The Free plan allows 1,000 writes a day. The source is [KV limits](https://developers.cloudflare.com/kv/platform/limits/), last updated 2026-10-30. When that write allowance is exhausted, this feature writes no further cache entries that day. Verification still fetches the remote key. A fetch that cannot be used is the authentication failure above. The app does not move onto a paid plan.
 
 - **Cloudflare D1**
   - **Related user stories:** Follow this host, Receive a delivered entry, Retry delivery without a new activity ID
   - **Reason for dependency:** Followers, activities, and delivery jobs remain when a send fails.
-  - **Contractual and usage decisions:** These rows use the same Free D1 allowance as the rest of the host. A refusal keeps the rows that are already stored. The app does not move onto a paid plan.
+  - **Contractual and usage decisions:** These rows use the same Free D1 allowance as the rest of the host. The daily row-read figure and the account storage figure are in [the product](../../product.md). A refusal keeps the rows that are already stored. The app does not move onto a paid plan.
 
 ## Security considerations
 
@@ -391,7 +391,7 @@ Any remote instance that can produce a verifying Follow becomes a follower. This
 
 Delivery can show the same activity more than once when the receiver does not ignore a repeated activity ID.
 
-Signature work that repeatedly exceeds the free CPU allowance cannot run on the free plan. Until that excess is measured, this feature does not contract a paid plan. The later choice stays the open question on the parent product.
+Authentication or a large JSON parse can take about 10 to 20 ms. The source is [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), updated 2026-10-29. Signature work that repeatedly exceeds the free CPU allowance cannot run on the free plan. An inbox request or a queue consumer that repeatedly ends with `exceededCpu` is that case. Until that excess is measured, this feature does not contract a paid plan. The later choice stays the open question on the parent product.
 
 ## Open questions
 

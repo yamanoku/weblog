@@ -18,7 +18,7 @@ CLI は公開プロジェクトを読む。このホストへは、ページを�
 
 [D1 Database](https://developers.cloudflare.com/d1/worker-api/d1-database/) は、`batch()` 内の文が失敗すると列を中断するか、巻き戻すと書く。同じページは、文が順に実行されるとも書く。この設計では、失敗した batch の変更は残さない。
 
-Free プランの D1 は、Worker の一呼び出しにつきクエリ 50 回までである。一文の束縛パラメータは 100 個までである。SQL は 100 KB までである。一行は 2 MB までである。データベースは 500 MB までである。出典は 2026-10-30 更新の [Limits](https://developers.cloudflare.com/d1/platform/limits/) である。Free の一日の書き込み行数は 10 万である。出典は 2026-10-30 更新の [Pricing](https://developers.cloudflare.com/d1/platform/pricing/) である。そのページでは、クエリごとの `meta.rows_written` がそのクエリの書き込み行数を返す。索引の行も数に入る。アカウントの残り枠は返さない。
+Free プランの D1 は、Worker の一呼び出しにつきクエリ 50 回までである。一文の束縛パラメータは 100 個までである。SQL は 100 KB までである。一行は 2 MB までである。データベースは 500 MB までである。出典は 2026-10-30 更新の [Limits](https://developers.cloudflare.com/d1/platform/limits/) である。同じ表は、その 50 クエリの行を、読み取りサブリクエストの上限とも呼ぶ。Free の一日の書き込み行数は 10 万である。出典は 2026-10-30 更新の [Pricing](https://developers.cloudflare.com/d1/platform/pricing/) である。そのページでは、クエリごとの `meta.rows_written` がそのクエリの書き込み行数を返す。索引の行も数に入る。アカウントの残り枠は返さない。
 
 2026-09-01 以降、Free プランは一日の読み取り行数か書き込み行数を超えると、クエリが失敗する。保存済みの行は残る。枠は 00:00 UTC に戻る。出典は [D1 の変更履歴](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/) である。
 
@@ -38,7 +38,7 @@ Free プランの D1 は、Worker の一呼び出しにつきクエリ 50 回ま
 
 成果物は、既存 CLI のサブコマンドと、同じ Worker 上の認証付き経路三つである。一覧の走査、待機、報告は CLI が持つ。Worker は、一要求につきページを多くて一つ確定する。Worker の一要求では、プロジェクトを取り込まない。
 
-ドメインとアダプタは分ける。ドメインは結果を決め、ページを検証し、変更の一覧を作る。D1 の型は取り込まない。D1 アダプタが batch を実行する。CLI のアダプタが Cosense とこのホストを呼ぶ。
+ドメインとアダプタは分ける。ドメインは結果を決め、ページを検証し、変更の一覧を作る。D1 の型は取り込まない。Cloudflare SDK、特定の ORM、Fedify の型も取り込まない。D1 アダプタが batch を実行する。CLI のアダプタが Cosense とこのホストを呼ぶ。
 
 エントリと辺を書く関数は `commitEntryBatch` だけである。所有者の作成と更新は、それぞれの変更一覧を作る。取り込みも変更一覧を作る。取り込みの一覧は、作成のとき `cosense_page_id` を設定する。種類、公開状態、bookmark の URL、不変 ID、`published_at`、既存のページ ID は変えない。
 

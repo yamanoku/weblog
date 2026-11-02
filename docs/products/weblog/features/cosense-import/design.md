@@ -18,7 +18,7 @@ The acceptance criteria in [Cosense import](requirements.md).
 
 [D1 Database](https://developers.cloudflare.com/d1/worker-api/d1-database/) says that if a statement in a `batch()` fails, the sequence is aborted or rolled back. The same page also says the statements run sequentially. This design treats a failed batch as leaving none of that batch's changes.
 
-On the Free plan, D1 allows 50 queries per Worker invocation, 100 bound parameters per statement, a SQL statement of at most 100 KB, and a row of at most 2 MB. A database is at most 500 MB. The source is [Limits](https://developers.cloudflare.com/d1/platform/limits/), last updated 2026-10-30. Free daily row writes are 100,000. The source is [Pricing](https://developers.cloudflare.com/d1/platform/pricing/), last updated 2026-10-30. That page says each query's `meta.rows_written` counts the rows that query wrote, including index rows. It does not return the account's remaining daily allowance.
+On the Free plan, D1 allows 50 queries per Worker invocation, 100 bound parameters per statement, a SQL statement of at most 100 KB, and a row of at most 2 MB. A database is at most 500 MB. The source is [Limits](https://developers.cloudflare.com/d1/platform/limits/), last updated 2026-10-30. That limits table also names the 50-query row as the read-subrequest limit. Free daily row writes are 100,000. The source is [Pricing](https://developers.cloudflare.com/d1/platform/pricing/), last updated 2026-10-30. That page says each query's `meta.rows_written` counts the rows that query wrote, including index rows. It does not return the account's remaining daily allowance.
 
 Since 2026-09-01, a Free-plan query fails when the account exceeds the daily row read or row write limit. Stored rows remain. The allowance returns at midnight UTC. The source is the [D1 changelog](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/).
 
@@ -38,7 +38,7 @@ The walk list is `https://scrapbox.io/api/pages/yamanoku/search/titles`. A non-e
 
 The deliverables are a subcommand of the existing CLI and three authenticated routes on the same Worker. The CLI holds the list walk, the waits, and the report. The Worker commits at most one page per request. One Worker request does not import the project.
 
-The domain and the adapters stay separate. The domain decides the outcome, validates the page, and builds the change list. It does not import D1 types. The D1 adapter runs the batch. The CLI adapter calls Cosense and this host.
+The domain and the adapters stay separate. The domain decides the outcome, validates the page, and builds the change list. It does not import D1 types, the Cloudflare SDK, a specific ORM, or Fedify types. The D1 adapter runs the batch. The CLI adapter calls Cosense and this host.
 
 `commitEntryBatch` is the only function that writes an entry and its edges. Owner create and owner update build one change list. Import builds another. Import's list sets `cosense_page_id` on create and does not change kind, visibility, bookmark URL, immutable ID, `published_at`, or an existing page ID.
 

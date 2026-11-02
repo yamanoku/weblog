@@ -268,7 +268,7 @@ The report of page IDs is for the owner running the CLI. It is not a public resp
 
 - **Cloudflare D1, through the owner write**
   - **Related user stories:** Import a new page, Continue the list and recheck it
-  - **Reason for dependency:** Each stored page is a write of an entry and its edges. The free daily write allowance is the product's D1 allowance.
+  - **Reason for dependency:** Each stored page is a write of an entry and its edges.
   - **Contractual and usage decisions:** When the next page does not fit in the remaining free daily write allowance, or a write is refused because the allowance is exhausted, the page is not completed and the run waits until 00:00 UTC. Stored rows remain. The app does not move itself onto a paid plan.
 
 ## Security considerations

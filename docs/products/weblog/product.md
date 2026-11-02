@@ -16,15 +16,16 @@ The host is `weblog.yamanoku.net`. The only writer is the owner, and the product
 - Realtime co-editing
 - A migration from [archives.yamanoku.net](https://archives.yamanoku.net/)
 - Two-way sync with Cosense
+- Posting into an existing Mastodon or Misskey
 - Visual design and the choice of an ORM
 
 ## Background and problems
 
 ### Background
 
-[archives.yamanoku.net](https://archives.yamanoku.net/) is a static archive of yamanoku's past articles. On 2026-11-01 the page described itself as a collection of past articles and logs, and said the contents are not updated except for link repairs made during the migration. Static files cannot hold an inbox, signatures, or delivery to followers. They also cannot take updates from both a browser and a CLI.
+[archives.yamanoku.net](https://archives.yamanoku.net/) is a static archive of yamanoku's past articles, generated with Astro. On 2026-11-01 the page described itself as a collection of past articles and logs, and said the contents are not updated except for link repairs made during the migration. This product does not extend that archive. Reading and feeds fit that static site. Static files cannot hold an inbox, signatures, or delivery to followers. They also cannot take updates from both a browser and a CLI.
 
-[The Cosense project yamanoku](https://scrapbox.io/yamanoku/) already stores pages linked by title. On 2026-11-01 the project page listed those titles as links. Cosense does not provide this host's ActivityPub actor, remote follow, or a write path limited to the owner. That gap was recorded when the scope of this product was set, in [the architecture note](../../ARCHITECTURE.md).
+[The Cosense project yamanoku](https://scrapbox.io/yamanoku/) already stores pages linked by title. On 2026-11-01 the project page listed those titles as links. Cosense does not provide this host's ActivityPub actor, remote follow, or a write path limited to the owner. The product does not keep Cosense as the canonical body.
 
 ### Problems to solve
 
@@ -83,7 +84,7 @@ A remote ActivityPub instance has no actor `acct:yamanoku@weblog.yamanoku.net` t
 ### A runtime that can be removed
 
 - **Recipient:** The owner
-- **Offering:** Keep the new cost of running the app at zero yen, and allow the runtime parts to be replaced later
+- **Offering:** Keep the new cost of running the app at zero yen, and allow the runtime parts to be replaced later. The items the owner can take out, and the rule that storage is acceptable only when those items can be restored, are in [Relocation](features/relocation/requirements.md).
 - **Reason:** The owner named Cloudflare's free tier as the first place to run the app, and asked for those parts to be removable. Domain registration fees paid to a registry are outside the zero-yen target. So is the part of the existing Gyazo archive storage that exceeds 10 GB a month.
 
 ## Definition of success
@@ -100,11 +101,16 @@ The product is successful when all of the following hold.
 
 - The only writer is the owner. There is no registration API.
 - The canonical body is plain text. HTML for display is produced from that text.
-- After publication, the hostname and the published ActivityPub identifiers stay unchanged. Changing the hostname breaks the `acct:` and object identifiers that remote servers have stored.
+- After publication, the hostname and the published ActivityPub identifiers stay unchanged. Changing the hostname breaks the `acct:` and object identifiers that remote servers have stored. The DNS provider can be replaced while the hostname's HTTPS still resolves to this app.
+- A custom domain is attached to a zone on the Free plan. The [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page, updated 2026-10-02, does not list an extra fee. The [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) page, updated 2026-10-29, does not list an extra fee either. The cap is 100 custom domains per zone. The zone stays on the Free plan. A Pro zone plan, or a higher zone plan, is not contracted.
 - Entry rules stay free of a Cloudflare SDK. Runtime parts remain replaceable.
 - Staying at zero yen for new runtime cost comes before continuing work that no longer fits the free allowance. That work fails or waits until 00:00 UTC the next day. The app does not move itself onto a paid plan.
+- Do not contract Workers Paid at the start. That plan costs 5 dollars a month even when it is not used. The source is the [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page, updated 2026-10-02. Do not contract it before measurement either.
+- The D1 free allowance includes 5 million row reads a day and 5 GB of storage for the account. The source is the D1 table on that same Workers pricing page, updated 2026-10-02.
 - Domain registration fees are outside the zero-yen target. So is existing Gyazo archive storage beyond 10 GB a month.
 - Pages brought in from Cosense are not classified automatically into articles, short posts, or bookmarks. They are not delivered to followers in bulk.
+- The public URL and the activity ID are fixed in this version. Adding the federation contract later would change the host after publication. Implementation order is not a separate decision.
+- Do not post this host's entries into an existing Mastodon or Misskey server. Remote follow could be met that way. Articles, bookmarks, and bidirectional links to titles that do not exist yet cannot be produced from one line of text.
 - This purpose does not choose a UI framework or an ORM.
 
 ## SLA, SLI, and SLO
@@ -123,9 +129,14 @@ Whether creating or checking HTTP signatures fits the free tier's CPU time per i
 
 It is undecided whether, if creating or checking HTTP signatures regularly exceeds the free tier's CPU time per invocation, the owner will reduce that work or adopt a paid plan. Until the owner decides, do not contract a paid plan. Work that cannot run inside the free tier does not run. The owner decides after measurement shows that the CPU time is exceeded as a regular case.
 
-The following are outside this purpose. Decide each one in the Requirements that own it.
+Which frontend framework to use is undecided. No product has been chosen. Until the owner chooses one, this purpose does not select a framework.
 
-- Rendering of Cosense notation other than links
-- Merging a local edit with a newer Cosense page
+Which ORM library to use is undecided. No library has been chosen. The first store adapter is D1. An ORM that exceeds D1's 500 MB database size, the free daily row limits, or 50 queries per invocation is rejected. The owner chooses a library later only inside those limits, or chooses none.
 
-Until then, leave the treatment in [the architecture note's open questions](../../ARCHITECTURE.md) as written. Do not change the purpose, the users, or the value.
+The following are outside this purpose. Decide each one in the Requirements that own it. The undecided choice and the decided interim are written there.
+
+- Rendering of Cosense notation other than links, in [Public reading](features/public-reading/requirements.md)
+- Merging a local edit with a newer Cosense page, in [Cosense import](features/cosense-import/requirements.md)
+- The physical format of the export file, in [Relocation](features/relocation/requirements.md)
+
+Do not change the purpose, the users, or the value.

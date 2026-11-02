@@ -280,6 +280,7 @@ When a read cannot run inside the free allowance, the response is not 404, 410, 
 - **Past titles and redirects:** Enough to send an old public path to the current view path or the canonical URL. A draft is not a redirect target for an unauthenticated client.
 - **Deletion record:** Whether a deleted id was delivered, so the HTML can return 404 or 410 without the deleted body. Owner writing defines that record.
 - **Gyazo index:** Image id, extension, and object key including the export directory. The index lives in D1, which is the decision already made. Many keys may share one image id.
+- **Local expansion on 2026-11-01:** 26.3 GiB. The same image id appeared in only one directory. 243 image ids had more than one extension. 2 metadata files had no file. The billed size of the bucket is not part of this measurement.
 
 ### Relationships
 
@@ -299,12 +300,12 @@ A public body, title, or bookmark URL may name the owner or another person. Thos
 - **Cloudflare R2, bucket `gyazo-archives`**
   - **Related user stories:** Read a Gyazo image
   - **Reason for dependency:** The image bytes already exist in this bucket. This feature reads them and does not upload them again.
-  - **Contractual and usage decisions:** Storage beyond 10 GB a month for this existing archive is outside the zero-yen target. This feature does not add a second copy of the bytes.
+  - **Contractual and usage decisions:** Storage beyond 10 GB a month for this existing archive is outside the zero-yen target. This feature does not add a second copy of the bytes. A read is a Class B operation. The free allowance is 1 million Class A operations a month, 10 million Class B operations a month, and 10 GB of storage a month. The source is [R2 pricing](https://developers.cloudflare.com/r2/pricing/), last updated 2026-10-30.
 
 - **Cloudflare D1**
   - **Related user stories:** Read a public entry, read the feeds, walk titles, read a Gyazo image
   - **Reason for dependency:** Public entries are read from the entry store. The Gyazo index is in the same D1 database.
-  - **Contractual and usage decisions:** The free allowance is the product's D1 allowance. When a read cannot run, it fails until 00:00 UTC. The failure stays distinguishable from a missing entry. The app does not move itself onto a paid plan.
+  - **Contractual and usage decisions:** The free allowance is the [D1 allowance in the product](../../product.md). When a read cannot run, it fails until 00:00 UTC. The failure stays distinguishable from a missing entry. The app does not move itself onto a paid plan.
 
 ## Security considerations
 
@@ -319,3 +320,5 @@ The image route returns one object's bytes. It does not list the bucket.
 None that block Design for this feature.
 
 The order for rendering Cosense notation other than links is decided by the owner when that rendering's requirements are written. Until then, this feature shows the source text. Changing that order does not change the stored body or the edge rules.
+
+The billed size of bucket `gyazo-archives` is unmeasured. The 26.3 GiB figure above is the local expansion, not a bill. No billed size is written until the owner measures it. This gap does not change the image URL. Storage beyond 10 GB a month stays outside the zero-yen target.

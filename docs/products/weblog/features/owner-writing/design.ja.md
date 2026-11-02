@@ -32,7 +32,7 @@ Access は、保護した経路のリクエストに `Cf-Access-Jwt-Assertion` �
 
 成果物は一つの Worker と、その Worker を呼ぶ CLI である。編集画面は、フレームワークを使わない HTML フォームである。見た目のフレームワークは Requirements の外であり、この機能は項目を送れることが条件だからである。
 
-処理はドメインとアダプタに分ける。ドメインは、検証、タイトルの正規化、辺の抽出、publishedAt の更新、削除が 404 か 410 かを決める。ドメインは D1 の型、Access の JWT、ORM を import しない。アダプタが D1、Access、トークンハッシュを扱う。実行場所を外すとき、アダプタだけを差し替える。
+処理はドメインとアダプタに分ける。ドメインは、検証、タイトルの正規化、辺の抽出、publishedAt の更新、削除が 404 か 410 かを決める。ドメインは D1 の型、Access の JWT、ORM を import しない。Cloudflare SDK と Fedify の型も import しない。アダプタが D1、Access、トークンハッシュを扱う。実行場所を外すとき、アダプタだけを差し替える。分けるポートは、エントリ保存、リンク保存、ブラウザ認証である。CLI 認証とリンク抽出も分ける。エントリ保存は、エントリを確定する。リンク保存は、同じ確定の中でそのエントリの辺を置き換える。両方の保存の第一アダプタは D1 である。ブラウザ認証は Access のアダプタである。CLI 認証は、トークンのハッシュを確認する。リンク抽出は、要件の規則を適用する。
 
 書き込みの流れは、次の順である。
 
@@ -172,7 +172,7 @@ GET `/edit` は空のフォームを返す。GET `/edit/{id}` は、所有者な
 
 ### CLI と `/entries`
 
-CLI は環境変数 `WEBLOG_TOKEN` を Bearer として送る。トークンをリポジトリやファイルへ書かない。基底 URL は `WEBLOG_URL` で、省略時は `https://weblog.yamanoku.net` である。
+CLI は環境変数 `WEBLOG_TOKEN` を Bearer として送る。トークンをリポジトリやファイルへ書かない。基底 URL は `WEBLOG_URL` で、省略時は `https://weblog.yamanoku.net` である。CLI は本文をファイルから読み、作成と更新の body として送る。
 
 - POST `/entries` は作成する。
 - PUT `/entries/{id}` は項目を置き換える。

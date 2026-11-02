@@ -36,7 +36,7 @@ On the Free plan, D1 allows 50 queries per Worker invocation. A `batch()` call c
 
 The deliverable is the public routes on the same Worker that handles owner writes. Pages are server-rendered HTML. There is no client-side application.
 
-The domain reads public rows, resolves public titles, and renders HTML. Adapters read D1 and the R2 bucket. The domain does not import the Cloudflare SDK, D1 types, R2 types, or an ORM. Replacing the host means replacing those adapters.
+The domain reads public rows, resolves public titles, and renders HTML. Adapters read D1 and the R2 bucket. The domain does not import the Cloudflare SDK, D1 types, R2 types, an ORM, or Fedify types. Replacing the host means replacing those adapters. Rendering is the render port. The object port is the image-fetch port. The store port is the entry store for these reads.
 
 Public routes do not read owner credentials. A draft is absent from every response this feature returns. The owner reads a draft at GET `/entries/{id}` and GET `/edit/{id}`, which belong to owner writing.
 
@@ -284,7 +284,7 @@ The public response is derived from stored plain text, public edges, past titles
 
 The Gyazo index is loaded by an owner command, not by a reader. The command reads a local listing of `{directory}/{imageId}.{extension}` and inserts or replaces `gyazo_objects` rows. It does not call R2 `list` or R2 `put`. A second run can continue a partial load because a missing id keeps the original URL in HTML. The command does not delete index rows that are absent from the listing. Removing a public image URL requires deleting that index row. This feature does not delete archive bytes.
 
-The listing counted on 2026-11-01 had 15686 image files. That row count fits the product's free daily write allowance. The command uses `batch()` calls small enough to finish, and it can be run again.
+The listing counted on 2026-11-01 had 15686 image files. That row count fits the free daily row-write allowance. The command uses `batch()` calls small enough to finish, and it can be run again.
 
 Public bodies, titles, and bookmark URLs may name a person. They are world-readable because the owner set visibility to public. Drafts are not read here. This feature collects no account data. Image bytes at the public image URL are world-readable. There is no extra consent step.
 

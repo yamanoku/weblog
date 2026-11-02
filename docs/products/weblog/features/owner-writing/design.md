@@ -32,7 +32,7 @@ Access adds `Cf-Access-Jwt-Assertion` on requests to a protected path. Verificat
 
 The deliverables are one Worker and a CLI that calls it. The edit screen is an HTML form with no UI framework. A visual framework is outside the requirements. This feature only needs the fields to be submitted.
 
-The domain and the adapters are separate. The domain validates fields, normalizes titles, extracts edges, updates publishedAt, and chooses 404 or 410 on delete. The domain does not import D1 types, Access JWTs, or an ORM. Adapters handle D1, Access, and the token hash. Replacing the runtime replaces the adapters.
+The domain and the adapters are separate. The domain validates fields, normalizes titles, extracts edges, updates publishedAt, and chooses 404 or 410 on delete. The domain does not import D1 types, Access JWTs, the Cloudflare SDK, Fedify types, or an ORM. Adapters handle D1, Access, and the token hash. Replacing the runtime replaces the adapters. The ports this feature separates are the entry store, the link store, browser authentication, CLI authentication, and link extraction. The entry store commits the entry. The link store replaces that entry's edges in the same commit. The first adapter for both stores is D1. Browser authentication is the Access adapter. CLI authentication checks the token hash. Link extraction applies the rules in the requirements.
 
 A write runs in this order.
 
@@ -172,7 +172,7 @@ The form fields are kind, title, body, visibility, and bookmarkUrl. The HTML res
 
 ### CLI and `/entries`
 
-The CLI sends the `WEBLOG_TOKEN` environment variable as a Bearer token. It does not write the token into the repository or a file. The base URL is `WEBLOG_URL`, and the default is `https://weblog.yamanoku.net`.
+The CLI sends the `WEBLOG_TOKEN` environment variable as a Bearer token. It does not write the token into the repository or a file. The base URL is `WEBLOG_URL`, and the default is `https://weblog.yamanoku.net`. The CLI reads the body from a file and sends that text as the body field of create and update.
 
 - POST `/entries` creates an entry.
 - PUT `/entries/{id}` replaces the fields.

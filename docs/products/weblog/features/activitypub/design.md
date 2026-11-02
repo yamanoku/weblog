@@ -35,7 +35,7 @@ The signature joint follows the Social Web Incubator Community Group report on A
 
 ## Implementation approach
 
-The deliverable is federation on the Worker that already writes entries. There is no second Worker and no Durable Object. The domain plans activities and decides whether an inbox post is accepted. Adapters sign, store, and enqueue. The domain does not import D1 types, Queue types, KV types, or Fedify types.
+The deliverable is federation on the Worker that already writes entries. There is no second Worker and no Durable Object. Workers Free can still create a Durable Object that uses SQLite. The free allowance for duration while it is running is 13,000 GB-s a day. The source is [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), updated 2026-10-02. This app is one person's relational data and has no reason to keep an object awake. The domain plans activities and decides whether an inbox post is accepted. Adapters sign, store, and enqueue. The domain does not import D1 types, Queue types, KV types, the Cloudflare SDK, an ORM, or Fedify types.
 
 An owner save or delete plans the activity before the batch. The plan is `none`, `create`, `update`, or `delete`. The same `batch()` that commits the entry and its edges also commits the activity and, when a send is required, the delivery job. `commitEntryBatch` remains the only function that writes an entry and its edges. Import builds a change list that does not call this planner, does not insert a delivery job, and does not enqueue.
 
@@ -231,7 +231,7 @@ The queue binding is `DELIVERY_QUEUE`. The cron on this Worker is `0 * * * *`. V
 
 ## External service integration
 
-D1 is the store, binding `DB`. The domain does not know `D1Database`. Sessions and read replicas are not used.
+D1 is the store, binding `DB`. The follower store is the port that reads and writes follower rows. Its first adapter is this D1 binding. The domain does not know `D1Database`. Sessions and read replicas are not used.
 
 Queues carry the activity ID. The consumer runs in this Worker. The domain sees a port that enqueues an activity URL or refuses. It does not see the Queue type.
 
@@ -239,7 +239,7 @@ KV binding `KEY_CACHE` caches a remote public key. The cache key is the `keyId`.
 
 The key is resolved by removing the fragment from `keyId` and requesting that HTTPS URL with Accept `application/activity+json`. The PEM is the `publicKey` whose `id` equals the `keyId`. A failed fetch, a key that is not RSA, or a PEM that does not verify is 401.
 
-The federation adapter may use Fedify for the signature and for parsing the inbox body. Fedify is selected because the app keeps followers, activities, and jobs in D1, and only the short-lived remote key uses KV. Replacing Fedify replaces that adapter. The domain does not import its types. If a build of the library cannot run unless it owns those records, the adapter is the hand-rolled signer instead. The hand-rolled signer uses the platform RSA implementation and the same headers.
+The federation adapter may use Fedify for the signature and for parsing the inbox body. Fedify is selected because the app keeps followers, activities, and jobs in D1, and only the short-lived remote key uses KV. Replacing Fedify replaces that adapter. The domain does not import its types. If a build of the library cannot run unless it owns those records, the adapter is the hand-rolled signer instead. The hand-rolled signer uses the platform RSA implementation and the same headers. The official Workers example for Fedify covers Follow's Accept and Undo(Follow). The example is not an implementation of a whole blog. The adapter conditions in this section still apply.
 
 Outbound POST signs `(request-target)`, `host`, `date`, `digest`, and `content-type` with `rsa-sha256`. `keyId` is `https://weblog.yamanoku.net/users/yamanoku#main-key`. The digest is the SHA-256 prefix from the report, then the base64 of the body hash. The body hash is SHA-256.
 
@@ -271,7 +271,7 @@ Delivery is at least once. A receiver that does not ignore a repeated activity I
 
 Signature work that the platform stops for CPU is not converted into 401 and is not a reason to contract a paid plan. The target stays unsent. Whether to reduce that work or adopt a paid plan stays the open question on the parent product.
 
-Workers Logs move to Observability pricing on 2026-12-01. This design does not rely on reading old logs. Logpush is not used.
+Workers Logs move to Observability pricing on 2026-12-01. The source for that move is the [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page, updated 2026-10-02. The unit price after that date has not been confirmed. This design does not state an amount. This design does not rely on reading old logs. Logpush is not used.
 
 ## Deployment notes
 
@@ -320,3 +320,5 @@ That path would need a new reserved view-path key. The ID under `/users/yamanoku
 None that block implementation of this feature.
 
 Whether signature CPU regularly exceeds the free tier, and whether the owner then reduces that work or adopts a paid plan, stays the open question on the parent product. Until that measurement, this feature does not contract a paid plan.
+
+The unit price of Workers Logs after 2026-12-01 is not confirmed. Until the owner checks a published price, this design states no amount. The interim remains the security section: do not depend on old logs, and do not use Logpush.

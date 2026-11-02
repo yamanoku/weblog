@@ -206,7 +206,7 @@ The parent product sets no percentage target for availability or delivery succes
 
 **Overview:** The browser and the CLI use the same write rules. One write submits kind, title, body, and visibility. A bookmark write also submits an external URL. The write that commits later becomes the new state of these fields.
 
-**Input:** A request verified as the owner. The fields are kind, title, body, visibility, and a bookmark's external URL.
+**Input:** A request verified as the owner. The fields are kind, title, body, visibility, and a bookmark's external URL. The CLI accepts the body from a file for create and update. Create, update, publish, delete, get, and list stay available on that same CLI. The fields stay the ones in this section.
 
 **Output:** The committed entry, or the reason for refusal. On refusal, the entry and its edges stay unchanged.
 
@@ -350,7 +350,7 @@ The token hash is retained until reissue invalidates it. A deleted ID that was d
 - **Cloudflare Access (Zero Trust Free plan)**
   - **Related user stories:** Create an entry, Issue a CLI token and write with it
   - **Reason for dependency:** The browser editing screen verifies the one owner. The product has no signup. The first CLI token is issued from a session that this service has verified.
-  - **Contractual and usage decisions:** Use the Free plan. Up to 50 seats have no extra charge, and the only seat used is the owner. Paid add-ons stay off. The app does not move itself onto a paid plan. When this service is removed, the replacement for browser verification of the owner is decided separately. The CLI token rules stay. Domain registration fees are outside this dependency's cost.
+  - **Contractual and usage decisions:** Use the Free plan. Up to 50 seats have no extra charge, and the only seat used is the owner. Paid add-ons stay off. The app does not move itself onto a paid plan. When this service is removed, the replacement for browser verification of the owner is decided separately. The CLI token rules stay. Domain registration fees are outside this dependency's cost. A Cloudflare Community explanation dated 2026-10-17 says the Free plan reaches a cap by seat count. Paid add-ons such as Log Explorer are not billed unless the owner explicitly upgrades. A Free organization is not charged when the signup flow asks for payment information. That procedure was updated on 2026-10-12.
 
 ## Security considerations
 
@@ -365,3 +365,5 @@ The CLI token value and the secrets used to verify browser authentication do not
 ## Open questions
 
 Whether these extraction rules match the link range on the Cosense screen is undecided. Until the owner decides, edges are made by the rules above. The owner changes the rules after comparing a fetched body with the screen and judging that they differ. It is not established that they match.
+
+The browser authentication method after Access is removed is undecided. Passkey is only a named candidate and is not adopted. Version 1 keeps Access for the browser. The CLI token rules stay. The owner decides the replacement. Until that decision, the contractual sentence above still stands.
