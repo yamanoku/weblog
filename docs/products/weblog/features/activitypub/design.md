@@ -31,7 +31,6 @@ The signature joint follows the Social Web Incubator Community Group report on A
 - Cosense listing, the import cursor, and merging a local edit with a newer source
 - A block list, replies, boosts, likes, and a client posting API
 - The UI framework and the ORM
-- Choosing a paid plan after signature CPU is measured. That question stays on the parent product
 
 ## Implementation approach
 
@@ -269,7 +268,7 @@ The inbox stores a follower only after the signature verifies and the key owner 
 
 Delivery is at least once. A receiver that does not ignore a repeated activity ID can show the same activity more than once. That result is accepted.
 
-Signature work that the platform stops for CPU is not converted into 401 and is not a reason to contract a paid plan. The target stays unsent. Whether to reduce that work or adopt a paid plan stays the open question on the parent product.
+Signature work that the platform stops for CPU is not converted into 401. The target stays unsent. Resuming it follows the [product](../../product.md) principle: reduce that work until it fits the free tier. This feature does not contract a paid plan.
 
 Workers Logs move to Observability pricing on 2026-12-01. The source for that move is the [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page, updated 2026-10-02. The unit price after that date has not been confirmed. This design does not state an amount. This design does not rely on reading old logs. Logpush is not used.
 
@@ -318,7 +317,5 @@ That path would need a new reserved view-path key. The ID under `/users/yamanoku
 ## Open questions
 
 None that block implementation of this feature.
-
-Whether signature CPU regularly exceeds the free tier, and whether the owner then reduces that work or adopts a paid plan, stays the open question on the parent product. Until that measurement, this feature does not contract a paid plan.
 
 The unit price of Workers Logs after 2026-12-01 is not confirmed. Until the owner checks a published price, this design states no amount. The interim remains the security section: do not depend on old logs, and do not use Logpush.

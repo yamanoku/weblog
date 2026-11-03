@@ -107,6 +107,7 @@ The product is successful when all of the following hold.
 - Entry rules stay free of a Cloudflare SDK. Runtime parts remain replaceable.
 - Staying at zero yen for new runtime cost comes before continuing work that no longer fits the free allowance. That work fails or waits until 00:00 UTC the next day. The app does not move itself onto a paid plan.
 - Do not contract Workers Paid at the start. That plan costs 5 dollars a month even when it is not used. The source is the [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) page, updated 2026-10-02. Do not contract it before measurement either.
+- When creating or checking an HTTP signature exceeds the free CPU time for one invocation, reduce that work and keep running on the free tier. Do not contract a paid plan for this reason. Until the work fits, do not run it.
 - The D1 free allowance includes 5 million row reads a day and 5 GB of storage for the account. The source is the D1 table on that same Workers pricing page, updated 2026-10-02.
 - Domain registration fees are outside the zero-yen target. So is existing Gyazo archive storage beyond 10 GB a month.
 - Pages brought in from Cosense are not classified automatically into articles, short posts, or bookmarks. They are not delivered to followers in bulk.
@@ -124,11 +125,9 @@ None. The product does not promise availability to readers or to remote instance
 
 No numeric target. The operating rule is to fail or wait when the free allowance is used up, not to hit an availability percentage. The product also sets no percentage target for delivery success.
 
-Whether creating or checking HTTP signatures fits the free tier's CPU time per invocation has not been measured. That measurement is the trigger for the open question below. It is not a current SLO.
+Whether creating or checking HTTP signatures fits the free CPU time for one invocation has not been measured. That lack of a measurement is not a current SLO. The handling when the work exceeds that time is the development principle above.
 
 ## Open questions
-
-It is undecided whether, if creating or checking HTTP signatures regularly exceeds the free tier's CPU time per invocation, the owner will reduce that work or adopt a paid plan. Until the owner decides, do not contract a paid plan. Work that cannot run inside the free tier does not run. The owner decides after measurement shows that the CPU time is exceeded as a regular case.
 
 Which frontend framework to use is undecided. No product has been chosen. Until the owner chooses one, this purpose does not select a framework.
 

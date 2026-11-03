@@ -28,7 +28,6 @@ The parent product is [weblog.yamanoku.net](../../product.md). Which entries are
 - Changing the hostname or a published object ID
 - The order of rendering Cosense notation other than links
 - The UI framework and the ORM
-- Choosing a paid plan after signature CPU is measured. That question stays on the parent product
 
 ## User stories
 
@@ -391,8 +390,8 @@ Any remote instance that can produce a verifying Follow becomes a follower. This
 
 Delivery can show the same activity more than once when the receiver does not ignore a repeated activity ID.
 
-Authentication or a large JSON parse can take about 10 to 20 ms. The source is [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), updated 2026-10-29. Signature work that repeatedly exceeds the free CPU allowance cannot run on the free plan. An inbox request or a queue consumer that repeatedly ends with `exceededCpu` is that case. Until that excess is measured, this feature does not contract a paid plan. The later choice stays the open question on the parent product.
+Authentication or a large JSON parse can take about 10 to 20 ms. The source is [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), updated 2026-10-29. Signature work that repeatedly exceeds the free CPU allowance cannot run on the free plan. An inbox request or a queue consumer that repeatedly ends with `exceededCpu` is that case. When that excess happens, follow the development principle in the [product](../../product.md): reduce the work and keep running on the free tier. Do not contract a paid plan.
 
 ## Open questions
 
-None in this feature. Whether to reduce signature work or adopt a paid plan, after measurement shows the free CPU allowance is regularly exceeded, stays the open question on the parent product. Until that measurement, this feature does not contract a paid plan.
+None in this feature.
