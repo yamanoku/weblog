@@ -1,10 +1,10 @@
-# テーブル設計
+# データベース設計
 
-[English](table.md)
+[English](database.md)
 
 ## このドキュメントについて
 
-この設計は、[weblog.yamanoku.net](../../products/weblog/product.ja.md) の一つの D1 にある表を挙げる。エントリの行は [所有者の書き込み](../../products/weblog/features/owner-writing/requirements.ja.md) に残る。公開の読み取りは [公開閲覧](../../products/weblog/features/public-reading/requirements.ja.md) に残る。配送の行は [ActivityPub](../../products/weblog/features/activitypub/requirements.ja.md) に残る。取り込みの列は [Cosense からの取り込み](../../products/weblog/features/cosense-import/requirements.ja.md) に残る。[移設](../../products/weblog/features/relocation/requirements.ja.md) は表を足さない。
+この設計は、[weblog.yamanoku.net](../../products/weblog/product.ja.md) の一つの D1 にあるテーブルを挙げる。エントリの行は [所有者の書き込み](../../products/weblog/features/owner-writing/requirements.ja.md) に残る。公開の読み取りは [公開閲覧](../../products/weblog/features/public-reading/requirements.ja.md) に残る。配送の行は [ActivityPub](../../products/weblog/features/activitypub/requirements.ja.md) に残る。取り込みの列は [Cosense からの取り込み](../../products/weblog/features/cosense-import/requirements.ja.md) に残る。[移設](../../products/weblog/features/relocation/requirements.ja.md) はテーブルを足さない。
 
 ### 対象読者
 
@@ -57,7 +57,7 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 ### `owner_token`
 
-表は常に一行である。列は `hash` と `issued_at` だけである。保存する値は、CLI トークンの SHA256 ハッシュである。
+テーブルは常に一行である。列は `hash` と `issued_at` だけである。保存する値は、CLI トークンの SHA256 ハッシュである。
 
 ### `delivery_records`
 
@@ -69,7 +69,7 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 ### `gyazo_objects`
 
-列は `image_id`、`extension`、`object_key` である。`extension` は小文字である。ドットは含まない。`object_key` は、書き出しディレクトリの名を含む。主キーは `image_id` と `extension` である。公開の要求は、この表を書かない。エントリの書き込み batch にも入らない。
+列は `image_id`、`extension`、`object_key` である。`extension` は小文字である。ドットは含まない。`object_key` は、書き出しディレクトリの名を含む。主キーは `image_id` と `extension` である。公開の要求は、このテーブルを書かない。エントリの書き込み batch にも入らない。
 
 読み取り用の索引は、次の二つである。一意な `view_path` は置き換えない。辺と過去タイトルの索引も置き換えない。
 
@@ -111,11 +111,11 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 ## セキュリティ上の留意事項
 
-アクターの秘密鍵は、公開の SQL では選ばない。公開 HTML は、配送の表を読まない。`owner_token` も読まない。`cosense_page_id` も読まない。
+アクターの秘密鍵は、公開の SQL では選ばない。公開 HTML は、配送のテーブルを読まない。`owner_token` も読まない。`cosense_page_id` も読まない。
 
 ## デプロイに関する特記事項
 
-最初のデータベースは、上の表以外は空である。`gyazo_objects` は空で始めてよい。`followers` も空で始めてよい。この文書の中に、既存サイトからの移行は無い。移設は表を足さない。
+最初のデータベースは、上のテーブル以外は空である。`gyazo_objects` は空で始めてよい。`followers` も空で始めてよい。この文書の中に、既存サイトからの移行は無い。移設はテーブルを足さない。
 
 ## 検討した代替手段
 

@@ -1,6 +1,6 @@
-# Table design
+# Database design
 
-[日本語](table.ja.md)
+[日本語](database.ja.md)
 
 ## About this document
 
