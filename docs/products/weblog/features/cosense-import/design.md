@@ -32,7 +32,7 @@ The walk list is `https://scrapbox.io/api/pages/yamanoku/search/titles`. A non-e
 - Copying Gyazo or `scrapbox.io/files` binaries, and writing the bucket `gyazo-archives`.
 - Rendering Cosense notation other than the edges owner writing extracts.
 - A UI framework and an ORM.
-- The later procedure that adopts a newer source body over a local edit.
+- A procedure that adopts a newer source body over a local edit. The requirements decide not to have that procedure.
 
 ## Implementation approach
 
@@ -66,7 +66,7 @@ For each page in the migration set, the CLI sends the page ID and the list's `up
 
 `skip` means the stored body still equals the last imported body and the list time is not newer. The CLI does not fetch text.
 
-`local_edit` means the stored body differs from the last imported body, including when the snapshot column is NULL. The CLI prints the page ID and does not fetch text. The source body is not written.
+`local_edit` means the stored body differs from the last imported body, including when the snapshot column is NULL. The CLI prints the page ID and does not fetch text. The source body is not written. The requirements decide there is no later procedure that adopts a newer source body over that edit. This design does not add one.
 
 `fetch` means no entry stores the page ID, or the body still matches and the list time is newer. The CLI fetches `https://scrapbox.io/api/pages/yamanoku/{title}/text` and posts that text. The title is one percent-encoded path segment.
 
@@ -267,8 +267,6 @@ A hash would show inequality with less storage. The requirements ask to keep the
 Overlapping runs were not specified. A lock would be a new rule. The selected design adds no lock. The unique page ID still prevents a second entry.
 
 ## Open questions
-
-The procedure for adopting a newer Cosense body after a local edit stays open in the requirements. Until the owner decides, this feature reports the page ID and does not write the newer body.
 
 Whether extraction matches the link range on the Cosense screen stays open in owner writing. This feature calls those rules and does not change them.
 

@@ -42,7 +42,7 @@ A remote ActivityPub instance has no actor `acct:yamanoku@weblog.yamanoku.net` t
 
 - **Characteristics:** The only person who writes on this host. Uses a browser and a CLI. Moves the created Cosense pages named by the import requirements onto this host.
 - **Problems:** Articles and linked pages live in different places. No single host offers remote follow and writes limited to the owner.
-- **Usage context:** Creates, updates, publishes, and deletes entries. Moves the created pages named by the import requirements onto this host. A program can call the same write path with the owner's CLI credential.
+- **Usage context:** Creates, updates, publishes, and deletes entries. Moves the created pages named by the import requirements onto this host. After that move, the owner does not update the public Cosense project. A program can call the same write path with the owner's CLI credential.
 
 ### Unauthenticated readers
 
@@ -136,7 +136,6 @@ Which ORM library to use is undecided. No library has been chosen. The first sto
 The following are outside this purpose. Decide each one in the Requirements that own it. The undecided choice and the decided interim are written there.
 
 - Rendering of Cosense notation other than links, in [Public reading](features/public-reading/requirements.md)
-- Merging a local edit with a newer Cosense page, in [Cosense import](features/cosense-import/requirements.md)
 - The physical format of the export file, in [Relocation](features/relocation/requirements.md)
 
 Do not change the purpose, the users, or the value.

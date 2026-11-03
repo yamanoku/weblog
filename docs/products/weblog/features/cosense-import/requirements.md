@@ -4,7 +4,7 @@
 
 ## About this document
 
-The owner uses the CLI to move the 7655 pages that were in the project on 2026-11-03 onto this host. A target page that is not stored yet is saved as a public page and is not delivered. A later run may replace a target page's body only when the local body still matches the last import and the source updated time is newer. A local edit is reported and left in place. A page created after that set is not stored. A link target that has no page is not stored either.
+The owner uses the CLI to move the 7655 pages that were in the project on 2026-11-03 onto this host. A target page that is not stored yet is saved as a public page and is not delivered. A later run may replace a target page's body only when the local body still matches the last import and the source updated time is newer. A local edit is reported and left in place. A page created after that set is not stored. A link target that has no page is not stored either. After the move, the owner does not update the public project. The replace rules remain.
 
 The parent product is [weblog.yamanoku.net](../../product.md). Writes use the validation and the entry-and-edge update boundary in [Owner writing](../owner-writing/requirements.md).
 
@@ -30,7 +30,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Writes use the va
 - A link target that is not in the page list. The link text stays in the body
 - The order of rendering Cosense notation other than the edges owner writing already extracts
 - The UI framework and the ORM
-- A procedure that writes the newer Cosense body over a local edit. The open question below records that this feature does not do that
+- A procedure that adopts a newer Cosense body over a local edit. The local-edit section records that this feature does not do that
 
 ## User stories
 
@@ -96,7 +96,7 @@ Scenario: When the free write allowance cannot take the next page, the run waits
 
 ### Keep a local edit
 
-As the owner, I want a page I edited locally to stay when Cosense has a newer copy so that the import does not choose between the two texts for me.
+As the owner, I want a page I edited locally to stay when Cosense has a newer copy so that this host's body is the canonical text of that edit.
 
 **Acceptance criteria:**
 
@@ -164,6 +164,10 @@ The parent product sets no percentage target for availability or delivery succes
 The only source is the public project `https://scrapbox.io/yamanoku/`. Whether a page exists, and its `created` time, come from `https://scrapbox.io/api/pages/yamanoku`. Walk order follows `search/titles`, in the later section. Neither list's elements include the body lines. The body is the plain text from `https://scrapbox.io/api/pages/yamanoku/{title}/text`. The import does not convert brackets.
 
 The migration set is the 7655 pages that were in that project list on 2026-11-03. On that day, `https://scrapbox.io/api/pages/yamanoku?limit=1` reported `count` 7655. That `count` excludes pages with no content. The source is [api/pages/:projectname](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname). On that same list, all 7655 pages had a line count and a character count of at least 1. A page's `created` value is Unix seconds. The maximum was 1793661527, which is 2026-11-02T23:18:47Z. A page whose `created` value is later than that integer is not in the migration set. A title that is not in the page list is not in the set either. These 7655 pages are the pages to move. The number is not the daily row-write cap. The whole project is not imported inside one request to this host. Each stored page is its own committed write.
+
+##### The public project after the move
+
+After the move, the owner does not update the public project. The replace rules remain. A later run replaces the body when the source updated time is newer and the local body still matches the last import.
 
 ##### Fields a create sets
 
@@ -243,6 +247,8 @@ When the list request fails with a status other than 429 or 5xx, the run stops. 
 
 The current body differs from the last imported body. The source body is not written. The report calls the page ID a local edit. While that difference remains, a newer source body does not enter. Kind and visibility stay. A difference in title alone, while the body still equals the last imported body, is not a local edit. The replace rules can still update the title from the source when the source body is newer.
 
+Once a page has moved onto this host, this host's body is canonical after a local edit. There is no procedure that adopts a newer Cosense body over that edit. This decision leaves the create, resume, and matching-body replace rules above unchanged.
+
 ##### Refused empty body
 
 The fetched body is empty and the resulting visibility is public. The report calls the page ID a refused empty body. This outcome is distinct from a local edit.
@@ -292,7 +298,5 @@ The import runs with the owner's CLI token. A run that does not verify the token
 The report lists Cosense page IDs to the owner and does not include entry bodies or the token value. Pages this feature creates are public. A local edit that stays in place keeps the visibility the owner already set.
 
 ## Open questions
-
-The procedure for adopting a newer Cosense body after a local edit is undecided. Until the owner decides that procedure, this feature reports the Cosense page ID, leaves the local body and edges in place, and does not take in the newer source body while the body still differs. The owner decides. The decision does not change the create, resume, or replace rules above.
 
 Whether the edge rules match the link range on the Cosense screen stays the open question in owner writing. This feature uses those rules and does not change them.
