@@ -12,4 +12,4 @@ Feature specifications go under `docs/products/weblog/features/`. Open questions
 - [ActivityPub](products/weblog/features/activitypub/requirements.md) and its [design](products/weblog/features/activitypub/design.md)
 - [Relocation](products/weblog/features/relocation/requirements.md) and its [design](products/weblog/features/relocation/design.md)
 
-The Worker application is [Worker application design](engineering/design/worker.md).
+The Worker application is [Worker application design](engineering/design/worker.md). The page map is [Page map](engineering/design/pages.md).
