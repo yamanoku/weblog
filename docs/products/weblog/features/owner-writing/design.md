@@ -200,9 +200,9 @@ A missing body key is treated as the empty string. When the visibility is public
 
 GET `/e/{id}` is the response for the canonical URL, whose host is fixed as `weblog.yamanoku.net`. The request Host header does not change the canonical URL.
 
-- A public entry is 200 HTML. The title and body are escaped text. Anchor tags for links are added by the public-reading feature.
+- A public entry is 200 HTML. The title and body are escaped text. Anchor tags for links are added by the public-reading feature. When Accept asks only for Activity Streams, this feature does not return that HTML. [Public reading](../public-reading/requirements.md) and [ActivityPub](../activitypub/requirements.md) specify the object.
 - A draft is 404 on public GET `/e/{id}`. That route does not read owner credentials. The owner reads the body at GET `/entries/{id}` and GET `/edit/{id}`.
-- A tombstone is 410. When Accept contains `application/activity+json` or `application/ld+json`, the response is an Activity Streams Tombstone. Its id is the canonical URL and its type is Tombstone. The body is absent. Any other Accept is also 410 and does not include the deleted body.
+- A tombstone is 410. When Accept contains `application/activity+json` or `application/ld+json`, and it contains neither `text/html` nor `*/*`, the response is an Activity Streams Tombstone. Its id is the canonical URL and its type is Tombstone. The deleted body is absent. Any other Accept is 410 HTML and also omits the deleted body.
 - An ID with neither a row nor a tombstone is 404.
 
 GET `/{comparison key}` is decided after the fixed paths.

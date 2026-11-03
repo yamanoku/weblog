@@ -200,9 +200,9 @@ CLI は環境変数 `WEBLOG_TOKEN` を Bearer として送る。トークンを�
 
 GET `/e/{id}` は、ホスト名を `weblog.yamanoku.net` に固定した正規 URL の応答である。要求の Host ヘッダでは正規 URL を変えない。
 
-- public のエントリは 200 の HTML である。タイトルと本文はエスケープしたテキストとして出す。リンクのアンカーは、公開閲覧の機能が付ける。
+- public のエントリは 200 の HTML である。タイトルと本文はエスケープしたテキストとして出す。リンクのアンカーは、公開閲覧の機能が付ける。Accept が Activity Streams だけを求めるとき、この機能は HTML を返さない。オブジェクトは [公開閲覧](../public-reading/requirements.ja.md) と [ActivityPub](../activitypub/requirements.ja.md) が定める。
 - 公開の GET `/e/{id}` では、draft は 404 である。この経路は所有者の資格を読まない。所有者は GET `/entries/{id}` と GET `/edit/{id}` で本文を読む。
-- tombstone は 410 である。Accept が `application/activity+json` または `application/ld+json` のときは、Activity Streams の Tombstone を返す。id は正規 URL、type は Tombstone である。本文は入れない。それ以外の Accept も 410 であり、削除前の本文は入れない。
+- tombstone は 410 である。Accept が `application/activity+json` または `application/ld+json` を含む。かつ `text/html` を含まない。`*/*` も含まない。このときは Activity Streams の Tombstone を返す。id は正規 URL である。type は Tombstone である。削除前の本文は入れない。それ以外の Accept は 410 の HTML である。削除前の本文は、この HTML にも入れない。
 - 行が無く tombstone も無い ID は 404 である。
 
 GET `/{比較キー}` は、固定パスのあとで判定する。

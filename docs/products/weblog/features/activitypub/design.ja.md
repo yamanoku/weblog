@@ -216,7 +216,7 @@ outbox が列挙するのは `Create`、`Update`、`Delete` だけである。`p
 
 `GET /e/{id}` の tombstone は、所有者の書き込みの振る舞いを保つ。確認は、次の順である。
 
-1. 公開行が無く、`tombstones` にその id があるときは 410 である。Tombstone と 410 の HTML は、所有者の書き込みが定めるままである。この機能は、どちらの本文も差し替えない。
+1. 公開行が無く、`tombstones` にその id があるときは 410 である。Accept が `application/activity+json` または `application/ld+json` を含む。かつ `text/html` を含まない。`*/*` も含まない。このときは Activity Streams の Tombstone を返す。それ以外の Accept は 410 の HTML である。どちらの本文も、所有者の書き込みが定める。この機能は、どちらの本文も差し替えない。
 2. 公開行が無く、tombstone も無いときは 404 である。draft はこの分岐である。本文は返さない。
 3. 行が公開である。Accept が `application/activity+json` または `application/ld+json` を含む。かつ `text/html` を含まない。`*/*` も含まない。このときは 200 で、下のオブジェクトを返す。
 4. それ以外の Accept は、公開閲覧の HTML である。

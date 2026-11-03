@@ -254,12 +254,12 @@ default-src 'none'; img-src 'self'; media-src 'self'; base-uri 'none'; form-acti
 
 `GET /e/{id}` は公開行を読み、閲覧用パスと同じエントリ HTML を返す。
 
-公開行が無く、`tombstones` にその id があるときは 410 を返す。Accept が次の文字列を含むとき、本文は Activity Streams の Tombstone である。
+公開行が無く、`tombstones` にその id があるときは 410 を返す。Accept が Activity Streams だけを求めるとき、本文は Activity Streams の Tombstone である。対象の文字列は、次の二つである。
 
 - `application/activity+json`
 - `application/ld+json`
 
-`id` は正規 URL である。`type` は `Tombstone` である。`deleted` は保存された `deleted_at` である。コンテンツ型は `application/activity+json; charset=utf-8` である。削除前の本文は入れない。それ以外の Accept は 410 の HTML である。削除前の本文は、この HTML にも入れない。
+このとき Accept は `text/html` を含まない。`*/*` も含まない。`id` は正規 URL である。`type` は `Tombstone` である。`deleted` は保存された `deleted_at` である。コンテンツ型は `application/activity+json; charset=utf-8` である。削除前の本文は入れない。それ以外の Accept は 410 の HTML である。削除前の本文は、この HTML にも入れない。
 
 公開行が無く、tombstone も無いときは 404 を返す。draft の id はこの分岐になる。
 
@@ -338,7 +338,7 @@ Gyazo の索引は、所有者のコマンドが読み込む。読者の要求�
 
 ### Activity Streams だけを求める要求へ HTML を返す
 
-エントリ HTML を返すと、Activity Streams のオブジェクトにならない。Activity Streams だけを求める Accept には、そのオブジェクトを返す。`text/html` も受け付ける要求は、これまでどおり HTML を受け取る。
+エントリ HTML を返すと、Activity Streams のオブジェクトにならない。Activity Streams だけを求める Accept には、そのオブジェクトを返す。`text/html` も受け付ける要求は、これまでどおり HTML を受け取る。削除済み ID も、Activity Streams だけを求める Accept には Tombstone を返す。`text/html` か `*/*` を含む Accept は、410 の HTML である。
 
 ### Cookie があるとき、公開パスで draft を返す
 

@@ -201,7 +201,7 @@ Create and Update embed the object while the entry row exists. Delete sets `obje
 
 `GET /e/{id}` keeps the tombstone behavior from owner writing. The checks run in this order.
 
-1. No public row, and `tombstones` has the id: 410. The Tombstone and the 410 HTML stay as owner writing specifies them. This feature does not replace either body.
+1. No public row, and `tombstones` has the id: 410. When Accept contains `application/activity+json` or `application/ld+json`, and it contains neither `text/html` nor `*/*`, the response is an Activity Streams Tombstone. Any other Accept is 410 HTML. Owner writing specifies both bodies. This feature does not replace either body.
 2. No public row and no tombstone: 404. A draft takes this branch. The body is not returned.
 3. The row is public, and Accept contains `application/activity+json` or `application/ld+json`, and it contains neither `text/html` nor `*/*`: 200 with the object below.
 4. Any other Accept: the HTML from public reading.

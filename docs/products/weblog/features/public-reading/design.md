@@ -250,7 +250,7 @@ The 404 and 410 HTML documents contain the sentence `見つかりません` or `
 
 `GET /e/{id}` reads the public row and returns the same entry HTML as the view path.
 
-When no public row exists and `tombstones` has the id, the response is 410. When `Accept` contains `application/activity+json` or `application/ld+json`, the body is an Activity Streams Tombstone. Its `id` is the canonical URL, its `type` is `Tombstone`, and `deleted` is the stored `deleted_at`. The content type is `application/activity+json; charset=utf-8`. The deleted body is absent. Any other Accept is 410 HTML and also omits the deleted body.
+When no public row exists and `tombstones` has the id, the response is 410. When `Accept` contains `application/activity+json` or `application/ld+json`, and it contains neither `text/html` nor `*/*`, the body is an Activity Streams Tombstone. Its `id` is the canonical URL, its `type` is `Tombstone`, and `deleted` is the stored `deleted_at`. The content type is `application/activity+json; charset=utf-8`. The deleted body is absent. Any other Accept is 410 HTML and also omits the deleted body.
 
 When no public row exists and no tombstone exists, the response is 404. A draft id takes this branch.
 
@@ -324,7 +324,7 @@ The index would then commit with an unrelated entry. A reader request would stil
 
 ### HTML for an Activity Streams-only request
 
-Returning the entry HTML would present a document that is not the Activity Streams object. The activity-only Accept receives that object. A request that also accepts `text/html` still receives HTML.
+Returning the entry HTML would present a document that is not the Activity Streams object. The activity-only Accept receives that object. A request that also accepts `text/html` still receives HTML. A deleted id uses the same split. An activity-only Accept receives a Tombstone. An Accept that contains `text/html` or `*/*` receives 410 HTML.
 
 ### Returning a draft on the public path when a cookie is present
 
