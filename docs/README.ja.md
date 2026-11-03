@@ -11,3 +11,5 @@
 - [Cosense からの取り込み](products/weblog/features/cosense-import/requirements.ja.md) と、その [設計](products/weblog/features/cosense-import/design.ja.md)
 - [ActivityPub](products/weblog/features/activitypub/requirements.ja.md) と、その [設計](products/weblog/features/activitypub/design.ja.md)
 - [移設](products/weblog/features/relocation/requirements.ja.md) と、その [設計](products/weblog/features/relocation/design.ja.md)
+
+Worker アプリケーションは [Worker アプリケーションの設計](engineering/design/worker.ja.md) にある。

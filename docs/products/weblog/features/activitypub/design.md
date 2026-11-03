@@ -238,7 +238,7 @@ KV binding `KEY_CACHE` caches a remote public key. The cache key is the `keyId`.
 
 The key is resolved by removing the fragment from `keyId` and requesting that HTTPS URL with Accept `application/activity+json`. The PEM is the `publicKey` whose `id` equals the `keyId`. A failed fetch, a key that is not RSA, or a PEM that does not verify is 401.
 
-The federation adapter may use Fedify for the signature and for parsing the inbox body. Fedify is selected because the app keeps followers, activities, and jobs in D1, and only the short-lived remote key uses KV. Replacing Fedify replaces that adapter. The domain does not import its types. If a build of the library cannot run unless it owns those records, the adapter is the hand-rolled signer instead. The hand-rolled signer uses the platform RSA implementation and the same headers. The official Workers example for Fedify covers Follow's Accept and Undo(Follow). The example is not an implementation of a whole blog. The adapter conditions in this section still apply.
+The federation adapter is the hand-rolled signer. It does not use Fedify. The owner chose this signer. Followers, activities, and jobs stay in D1. KV still holds only the short-lived remote key. The domain does not import Fedify types. The adapter does not import them either. The adapter signs and verifies with Workers Web Crypto, using RSASSA-PKCS1-v1.5. The source is [Web Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/), updated 2026-09-30. That page's table marks sign, verify, and importKey for RSASSA-PKCS1-v1.5, and digest for SHA-256. A mark on that page means the feature is believed to be fully supported according to the specification. The same page says Web Crypto is significantly faster than the same work in JavaScript. The signed headers stay the ones in the next paragraph. The adapter reads the inbox body as JSON and does not pass it to a federation library. The domain still decides whether the post is accepted.
 
 Outbound POST signs `(request-target)`, `host`, `date`, `digest`, and `content-type` with `rsa-sha256`. `keyId` is `https://weblog.yamanoku.net/users/yamanoku#main-key`. The digest is the SHA-256 prefix from the report, then the base64 of the body hash. The body hash is SHA-256.
 
@@ -313,6 +313,10 @@ The retried POST would keep the first rendering. It would also copy every body i
 ### Use `/a/{uuid}` as the activity ID
 
 That path would need a new reserved view-path key. The ID under `/users/yamanoku/s/` uses the key owner writing already reserves.
+
+### Use Fedify in the federation adapter
+
+Fedify's Cloudflare Workers example accepts Follow and Undo(Follow) only. The source is the [example README](https://github.com/fedify-dev/fedify/blob/main/examples/cloudflare-workers/README.md). The same file says the example exports `fetch()` and `queue()`, and that the library processes the queue messages. That example is not this blog. This feature already keeps followers, activities, and jobs in D1, and the queue message is only an activity ID. The owner chose the hand-rolled signer, so the adapter does not import Fedify.
 
 ## Open questions
 

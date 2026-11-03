@@ -253,7 +253,7 @@ KV のバインディング `KEY_CACHE` は、リモートの公開鍵を短時�
 
 鍵の解決は、`keyId` からフラグメントを除いた HTTPS URL を取得する。Accept は `application/activity+json` である。PEM は、`id` が `keyId` と一致する `publicKey` である。取得の失敗、RSA 以外の鍵、検証できない PEM は、401 である。
 
-連合アダプタは、署名と inbox 本文の解析に Fedify を使ってよい。選ぶ理由は、フォロワー、活動、ジョブの正本を D1 に残せるからである。KV に置くのは、リモート鍵の短時間の写しだけである。Fedify を外すときは、そのアダプタを差し替える。ドメインは、その型を import しない。それらの記録をライブラリが所有しないと動けないビルドでは、アダプタは自前の署名にする。自前の署名は、基盤の RSA 実装と、同じヘッダを使う。Fedify の Workers 公式例の範囲は、Follow の Accept と Undo(Follow) までである。この例の範囲に、ブログ全体の実装は入らない。この節のアダプタの条件は、そのまま残る。
+連合アダプタは自前の署名である。Fedify は使わない。これは所有者が選んだ。フォロワー、活動、ジョブの正本は D1 のままである。KV に置くのは、リモート鍵の短時間の写しだけである。ドメインは Fedify の型を import しない。アダプタも、その型を import しない。署名と検証は、Workers の Web Crypto で行う。アルゴリズムは RSASSA-PKCS1-v1.5 である。出典は 2026-09-30 更新の [Web Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/) である。そのページの表は、RSASSA-PKCS1-v1.5 の sign、verify、importKey と、SHA256 の digest を印している。そのページで印は、仕様どおりに対応しているとみなす印である。同じページは、Web Crypto が同じ処理を JavaScript だけで行う場合より大幅に速いと説明している。署名するヘッダは、次の段落のままである。inbox 本文は JSON として読む。連合ライブラリには渡さない。受け入れるかの決定は、これまでどおりドメインが行う。
 
 外向きの POST は、`rsa-sha256` で次を署名する。
 
@@ -336,6 +336,10 @@ cron は、上のトリガ一つである。これ以上のトリガは、アカ
 ### 活動 ID を `/a/{uuid}` にする
 
 その経路には、新しい閲覧用パスの予約キーが要る。`/users/yamanoku/s/` の下の ID は、所有者の書き込みが既に予約したキーを使う。
+
+### 連合アダプタに Fedify を使う
+
+Fedify の Cloudflare Workers の例が受け付ける活動は、Follow と Undo(Follow) だけである。出典は [例の README](https://github.com/fedify-dev/fedify/blob/main/examples/cloudflare-workers/README.md) である。同じファイルは、例が `fetch()` と `queue()` を書き出し、キューのメッセージをライブラリが処理すると記している。この例は、このブログの実装ではない。この機能は、フォロワー、活動、ジョブの正本を D1 に置く。キューのメッセージは活動 ID だけである。所有者は自前の署名を選んだ。アダプタは Fedify を import しない。
 
 ## 未決事項
 

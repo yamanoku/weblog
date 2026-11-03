@@ -11,3 +11,5 @@ Feature specifications go under `docs/products/weblog/features/`. Open questions
 - [Cosense import](products/weblog/features/cosense-import/requirements.md) and its [design](products/weblog/features/cosense-import/design.md)
 - [ActivityPub](products/weblog/features/activitypub/requirements.md) and its [design](products/weblog/features/activitypub/design.md)
 - [Relocation](products/weblog/features/relocation/requirements.md) and its [design](products/weblog/features/relocation/design.md)
+
+The Worker application is [Worker application design](engineering/design/worker.md).
