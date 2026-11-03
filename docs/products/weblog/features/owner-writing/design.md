@@ -287,4 +287,4 @@ Queries would be shorter to write. The requirements leave the ORM undecided and 
 
 ## Open questions
 
-None that block this design. Revising the extraction rules remains open in the requirements. Extraction stays in one domain function. Changing those rules does not change the tables.
+None that block this design. Revising the extraction rules remains open in the requirements. Extraction stays in one domain function. Changing those rules does not change the tables. The three requirements to write when Access is removed also remain open in the requirements. Version 1 browser authentication stays Access.
