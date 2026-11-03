@@ -15,6 +15,7 @@ The parent product is [weblog.yamanoku.net](../../product.md).
 - Immutable IDs, canonical URLs, view paths, and redirects after a rename
 - Keeping draft bodies out of unauthenticated responses
 - Making edges from the body and committing them with the entry
+- The edit screen runs in the browser after the first HTML. Submitting the fields uses the same write rules as the CLI
 
 ### Out of scope
 
@@ -22,7 +23,7 @@ The parent product is [weblog.yamanoku.net](../../product.md).
 - The ActivityPub actor, Follow, signatures, and sending activities. This feature records the state needed to decide delivery. It does not send activities.
 - Putting a bookmark's external URL into the body of a delivered Note as a link. This feature stores that URL as a field separate from the body.
 - Bulk import from Cosense, retries, and merging a local edit with a newer source page. When import writes an entry, it passes this feature's validation and the same entry-and-edge update boundary. Import has no path that stores an entry directly.
-- Public image URLs, rendering of notation other than links, the UI framework, and the ORM.
+- Public image URLs, rendering of notation other than links, and the ORM.
 - More than one owner, signup, and merging fields from concurrent edits.
 
 ## User stories

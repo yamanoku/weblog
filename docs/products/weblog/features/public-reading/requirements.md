@@ -15,6 +15,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Write rules are i
 - Empty pages for titles that have public inbound edges and no public entry
 - The public Gyazo image URL and the bytes it returns
 - Links in public HTML
+- After the first HTML response, a link to another public HTML page on this host updates the page in the browser and does not replace the whole document
 
 ### Out of scope
 
@@ -23,10 +24,22 @@ The parent product is [weblog.yamanoku.net](../../product.md). Write rules are i
 - WebFinger, the outbox, followers, and the inbox
 - Bulk import from Cosense
 - The order of rendering Cosense notation other than links. This feature shows that notation as source text
-- The UI framework and the ORM
+- The ORM
 - The owner's write API and the owner's list of 50 entries
 
 ## User stories
+
+### Move between public HTML pages
+
+As an unauthenticated reader, I want the next public HTML page on this host to open in the browser so that the whole document is not replaced.
+
+**Acceptance criteria:**
+
+Scenario: When the reader follows a link to another public HTML page on this host
+
+- Given: The reader has the first HTML for a public page.
+- When: The reader follows a link to another public HTML page on this host.
+- Then: The browser updates that page and does not replace the whole document. A direct request for either URL still returns 200 HTML. Feeds and image bytes are not this navigation.
 
 ### Read a public entry
 

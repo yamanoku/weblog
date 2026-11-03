@@ -6,7 +6,7 @@
 
 この設計は、一つの Worker が [weblog.yamanoku.net](../../products/weblog/product.ja.md) をどう載せるかを決める。同じ Worker が、[所有者の書き込み](../../products/weblog/features/owner-writing/requirements.ja.md)、[公開閲覧](../../products/weblog/features/public-reading/requirements.ja.md)、[ActivityPub](../../products/weblog/features/activitypub/requirements.ja.md)、[Cosense からの取り込み](../../products/weblog/features/cosense-import/requirements.ja.md) を担う。
 
-所有者は、そのアプリケーションに [Void](https://void.cloud/) を選んだ。画面のフレームワークは選んでいない。React、Vue、Svelte、Solid は、未選択のままである。
+所有者は、そのアプリケーションに [Void](https://void.cloud/) を選んだ。画面のフレームワークは Svelte である。React、Vue、Solid は選んでいない。SvelteKit は、この Worker を持たない。
 
 ### 対象読者
 
@@ -18,7 +18,6 @@
 
 ### このドキュメントで扱わないこと
 
-- どの画面のフレームワークを使うか。プロダクトは、それを未決のままにしている。
 - どの ORM を使うか。保存の第一アダプタは D1 のままである。
 - エントリの検証、公開 HTML の規則、連合の挙動、取り込みの歩き方。これらは上の要件に残す。
 - 所有者の CLI。CLI は、この Worker を呼ぶ別プロセスのままである。
@@ -27,11 +26,11 @@
 
 成果物は、一つの Cloudflare Worker 上の Void アプリケーション一つである。二つ目の Worker は置かない。
 
-[クイックスタート](https://void.cloud/guide/quickstart) は、`void` パッケージと `void init` でアプリを作り、デプロイする。そのページは、画面のフレームワーク、スタータ、デプロイ先を選ばせる。この設計が答えるのは、デプロイ先と形である。画面のフレームワークには答えない。デプロイ先は、所有者の Cloudflare アカウントである。形は、API だけの Void アプリである。ディレクトリは `routes/` であり、フロントエンドのパッケージは置かない。[対応するアプリの形](https://void.cloud/guide/app-types) は、その形をフロントエンドの無い経路として説明している。
+[クイックスタート](https://void.cloud/guide/quickstart) は、`void` パッケージと `void init` でアプリを作り、デプロイする。そのページは、画面のフレームワーク、スタータ、デプロイ先を選ばせる。この設計が答えるのは、Svelte、ページモード、所有者の Cloudflare アカウントである。
 
-[ページルーティング](https://void.cloud/guide/pages-routing/overview) は、`pages/` があると始まる。ページのコンポーネントは、最初の描画をサーバで行い、その後の移動をブラウザで行う。アダプタは `@void/react`、`@void/vue`、`@void/svelte`、`@void/solid` である。このアプリはページモードを使わない。公開ページは、サーバが描画した HTML のままである。クライアントアプリは無い。編集画面は、HTML フォームのままである。
+[ページルーティング](https://void.cloud/guide/pages-routing/overview) は、`pages/` があると始まると説明している。`routes/` と並べて置ける。ページのコンポーネントは、通常、最初の描画をサーバで行い、その後の移動と操作をブラウザで行う。最初の要求は、描画された HTML を受け取る。その後の移動は、ローダを実行し、文書を読み直さずにページを更新する。このアプリは、そのモードを使う。画面のアダプタは `@void/svelte` である。Vite のプラグインは、`@void/svelte/plugin` の `voidSvelte()` である。同じページは `@void/react`、`@void/vue`、`@void/solid` も示している。このアプリは、それらをインストールしない。公開の HTML ページと編集画面は `pages/` に置く。ページでない HTTP は `routes/` に残す。このアプリは `ssr = false` を出さない。その指定は、サーバが描画したコンポーネントの HTML ではなく、ブラウザで載せる殻を返す。同じページの表が、その行の出典である。
 
-経路ハンドラが HTTP の入口である。[サーバルーティング](https://void.cloud/guide/server-routing) は、経路とミドルウェアに Hono を使うと説明している。ハンドラはドメインを呼び、その結果を返す。ドメインは `void`、`void/db`、Hono、画面のフレームワーク、ORM、Fedify、Cloudflare SDK を import しない。アダプタは Fedify を使わない。
+[サーバルーティング](https://void.cloud/guide/server-routing) は、経路とミドルウェアに Hono を使うと説明している。経路ハンドラはドメインを呼び、その結果を返す。ドメインは `void`、`void/db`、Hono、Svelte、`@void/svelte`、ORM、Fedify、Cloudflare SDK を import しない。ページのファイルは、`@void/svelte` を通して Svelte を import する。連合のアダプタは Fedify を使わない。
 
 保存アダプタは、D1 のバインディングを直接使う。`void/db` は import しない。[データベース](https://void.cloud/guide/database) は、`void/db` が Drizzle であると説明している。ORM は未決なので、アダプタはその import を取らない。[D1](https://void.cloud/guide/database/d1) は、素の D1 バインディングがプライマリを読むと説明している。レプリカを使うのは `withSession()` の呼び出しである。アダプタは `withSession()` を呼ばない。同じページは、Void がデータベースを用意するときに読み取りレプリカを有効にすると説明している。このアプリは、そのセッションを使わない。
 
@@ -69,7 +68,7 @@ Void は、所有者の Cloudflare アカウントへアプリをデプロイす
 
 ## セキュリティ上の留意事項
 
-ドメインは、`void`、`void/db`、Hono、React、Vue、Svelte、Solid、ORM、Fedify、Cloudflare SDK を import しない。アダプタは Fedify を使わない。ハンドラが D1 のバインディングか Void の入口を必要とするとき、その import はアダプタに残す。画面のフレームワークは選んでいないので、アダプタは画面のフレームワークを import しない。
+ドメインは、`void`、`void/db`、Hono、Svelte、`@void/svelte`、ORM、Fedify、Cloudflare SDK を import しない。ページのファイルは、`@void/svelte` を通して Svelte を import する。連合のアダプタは Fedify を使わない。ハンドラが D1 のバインディングか Void の入口を必要とするとき、その import はアダプタに残す。保存アダプタは Svelte を import しない。
 
 ## デプロイに関する特記事項
 
@@ -77,15 +76,15 @@ Void は、所有者の Cloudflare アカウントへアプリをデプロイす
 
 ## 検討した代替手段
 
-### React、Vue、Svelte、Solid
+### React、Vue、Solid
 
-[renderToReadableStream](https://react.dev/reference/react-dom/server/renderToReadableStream) は、React の木を Web Stream へ描画する。`bootstrapScripts` を省くと、クライアントで React は動かない。[Vue のサーバレンダラ](https://vuejs.org/api/ssr.html) は、`renderToString` と `pipeToWebWritable` を出す。Vue のページは、`TransformStream` が使える環境として Cloudflare Workers を挙げている。[svelte/server](https://svelte.dev/docs/svelte/svelte-server) の `render` は、サーバで HTML の `head` と `body` を返す。[renderToString](https://docs.solidjs.com/reference/rendering/render-to-string) は、サーバで Solid の HTML を描画し、ハイドレーション用の印を含む。Solid の [Cloudflare ガイド](https://docs.solidjs.com/guides/deployment-options/cloudflare) は、`dist` を `wrangler pages deploy` で置く。これは静的な Pages の出力である。
+[renderToReadableStream](https://react.dev/reference/react-dom/server/renderToReadableStream) は、React の木を Web Stream へ描画する。`bootstrapScripts` を省くと、クライアントで React は動かない。[Vue のサーバレンダラ](https://vuejs.org/api/ssr.html) は、`renderToString` と `pipeToWebWritable` を出す。Vue のページは、`TransformStream` が使える環境として Cloudflare Workers を挙げている。[renderToString](https://docs.solidjs.com/reference/rendering/render-to-string) は、サーバで Solid の HTML を描画し、ハイドレーション用の印を含む。Solid の [Cloudflare ガイド](https://docs.solidjs.com/guides/deployment-options/cloudflare) は、`dist` を `wrangler pages deploy` で置く。これは静的な Pages の出力である。
 
-四つとも、描画アダプタに置けばドメインへ入れずに済む。どのページも、Workers Paid を必要とは書いていない。所有者は、どれも選んでいない。ページモードは、選んだライブラリをブラウザでも動かす。このプロダクトに、クライアントアプリは無い。編集画面は、HTML フォームのままである。
+三つとも、描画アダプタに置けばドメインへ入れずに済む。どのページも、Workers Paid を必要とは書いていない。所有者は Svelte を選んだ。このアプリは `@void/react`、`@void/vue`、`@void/solid` をインストールしない。
 
 ### Worker を SvelteKit にする
 
-[adapter-cloudflare](https://svelte.dev/docs/kit/adapter-cloudflare) は、`main` が `.svelte-kit/cloudflare/_worker.js` の Worker を作り、アセットのバインディングを持つ。SvelteKit が Worker の入口になる。所有者は、Void のアプリを選んだ。
+[adapter-cloudflare](https://svelte.dev/docs/kit/adapter-cloudflare) は、`main` が `.svelte-kit/cloudflare/_worker.js` の Worker を作り、アセットのバインディングを持つ。SvelteKit が Worker の入口になる。所有者は、入口を Void のままにし、画面を Svelte にした。このアプリは `@sveltejs/adapter-cloudflare` をインストールしない。
 
 ### `void/db` と Drizzle
 
@@ -104,7 +103,5 @@ Sandboxes は、分離した実行のための Void の実行環境である。�
 アプリケーションフレームワークを置かない Worker は、`void` パッケージを避けられる。経路は一つの Worker のままであり、ドメインの境界も同じである。所有者は Void を選んだ。入口は、Void の経路ハンドラである。
 
 ## 未決事項
-
-どの画面のフレームワークを使うかは未決である。画面の製品は、まだ選んでいない。所有者が一つを選ぶまで、このアプリは React、Vue、Svelte、Solid を import しない。`pages/` も足さない。クライアントアプリも動かさない。編集画面は、HTML フォームのままである。
 
 どの ORM を使うかは未決である。この設計は `void/db` を選ばない。Drizzle も選ばない。

@@ -29,12 +29,12 @@ On the Free plan, D1 allows 50 queries per Worker invocation. A `batch()` call c
 - WebFinger, the outbox, followers, and the inbox
 - Bulk import from Cosense
 - The order of rendering Cosense notation other than links
-- The UI framework and the ORM
+- The ORM
 - The owner's write API and the owner's list of 50 entries
 
 ## Implementation approach
 
-The deliverable is the public routes on the same Worker that handles owner writes. Pages are server-rendered HTML. There is no client-side application.
+The deliverable is the public routes on the same Worker that handles owner writes. The first response for a public HTML page is server-rendered HTML. After that, a move to another public HTML page on this host runs in the browser and does not replace the whole document. The screen is Svelte. The domain does not import Svelte. Feeds and image bytes stay documents and bytes.
 
 The domain reads public rows, resolves public titles, and renders HTML. Adapters read D1 and the R2 bucket. The domain does not import the Cloudflare SDK, D1 types, R2 types, an ORM, or Fedify types. Replacing the host means replacing those adapters. Rendering is the render port. The object port is the image-fetch port. The store port is the entry store for these reads.
 

@@ -26,11 +26,11 @@ Access adds `Cf-Access-Jwt-Assertion` on requests to a protected path. Verificat
 - Sending and signing ActivityPub activities. Inserting rows into `delivery_records` belongs to that feature.
 - Inserting a bookmark URL into a delivered body.
 - Cosense listing, retries, and merging a local edit with a newer source.
-- A UI framework and an ORM.
+- An ORM.
 
 ## Implementation approach
 
-The deliverables are one Worker and a CLI that calls it. The edit screen is an HTML form with no UI framework. A visual framework is outside the requirements. This feature only needs the fields to be submitted.
+The deliverables are one Worker and a CLI that calls it. The edit screen is a Svelte page. The first response is HTML. After that, the browser runs Svelte. Submitting the fields still calls the same write operation. The domain does not import Svelte.
 
 The domain and the adapters are separate. The domain validates fields, normalizes titles, extracts edges, updates publishedAt, and chooses 404 or 410 on delete. The domain does not import D1 types, Access JWTs, the Cloudflare SDK, Fedify types, or an ORM. Adapters handle D1, Access, and the token hash. Replacing the runtime replaces the adapters. The ports this feature separates are the entry store, the link store, browser authentication, CLI authentication, and link extraction. The entry store commits the entry. The link store replaces that entry's edges in the same commit. The first adapter for both stores is D1. Browser authentication is the Access adapter. CLI authentication checks the token hash. Link extraction applies the rules in the requirements.
 

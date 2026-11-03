@@ -113,7 +113,7 @@ The product is successful when all of the following hold.
 - Pages brought in from Cosense are not classified automatically into articles, short posts, or bookmarks. They are not delivered to followers in bulk.
 - The public URL and the activity ID are fixed in this version. Adding the federation contract later would change the host after publication. Implementation order is not a separate decision.
 - Do not post this host's entries into an existing Mastodon or Misskey server. Remote follow could be met that way. Articles, bookmarks, and bidirectional links to titles that do not exist yet cannot be produced from one line of text.
-- This purpose does not choose a UI framework or an ORM.
+- The UI framework is Svelte. This purpose does not choose an ORM.
 
 ## SLA, SLI, and SLO
 
@@ -128,8 +128,6 @@ No numeric target. The operating rule is to fail or wait when the free allowance
 Whether creating or checking HTTP signatures fits the free CPU time for one invocation has not been measured. That lack of a measurement is not a current SLO. The handling when the work exceeds that time is the development principle above.
 
 ## Open questions
-
-Which frontend framework to use is undecided. No product has been chosen. Until the owner chooses one, this purpose does not select a framework.
 
 Which ORM library to use is undecided. No library has been chosen. The first store adapter is D1. An ORM that exceeds D1's 500 MB database size, the free daily row limits, or 50 queries per invocation is rejected. The owner chooses a library later only inside those limits, or chooses none.
 

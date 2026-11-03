@@ -6,7 +6,7 @@
 
 This design decides how one Worker hosts [weblog.yamanoku.net](../../products/weblog/product.md). The same Worker serves [owner writing](../../products/weblog/features/owner-writing/requirements.md), [public reading](../../products/weblog/features/public-reading/requirements.md), [ActivityPub](../../products/weblog/features/activitypub/requirements.md), and [Cosense import](../../products/weblog/features/cosense-import/requirements.md).
 
-The owner chose [Void](https://void.cloud/) as that application. The owner did not choose a UI framework. React, Vue, Svelte, and Solid stay unchosen.
+The owner chose [Void](https://void.cloud/) as that application. The owner chose Svelte as the UI framework. React, Vue, and Solid stay unchosen. SvelteKit does not own this Worker.
 
 ### Audience
 
@@ -18,7 +18,6 @@ The parent product and the requirements linked above. Void is a full-stack frame
 
 ### Outside this document
 
-- Which UI framework to use. The product leaves that unchosen.
 - Which ORM to use. The first store adapter stays D1.
 - Entry validation, public HTML rules, federation behavior, and the import walk. Those stay in the requirements linked above.
 - The owner CLI. It stays a separate process that calls this Worker.
@@ -27,11 +26,11 @@ The parent product and the requirements linked above. Void is a full-stack frame
 
 The deliverable is one Void application on one Cloudflare Worker. There is no second Worker.
 
-[Quickstart](https://void.cloud/guide/quickstart) creates the app with the `void` package and `void init`, then deploys it. That page asks for a UI framework, a starter, and a deployment target. This design answers the target and the shape. It does not answer the UI framework. The target is the owner's Cloudflare account. The shape is the API-only Void app: `routes/`, and no frontend package. [Supported App Types](https://void.cloud/guide/app-types) describes that shape as routes without a frontend.
+[Quickstart](https://void.cloud/guide/quickstart) creates the app with the `void` package and `void init`, then deploys it. That page asks for a UI framework, a starter, and a deployment target. This design answers those with Svelte, Pages mode, and the owner's Cloudflare account.
 
-[Pages Routing](https://void.cloud/guide/pages-routing/overview) starts when a `pages/` directory exists. Page components run on the server for the first render and in the browser for later navigation. The adapters are `@void/react`, `@void/vue`, `@void/svelte`, and `@void/solid`. This app does not use Pages mode. Public pages stay server-rendered HTML, and there is no client-side application. The edit screen stays an HTML form.
+[Pages Routing](https://void.cloud/guide/pages-routing/overview) starts when a `pages/` directory exists. It can live alongside `routes/`. Page components normally run on the server for the first render and in the browser for later navigation and interaction. The first request receives rendered HTML. Later navigations run the loader and update the page without reloading the document. This app uses that mode. The screen adapter is `@void/svelte`, and the Vite plugin is `voidSvelte()` from `@void/svelte/plugin`. The same page shows `@void/react`, `@void/vue`, and `@void/solid`. This app does not install those. Public HTML pages and the edit screen live under `pages/`. HTTP that is not a page stays under `routes/`. This app does not export `ssr = false`. That export returns a client-mounted shell instead of server-rendered component HTML. The same page's table is the source for that row.
 
-A route handler is the HTTP entrance. [Server Routing](https://void.cloud/guide/server-routing) says Void uses Hono for routing and middleware. The handler calls the domain and returns that result. The domain does not import `void`, `void/db`, Hono, a UI framework, an ORM, Fedify, or the Cloudflare SDK. The adapter does not use Fedify.
+[Server Routing](https://void.cloud/guide/server-routing) says Void uses Hono for routing and middleware. A route handler calls the domain and returns that result. The domain does not import `void`, `void/db`, Hono, Svelte, `@void/svelte`, an ORM, Fedify, or the Cloudflare SDK. Page files import Svelte through `@void/svelte`. The federation adapter does not use Fedify.
 
 The store adapter uses the bare D1 binding. It does not import `void/db`. [Database](https://void.cloud/guide/database) says `void/db` is Drizzle. The ORM stays unchosen, so the adapter does not take that import. [D1](https://void.cloud/guide/database/d1) says a bare D1 binding reads from the primary, and that a call to `withSession()` is what uses a replica. The adapter does not call `withSession()`. The same page says Void enables read replication when it provisions a database. This app does not use that session.
 
@@ -69,7 +68,7 @@ None beyond the linked requirements. [Authentication](https://void.cloud/guide/a
 
 ## Security considerations
 
-The domain stays free of `void`, `void/db`, Hono, React, Vue, Svelte, Solid, an ORM, Fedify, and the Cloudflare SDK. The adapter does not use Fedify. When a handler needs the D1 binding or the Void entrance, that import stays in the adapter. The adapter does not import a UI framework, because no UI framework is chosen.
+The domain stays free of `void`, `void/db`, Hono, Svelte, `@void/svelte`, an ORM, Fedify, and the Cloudflare SDK. Page files import Svelte through `@void/svelte`. The federation adapter does not use Fedify. When a handler needs the D1 binding or the Void entrance, that import stays in the adapter. The store adapter does not import Svelte.
 
 ## Deployment notes
 
@@ -77,15 +76,15 @@ Publish with `void deploy --platform cloudflare`. Do not install a Void platform
 
 ## Alternatives considered
 
-### React, Vue, Svelte, or Solid
+### React, Vue, or Solid
 
-[renderToReadableStream](https://react.dev/reference/react-dom/server/renderToReadableStream) renders a React tree to a Web Stream. Omitting `bootstrapScripts` skips running React on the client. [Vue server renderer](https://vuejs.org/api/ssr.html) exports `renderToString` and `pipeToWebWritable`. The Vue page names Cloudflare Workers as an environment where `TransformStream` is available. [svelte/server](https://svelte.dev/docs/svelte/svelte-server) `render` returns HTML `head` and `body` on the server. [renderToString](https://docs.solidjs.com/reference/rendering/render-to-string) renders Solid HTML on the server and includes hydration markup. Solid's [Cloudflare guide](https://docs.solidjs.com/guides/deployment-options/cloudflare) deploys a `dist` directory with `wrangler pages deploy`, which is static Pages output.
+[renderToReadableStream](https://react.dev/reference/react-dom/server/renderToReadableStream) renders a React tree to a Web Stream. Omitting `bootstrapScripts` skips running React on the client. [Vue server renderer](https://vuejs.org/api/ssr.html) exports `renderToString` and `pipeToWebWritable`. The Vue page names Cloudflare Workers as an environment where `TransformStream` is available. [renderToString](https://docs.solidjs.com/reference/rendering/render-to-string) renders Solid HTML on the server and includes hydration markup. Solid's [Cloudflare guide](https://docs.solidjs.com/guides/deployment-options/cloudflare) deploys a `dist` directory with `wrangler pages deploy`, which is static Pages output.
 
-Any of the four could sit in a render adapter and avoid the domain. None of those pages requires Workers Paid. The owner did not choose one. Pages mode would also run the chosen library in the browser, and this product has no client-side application. The edit screen stays an HTML form.
+Any of the three could sit in a render adapter and avoid the domain. None of those pages requires Workers Paid. The owner chose Svelte. This app does not install `@void/react`, `@void/vue`, or `@void/solid`.
 
 ### SvelteKit as the Worker
 
-[adapter-cloudflare](https://svelte.dev/docs/kit/adapter-cloudflare) builds a Worker whose `main` is `.svelte-kit/cloudflare/_worker.js`, with an assets binding. That would make SvelteKit the Worker entry. The owner chose a Void app instead.
+[adapter-cloudflare](https://svelte.dev/docs/kit/adapter-cloudflare) builds a Worker whose `main` is `.svelte-kit/cloudflare/_worker.js`, with an assets binding. That would make SvelteKit the Worker entry. The owner kept Void as the entry and chose Svelte as the screen. This app does not install `@sveltejs/adapter-cloudflare`.
 
 ### `void/db` and Drizzle
 
@@ -104,7 +103,5 @@ Sandboxes are a Void runtime for isolated execution. The deployment page says th
 A Worker with no application framework avoids the `void` package. The routes would still be one Worker, and the domain boundary would be the same. The owner chose Void, so the entrance is the Void route handler.
 
 ## Open questions
-
-Which UI framework to use is undecided. No UI product has been chosen. Until the owner chooses one, this app does not import React, Vue, Svelte, or Solid, does not add `pages/`, and does not run a client-side application. The edit screen stays an HTML form.
 
 Which ORM to use is undecided. This design does not choose `void/db` or Drizzle.
