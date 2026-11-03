@@ -286,7 +286,7 @@ D1 のエラーは 503 `store_unavailable` にする。無料枠による拒否�
 
 ## 外部サービスとの連携方式
 
-D1 は保存のアダプタで、バインディング名は `DB` である。ドメインは `D1Database` を知らない。セッションと読取レプリカは使わない。データベースはプライマリであり、単一スレッドである。クエリ予算と 50 MB 上限の根拠は [Limits](https://developers.cloudflare.com/d1/platform/limits/) である。無料枠の 1 日の拒否と、保存済み行が残る根拠は [2026-09-01 の D1 変更記録](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/) である。
+D1 は保存のアダプタで、バインディング名は `DB` である。アダプタは `void/db` の `db` で問い合わせる。D1 のページは、この問い合わせがリクエストごとに D1 のセッションを使うと説明している。リクエストをまたぐと、レプリカの内容は遅れることがある。出典は [D1](https://void.cloud/guide/database/d1) である。ドメインは `D1Database` を知らない。ドメインは `void/db` を import しない。クエリ予算と 50 MB 上限の根拠は [Limits](https://developers.cloudflare.com/d1/platform/limits/) である。無料枠の 1 日の拒否と、保存済み行が残る根拠は [2026-09-01 の D1 変更記録](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/) である。
 
 R2 はオブジェクトのアダプタで、バインディング名は `GYAZO_BUCKET`、バケット名は `gyazo-archives` である。ドメインは、ポートからバイト列とコンテンツ型を受け取る。`R2Bucket` は知らない。`get` の定義は [Workers API の参照](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/) にある。この機能はアップロードしない。バケットの一覧も取らない。既存アーカイブの月間 10 GB を超える保管は、ゼロ円の対象外のままである。
 

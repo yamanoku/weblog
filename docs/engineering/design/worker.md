@@ -18,7 +18,6 @@ The parent product and the requirements linked above. Void is a full-stack frame
 
 ### Outside this document
 
-- Which ORM to use. The first store adapter stays D1.
 - Entry validation, public HTML rules, federation behavior, and the import walk. Those stay in the requirements linked above.
 - The owner CLI. It stays a separate process that calls this Worker.
 
@@ -32,7 +31,7 @@ The deliverable is one Void application on one Cloudflare Worker. There is no se
 
 [Server Routing](https://void.cloud/guide/server-routing) says Void uses Hono for routing and middleware. A route handler calls the domain and returns that result. The domain does not import `void`, `void/db`, Hono, Svelte, `@void/svelte`, an ORM, Fedify, or the Cloudflare SDK. Page files import Svelte through `@void/svelte`. The federation adapter does not use Fedify.
 
-The store adapter uses the bare D1 binding. It does not import `void/db`. [Database](https://void.cloud/guide/database) says `void/db` is Drizzle. The ORM stays unchosen, so the adapter does not take that import. [D1](https://void.cloud/guide/database/d1) says a bare D1 binding reads from the primary, and that a call to `withSession()` is what uses a replica. The adapter does not call `withSession()`. The same page says Void enables read replication when it provisions a database. This app does not use that session.
+The store adapter queries through `db` from `void/db` on the D1 binding. [Database](https://void.cloud/guide/database) says `void/db` is Drizzle. [D1](https://void.cloud/guide/database/d1) says those queries use a D1 session for each Void request, so reads can run near the request and later queries in that request see at least the same data. The same page says replicas can lag between requests, and that Void enables read replication when it provisions a database. The domain does not import `void/db`. Page files do not import it either.
 
 Deploy with `void deploy --platform cloudflare`. [Deployment](https://void.cloud/guide/deployment) says native apps work on Workers Free within its quotas. Sandboxes require Workers Paid and Containers. This app does not use Sandboxes. It does not install a Void platform. [Prerequisites](https://void.cloud/guide/platform/installation/prerequisites) say Workers for Platforms requires its own paid plan. [Install a Void Platform](https://void.cloud/guide/self-hosted-platform) points an individual app at direct Cloudflare deploy instead.
 
@@ -56,7 +55,7 @@ The deploy command is `void deploy --platform cloudflare`. It publishes this one
 
 Void deploys the app to the owner's Cloudflare account. The quickstart and the deployment page above are the sources. The account stays on Workers Free. The app does not contract Workers Paid, Workers for Platforms, or Sandboxes.
 
-The D1 binding is the store. KV, the queue, and R2 stay the resources the linked requirements already use. This design does not add a database product. It does not import `void/db`.
+The D1 binding is the store. The store adapter imports `void/db`. KV, the queue, and R2 stay the resources the linked requirements already use. This design does not add a database product.
 
 ## Data handling
 
@@ -68,7 +67,7 @@ None beyond the linked requirements. [Authentication](https://void.cloud/guide/a
 
 ## Security considerations
 
-The domain stays free of `void`, `void/db`, Hono, Svelte, `@void/svelte`, an ORM, Fedify, and the Cloudflare SDK. Page files import Svelte through `@void/svelte`. The federation adapter does not use Fedify. When a handler needs the D1 binding or the Void entrance, that import stays in the adapter. The store adapter does not import Svelte.
+The domain stays free of `void`, `void/db`, Hono, Svelte, `@void/svelte`, Fedify, and the Cloudflare SDK. The store adapter imports `void/db`. Page files import Svelte through `@void/svelte`. The federation adapter does not use Fedify. When a handler needs the D1 binding or the Void entrance, that import stays in the adapter. The store adapter does not import Svelte.
 
 ## Deployment notes
 
@@ -86,9 +85,9 @@ Any of the three could sit in a render adapter and avoid the domain. None of tho
 
 [adapter-cloudflare](https://svelte.dev/docs/kit/adapter-cloudflare) builds a Worker whose `main` is `.svelte-kit/cloudflare/_worker.js`, with an assets binding. That would make SvelteKit the Worker entry. The owner kept Void as the entry and chose Svelte as the screen. This app does not install `@sveltejs/adapter-cloudflare`.
 
-### `void/db` and Drizzle
+### A bare D1 binding
 
-`void/db` would give typed queries, and the Database page says Void includes Drizzle. The ORM is still unchosen. The first store adapter stays the D1 binding. The domain does not import an ORM, and this adapter does not import `void/db`.
+A bare D1 binding reads from the primary. The D1 page says other query libraries need their own `withSession()` call to use a replica. The owner chose `void/db`, so the adapter uses that library's session for each Void request. The domain still does not import `void/db`.
 
 ### A Void platform
 
@@ -104,4 +103,4 @@ A Worker with no application framework avoids the `void` package. The routes wou
 
 ## Open questions
 
-Which ORM to use is undecided. This design does not choose `void/db` or Drizzle.
+None that block this Worker.

@@ -283,7 +283,7 @@ The code is simpler. A page with many links would exceed the Free plan's 50 quer
 
 ### Import an ORM or D1 types from the domain
 
-Queries would be shorter to write. The requirements leave the ORM undecided and keep storage replaceable. SQL stays in the D1 adapter. The domain passes only the list of changes that the batch must commit.
+Queries would be shorter to write. The product chooses `void/db` for the store adapter. Importing it from the domain would place that library in the domain. The adapter imports `void/db` and runs the batch. The domain passes only the list of changes that the batch must commit.
 
 ## Open questions
 

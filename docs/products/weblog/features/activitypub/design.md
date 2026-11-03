@@ -230,7 +230,7 @@ The queue binding is `DELIVERY_QUEUE`. The cron on this Worker is `0 * * * *`. V
 
 ## External service integration
 
-D1 is the store, binding `DB`. The follower store is the port that reads and writes follower rows. Its first adapter is this D1 binding. The domain does not know `D1Database`. Sessions and read replicas are not used.
+D1 is the store, binding `DB`. The follower store is the port that reads and writes follower rows. Its adapter queries through `db` from `void/db`. [D1](https://void.cloud/guide/database/d1) says those queries use a D1 session for each Void request, and that replicas can lag between requests. The domain does not know `D1Database` and does not import `void/db`.
 
 Queues carry the activity ID. The consumer runs in this Worker. The domain sees a port that enqueues an activity URL or refuses. It does not see the Queue type.
 
