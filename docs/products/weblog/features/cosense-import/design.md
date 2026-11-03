@@ -48,6 +48,10 @@ The owner runs one import subcommand. It reads `WEBLOG_TOKEN` and `WEBLOG_URL` t
 
 The command first calls `GET /entries/import`. A 401 stores nothing, does not call Cosense, and does not change the cursor. Any other run starts only after that call succeeds.
 
+The CLI then reads `https://scrapbox.io/api/pages/yamanoku`. `limit` is 1000. `skip` starts at 0 and increases by 1000. The read ends when a response has fewer pages than `limit`. `limit`, `skip`, and `created` are documented on [api/pages/:projectname](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname). The fields used are `id` and `created`. `created` is Unix seconds. When the number of pages collected differs from the response `count`, the CLI does not start the walk and completes no new page. HTTP 429 and 5xx use the same wait and retry as a text fetch.
+
+A migration-set page has `created` less than or equal to 1793661527. That integer is the requirements cutoff. In UTC it is 2026-11-02T23:18:47Z. A page ID absent from that completed read is outside the set. A page with a greater `created` is not sent to plan, its text is not fetched, and it is not posted. It produces no stdout line and is not recorded as completed. The walk continues at the next page.
+
 The CLI then reads `search/titles` from the start. It follows a non-empty `X-Following-Id` until the header is empty or absent. Pages stay in that response order. The CLI does not sort them again.
 
 When the stored walk is unfinished and `lastCompletedPageId` is set, the CLI does not fetch text and does not post a page until it has seen that ID. The seen ID itself is not posted again. Later pages are handled. If the list ends without that ID, the command prints `cursor_missing` and that page ID, leaves `finished` false, and exits non-zero.
@@ -58,7 +62,7 @@ When the CLI has handled the last page of a run that started unfinished, it call
 
 ### One page
 
-For each page the walk handles, the CLI sends the page ID and the list's `updated` number to `POST /entries/import/plan`, in chunks of at most 80. The response tells the CLI to skip, to report a local edit, or to fetch the text. The response does not contain a body.
+For each page in the migration set, the CLI sends the page ID and the list's `updated` number to `POST /entries/import/plan`, in chunks of at most 80. The response tells the CLI to skip, to report a local edit, or to fetch the text. The response does not contain a body.
 
 `skip` means the stored body still equals the last imported body and the list time is not newer. The CLI does not fetch text.
 
@@ -67,6 +71,8 @@ For each page the walk handles, the CLI sends the page ID and the list's `update
 `fetch` means no entry stores the page ID, or the body still matches and the list time is newer. The CLI fetches `https://scrapbox.io/api/pages/yamanoku/{title}/text` and posts that text. The title is one percent-encoded path segment.
 
 The page route decides again. A stale plan cannot overwrite a local edit. An omitted body is not an empty body. The empty string is an empty body.
+
+A create post includes integer `sourceCreatedAt`. The value is the page list's `created` and is not stored. When the value is missing, or when it is greater than 1793661527, the Worker writes nothing. The response is 200 `outside_target`. The CLI does not report that page and does not record it as completed. A non-integer value is 422 `invalid_source_time`, and the CLI stops without moving the cursor. A replace of a page that already has an entry does not use this check.
 
 A create sets kind to page and visibility to public, leaves the bookmark URL empty, issues a new lowercase UUID with `crypto.randomUUID()` before the batch, and stores the page ID. The body is the text response unchanged, including a first line equal to the title. `published_at` is NULL. The batch does not insert `delivery_records` and does not enqueue an activity.
 
@@ -122,6 +128,8 @@ sequenceDiagram
   CLI->>Worker: GET /entries/import with Bearer
   Worker->>D1: Read the walk row
   D1-->>CLI: finished and lastCompletedPageId
+  CLI->>Cosense: GET /api/pages for id and created
+  Cosense-->>CLI: count and created
   CLI->>Cosense: GET search/titles
   Cosense-->>CLI: Titles and X-Following-Id
   CLI->>Worker: POST /entries/import/plan
@@ -155,11 +163,12 @@ Deleting an entry deletes that row's page ID, snapshot, and source time. The wal
 
 The CLI calls these URLs with no credential. The project is public. The CLI discards `user` and `users` from any JSON it receives. It does not send those fields to this host.
 
+- `GET https://scrapbox.io/api/pages/yamanoku?limit=1000&skip=0`, then the same path with `skip` increased by 1000
 - `GET https://scrapbox.io/api/pages/yamanoku/search/titles`
 - The same path with `?followingId=` set to a non-empty `X-Following-Id`
 - `GET https://scrapbox.io/api/pages/yamanoku/{title}/text`
 
-Each list element used by this feature has `id`, `title`, and `updated`. The element has no body lines. The `links` array is not the edge list. Edges are extracted from the stored plain text by the owner-writing rules. The text response is `text/plain` and is stored unchanged. The CLI does not request `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files`.
+The page-list fields used are `id` and `created`. A `search/titles` element has no `created`. The source is [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles), which says that response does not include the creation time. Each walk element used by this feature has `id`, `title`, and `updated`. The element has no body lines. The `links` array is not the edge list. Edges are extracted from the stored plain text by the owner-writing rules. The text response is `text/plain` and is stored unchanged. The CLI does not request `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files`.
 
 The measured count URL, `https://scrapbox.io/api/pages/yamanoku?limit=1`, is not the walk. That response has no `X-Following-Id` continuation.
 
@@ -171,13 +180,13 @@ All four routes require `Authorization: Bearer` and the same token hash as `/ent
 
 `POST /entries/import/plan` accepts at most 80 pages. Each page has `cosensePageId` and integer `sourceUpdatedAt`. The response lists the same IDs with `action` of `skip`, `local_edit`, or `fetch`. A larger batch is 422 `plan_too_large`. The CLI sends a smaller chunk. A non-integer source time is 422 `invalid_source_time`, and the CLI stops without moving the cursor.
 
-`POST /entries/import/pages` accepts `cosensePageId`, `title`, integer `sourceUpdatedAt`, `body`, and `advanceCursor`. `body` may be null. The response is `outcome` and `cosensePageId`. Outcomes are `created`, `replaced`, `unchanged`, `local_edit`, `need_body`, `empty_body`, `edges_too_large`, and `missing_title`.
+`POST /entries/import/pages` accepts `cosensePageId`, `title`, integer `sourceUpdatedAt`, `body`, and `advanceCursor`. A create also accepts integer `sourceCreatedAt`. `body` may be null. The response is `outcome` and `cosensePageId`. Outcomes are `created`, `replaced`, `unchanged`, `local_edit`, `need_body`, `empty_body`, `edges_too_large`, `missing_title`, and `outside_target`.
 
 `POST /entries/import/finish` sets `finished` to true. It does not change `lastCompletedPageId`.
 
 Successful decisions use 200. `empty_body`, `edges_too_large`, `missing_title`, `plan_too_large`, and `invalid_source_time` use 422. An unverified token uses 401 `unauthorized`. Allowance failure uses 503 `store_allowance`. Any other store failure uses 503 `store_unavailable`.
 
-`need_body` means the CLI has not yet sent the text. The CLI fetches and posts again. `need_body` is not a report line.
+`need_body` means the CLI has not yet sent the text. The CLI fetches and posts again. `need_body` is not a report line. `outside_target` is also 200. It is not a report line, and it creates no entry.
 
 ### CLI
 
@@ -195,7 +204,7 @@ The pre-check uses the Free daily write maximum of 100,000 and this app's tally.
 
 ## Data handling
 
-The collected source data is the page ID, the title, the plain text, and the list `updated` number. The create stores a public page, so the title and body are world-readable. The source project is already public.
+The collected source data is the page ID, the title, the plain text, the list `updated` number, and `created` for the membership check. `created` is not stored. The create stores a public page, so the title and body are world-readable. The source project is already public.
 
 The snapshot is kept so a later run can recognize a local edit. It is replaced only when a later import commits. It is not a separate public page. Public HTML does not read `last_imported_body`, `source_updated_at`, or `import_walk`.
 
@@ -224,6 +233,10 @@ The schema change is additive. Add `last_imported_body`, `source_updated_at`, `i
 The owner runs the subcommand and can stop it. The unfinished cursor is what allows the next run to continue. The command may sleep until 00:00 UTC. It does not register a Cron Trigger.
 
 ## Alternatives considered
+
+### Also import pages that appear later
+
+The list can grow after this date. Creating those later pages on the next walk would take the set past the 7655 pages from 2026-11-03. The owner chose migration of those 7655 pages as the purpose. The selected check does not create a page whose `created` is after the requirements cutoff.
 
 ### Import the project inside one Worker request
 

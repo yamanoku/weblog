@@ -16,6 +16,7 @@ The host is `weblog.yamanoku.net`. The only writer is the owner, and the product
 - Realtime co-editing
 - A migration from [archives.yamanoku.net](https://archives.yamanoku.net/)
 - Two-way sync with Cosense
+- Cosense pages created after the migration set. The set is defined in [Cosense import](features/cosense-import/requirements.md)
 - Posting into an existing Mastodon or Misskey
 - Visual design and the choice of an ORM
 
@@ -39,9 +40,9 @@ A remote ActivityPub instance has no actor `acct:yamanoku@weblog.yamanoku.net` t
 
 ### Owner yamanoku
 
-- **Characteristics:** The only person who writes on this host. Uses a browser and a CLI. Brings pages from the public Cosense project onto this host.
+- **Characteristics:** The only person who writes on this host. Uses a browser and a CLI. Moves the created Cosense pages named by the import requirements onto this host.
 - **Problems:** Articles and linked pages live in different places. No single host offers remote follow and writes limited to the owner.
-- **Usage context:** Creates, updates, publishes, and deletes entries. Brings public Cosense pages onto this host. A program can call the same write path with the owner's CLI credential.
+- **Usage context:** Creates, updates, publishes, and deletes entries. Moves the created pages named by the import requirements onto this host. A program can call the same write path with the owner's CLI credential.
 
 ### Unauthenticated readers
 
@@ -91,7 +92,7 @@ A remote ActivityPub instance has no actor `acct:yamanoku@weblog.yamanoku.net` t
 
 The product is successful when all of the following hold.
 
-- The owner can publish articles, short posts, and bookmarks to weblog.yamanoku.net from the browser and the CLI, and can bring public Cosense pages onto the same host.
+- The owner can publish articles, short posts, and bookmarks to weblog.yamanoku.net from the browser and the CLI. The owner can also move the created pages named by the import requirements onto the same host.
 - A person who is not logged in can read public entries and follow title links in both directions. They can also read the human-readable feeds.
 - A remote instance can follow `acct:yamanoku@weblog.yamanoku.net` and receive the public entries this host delivers.
 - Pages brought in from Cosense stay out of the human-readable feeds until the owner changes their kind. They also stay out of remote delivery.

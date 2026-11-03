@@ -4,14 +4,14 @@
 
 ## About this document
 
-The owner imports pages from the public Cosense project into this host with the CLI. A new page is stored as a public page and is not delivered. A later run replaces the body only when the local body still matches the last import and the source is newer. A local edit is reported and left in place.
+The owner uses the CLI to move the 7655 pages that were in the project on 2026-11-03 onto this host. A target page that is not stored yet is saved as a public page and is not delivered. A later run may replace a target page's body only when the local body still matches the last import and the source updated time is newer. A local edit is reported and left in place. A page created after that set is not stored. A link target that has no page is not stored either.
 
 The parent product is [weblog.yamanoku.net](../../product.md). Writes use the validation and the entry-and-edge update boundary in [Owner writing](../owner-writing/requirements.md).
 
 ### Scope
 
 - A CLI batch that reads the public project `https://scrapbox.io/yamanoku/`
-- Creating a public page entry for a Cosense page that is not stored yet
+- Creating a public page entry for a page among the 7655 pages that were in the project list on 2026-11-03, when that page is not stored yet
 - Continuing an unfinished list walk, and rechecking the list after the walk has finished
 - Replacing a matching body, or reporting the Cosense page ID and leaving a local edit
 - Waiting and retrying when the source or the free store allowance does not accept the next page
@@ -26,6 +26,8 @@ The parent product is [weblog.yamanoku.net](../../product.md). Writes use the va
 - Copying image or file binaries, and uploading into the bucket `gyazo-archives`
 - Importing articles from `archives.yamanoku.net`
 - Two-way sync back to Cosense
+- A Cosense page created after the 2026-11-03 migration set
+- A link target that is not in the page list. The link text stays in the body
 - The order of rendering Cosense notation other than the edges owner writing already extracts
 - The UI framework and the ORM
 - A procedure that writes the newer Cosense body over a local edit. The open question below records that this feature does not do that
@@ -34,15 +36,27 @@ The parent product is [weblog.yamanoku.net](../../product.md). Writes use the va
 
 ### Import a new page
 
-As the owner, I want a public Cosense page to become a page on this host so that its text and title links live here without entering the feed or a delivery.
+As the owner, I want a Cosense page in the migration set to become a page on this host so that its text and title links live here without entering the feed or a delivery.
 
 **Acceptance criteria:**
 
 Scenario: When the page is not stored yet, the host creates one public page
 
-- Given: The CLI token is valid. The public project has a page with a page ID, a title, and line text. No entry stores that page ID. The fetched body is not empty.
+- Given: The CLI token is valid. The page is in the migration set. The public project has a page ID, a title, and line text for it. No entry stores that page ID. The fetched body is not empty.
 - When: The owner runs the import.
 - Then: One entry exists. Its kind is page and its visibility is public. The immutable ID is new and is not the Cosense page ID. The canonical URL is `https://weblog.yamanoku.net/e/{id}`. The Cosense page ID is stored on that entry. The body is the fetched plain text, and the first line remains even when it equals the title. Bracket characters are unchanged. The entry is not deliverable. This run does not send an activity.
+
+Scenario: A page created after the migration set is not stored
+
+- Given: The CLI token is valid. The page's `created` value is greater than 1793661527. No entry stores that page ID.
+- When: The owner runs the import.
+- Then: No entry is created for that page ID. The command does not report that page ID as a refusal. The walk continues. Pages in the migration set are still handled as before.
+
+Scenario: A link target that has no page is not stored
+
+- Given: The body of a migration-set page links to a title that is not in the page list.
+- When: The owner runs the import.
+- Then: No entry is created for that title. The link text remains in the body. Edges follow the owner-writing rules.
 
 Scenario: When the same page is stored again, the host does not create a second entry
 
@@ -52,7 +66,7 @@ Scenario: When the same page is stored again, the host does not create a second 
 
 ### Continue the list and recheck it
 
-As the owner, I want a long import to continue after a stop so that a rerun does not start from zero, and a finished import can later pick up a newer source page.
+As the owner, I want a long import to continue after a stop so that a rerun does not start from zero. A finished import can later replace a target page when its source is newer.
 
 **Acceptance criteria:**
 
@@ -66,7 +80,7 @@ Scenario: When the list walk has finished, the next run checks the list from the
 
 - Given: The previous walk finished the list. One stored page has a newer source updated time, and its current body still equals the last imported body. The fetched body is not empty.
 - When: The owner runs the import again.
-- Then: The run reads the list from the start and applies the replace rules. That page's body is replaced. Its immutable ID stays. Pages whose body and source time do not call for a replace are left as they are.
+- Then: The run reads the list from the start and applies the replace rules. That page's body is replaced. Its immutable ID stays. Pages whose body and source time do not call for a replace are left as they are. A page outside the migration set is not stored.
 
 Scenario: When the source asks the client to wait, the same page is retried
 
@@ -147,9 +161,9 @@ The parent product sets no percentage target for availability or delivery succes
 
 ##### Which project and which text
 
-The only source is the public project `https://scrapbox.io/yamanoku/`. The list is `https://scrapbox.io/api/pages/yamanoku`. List elements do not include the body lines. The body is the plain text from `https://scrapbox.io/api/pages/yamanoku/{title}/text`. The import does not convert brackets.
+The only source is the public project `https://scrapbox.io/yamanoku/`. Whether a page exists, and its `created` time, come from `https://scrapbox.io/api/pages/yamanoku`. Walk order follows `search/titles`, in the later section. Neither list's elements include the body lines. The body is the plain text from `https://scrapbox.io/api/pages/yamanoku/{title}/text`. The import does not convert brackets.
 
-On 2026-11-01 that list reported `count` 7651. The count can grow. The number is not a quota. The whole project is not imported inside one request to this host. Each stored page is its own committed write.
+The migration set is the 7655 pages that were in that project list on 2026-11-03. On that day, `https://scrapbox.io/api/pages/yamanoku?limit=1` reported `count` 7655. That `count` excludes pages with no content. The source is [api/pages/:projectname](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname). On that same list, all 7655 pages had a line count and a character count of at least 1. A page's `created` value is Unix seconds. The maximum was 1793661527, which is 2026-11-02T23:18:47Z. A page whose `created` value is later than that integer is not in the migration set. A title that is not in the page list is not in the set either. These 7655 pages are the pages to move. The number is not the daily row-write cap. The whole project is not imported inside one request to this host. Each stored page is its own committed write.
 
 ##### Fields a create sets
 
@@ -181,7 +195,7 @@ When the write does not commit, the entry and its edges stay as they were. The p
 
 ### Walk, retry, and resume
 
-**Overview:** The CLI walks the project list. An unfinished walk continues. A finished walk can be run again from the start.
+**Overview:** The CLI walks the project list. It stores only pages in the migration set. An unfinished walk continues. A finished walk can be run again from the start.
 
 **Input:** The owner starts the import from the CLI.
 
@@ -199,7 +213,7 @@ A page whose write committed is recorded as completed for the current walk. The 
 
 While the walk has not finished, the next run continues after the last completed page ID. It does not fetch those completed pages again.
 
-When the walk has finished, the next run reads the list from the start and applies the replace and report rules. It does not create a second entry for a Cosense page ID that is already stored.
+When the walk has finished, the next run reads the list from the start and applies the replace and report rules. It does not create a second entry for a Cosense page ID that is already stored. A page outside the migration set is not stored and is not reported as a refusal.
 
 #### Exceptional behavior
 

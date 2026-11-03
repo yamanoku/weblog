@@ -48,6 +48,10 @@ Free プランの D1 は、Worker の一呼び出しにつきクエリ 50 回ま
 
 コマンドは最初に `GET /entries/import` を呼ぶ。401 のときは何も保存しない。Cosense も呼ばない。カーソルも変えない。この呼び出しが成功してから、ほかの処理を始める。
 
+次に CLI は、`https://scrapbox.io/api/pages/yamanoku` を読む。`limit` は 1000 である。`skip` は 0 から始め、1000 ずつ増やす。返った件数が `limit` より少ないとき、読み終える。`limit`、`skip`、`created` の説明は、[api/pages/:projectname](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname) にある。使う項目は `id` と `created` だけである。`created` は Unix 秒である。集めた件数が応答の `count` と違うときは、走査を始めない。新しいページは完了にしない。429 と 5xx は、本文の取得と同じ待ち方で同じ要求を再試行する。
+
+移行対象の `created` は 1793661527 以下である。この整数は Requirements の上限である。UTC の表記は 2026-11-02T23:18:47Z である。読み終えた一覧に無いページ ID も、対象外である。これより大きい `created` のページは、plan へ送らない。本文も取らない。投稿もしない。標準出力にも出さない。完了としても記録しない。走査は次のページへ続く。
+
 CLI は `search/titles` を先頭から読む。`X-Following-Id` が空でなくなるまで、その値で次を読む。ヘッダが空か無くなったら一覧は終わりである。ページの順は、その応答の順のままである。CLI は並び替えない。
 
 保存された走査が終わっておらず、`lastCompletedPageId` があるときは、その ID を見るまで本文を取らない。そのページも投稿しない。見た ID 自体は、再び投稿しない。それより後のページを処理する。一覧が終わってもその ID が無いときは、`cursor_missing` とそのページ ID を出す。`finished` は false のままである。終了コードは 0 以外にする。
@@ -58,7 +62,7 @@ CLI は `search/titles` を先頭から読む。`X-Following-Id` が空でなく
 
 ### ページ一つ
 
-走査が処理するページについて、CLI はページ ID と一覧の `updated` を `POST /entries/import/plan` へ送る。一度に送るのは 80 件までである。応答は、本文の取得を省くか、ローカル編集として報告するか、本文を取るかを返す。応答に本文は含めない。
+移行対象のページについて、CLI はページ ID と一覧の `updated` を `POST /entries/import/plan` へ送る。一度に送るのは 80 件までである。応答は、本文の取得を省くか、ローカル編集として報告するか、本文を取るかを返す。応答に本文は含めない。
 
 `skip` は、保存された本文が最後に取り込んだ本文と一致し、一覧の時刻が新しくないときである。CLI は本文を取らない。
 
@@ -67,6 +71,8 @@ CLI は `search/titles` を先頭から読む。`X-Following-Id` が空でなく
 `fetch` は、そのページ ID のエントリが無いときである。本文が一致し、一覧の時刻が新しいときも `fetch` である。CLI は `https://scrapbox.io/api/pages/yamanoku/{title}/text` を取り、そのテキストを投稿する。タイトルは、パーセント符号化された一つのパス要素にする。
 
 ページの経路は、もう一度判定する。古い plan では、ローカル編集を上書きできない。本文を省いた要求は、空の本文ではない。空文字列が空の本文である。
+
+作成の投稿は、整数の `sourceCreatedAt` を含む。値は、ページ一覧の `created` である。保存はしない。値が無いときは、Worker が書かない。1793661527 より大きいときも、Worker が書かない。応答は 200 の `outside_target` である。CLI は、そのページを報告しない。完了にもしない。整数でない値は 422 `invalid_source_time` である。CLI はカーソルを動かさずに停止する。既にエントリがあるページの置き換えは、この判定を使わない。
 
 作成は種類を page、公開状態を public にする。bookmark の URL は空にする。batch の前に `crypto.randomUUID()` で小文字の UUID を発行する。ページ ID を保存する。本文は text 応答のままである。先頭行がタイトルと一致しても残す。`published_at` は NULL である。batch は `delivery_records` を挿入しない。活動も積まない。
 
@@ -122,6 +128,8 @@ sequenceDiagram
   CLI->>Worker: Bearer で GET /entries/import
   Worker->>D1: 走査の行を読む
   D1-->>CLI: finished と lastCompletedPageId
+  CLI->>Cosense: GET /api/pages の id と created
+  Cosense-->>CLI: count と created
   CLI->>Cosense: GET search/titles
   Cosense-->>CLI: タイトルと X-Following-Id
   CLI->>Worker: POST /entries/import/plan
@@ -155,11 +163,12 @@ ER 図は要らない。走査は一行であり、すべてのエントリの�
 
 CLI は次の URL を、資格情報なしの HTTPS GET で呼ぶ。プロジェクトは公開である。CLI は、受け取った JSON から `user` と `users` を捨てる。それらの項目は、このホストへ送らない。
 
+- `GET https://scrapbox.io/api/pages/yamanoku?limit=1000&skip=0` と、`skip` を 1000 ずつ増やした同じパス
 - `GET https://scrapbox.io/api/pages/yamanoku/search/titles`
 - 空でない `X-Following-Id` を `followingId` にした、同じパス
 - `GET https://scrapbox.io/api/pages/yamanoku/{title}/text`
 
-この機能が使う一覧要素は `id`、`title`、`updated` である。要素に本文の行は無い。`links` 配列は辺の一覧ではない。辺は、保存したプレーンテキストから、所有者の書き込みの規則で抽出する。text 応答は `text/plain` であり、そのまま保存する。CLI は `i.gyazo.com`、`gyazo.com`、`scrapbox.io/files` を要求しない。
+ページ一覧から使う項目は `id` と `created` である。`search/titles` の要素に `created` は無い。出典は [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles) である。そのページは、作成日時を返さないと書く。走査で使う要素は `id`、`title`、`updated` である。要素に本文の行は無い。`links` 配列は辺の一覧ではない。辺は、保存したプレーンテキストから、所有者の書き込みの規則で抽出する。text 応答は `text/plain` であり、そのまま保存する。CLI は `i.gyazo.com`、`gyazo.com`、`scrapbox.io/files` を要求しない。
 
 件数を測った URL `https://scrapbox.io/api/pages/yamanoku?limit=1` は、走査には使わない。あの応答には、`X-Following-Id` による続きが無い。
 
@@ -171,7 +180,7 @@ CLI は次の URL を、資格情報なしの HTTPS GET で呼ぶ。プロジェ
 
 `POST /entries/import/plan` は、ページを 80 件まで受け取る。各ページは `cosensePageId` と、整数の `sourceUpdatedAt` を持つ。応答は同じ ID を列挙する。`action` は `skip`、`local_edit`、`fetch` のいずれかである。80 件を超える要求は 422 `plan_too_large` である。CLI はより小さい塊を送る。整数でないソース時刻は 422 `invalid_source_time` である。CLI はカーソルを動かさずに停止する。
 
-`POST /entries/import/pages` は、`cosensePageId`、`title`、整数の `sourceUpdatedAt`、`body`、`advanceCursor` を受け取る。`body` は null を許す。応答は `outcome` と `cosensePageId` である。`outcome` は次の八つである。
+`POST /entries/import/pages` は、`cosensePageId`、`title`、整数の `sourceUpdatedAt`、`body`、`advanceCursor` を受け取る。作成のときだけ、整数の `sourceCreatedAt` も受け取る。`body` は null を許す。応答は `outcome` と `cosensePageId` である。`outcome` は次の九つである。
 
 - `created`
 - `replaced`
@@ -181,12 +190,13 @@ CLI は次の URL を、資格情報なしの HTTPS GET で呼ぶ。プロジェ
 - `empty_body`
 - `edges_too_large`
 - `missing_title`
+- `outside_target`
 
 `POST /entries/import/finish` は `finished` を true にする。`lastCompletedPageId` は変えない。
 
 成功した判定は 200 である。`empty_body`、`edges_too_large`、`missing_title`、`plan_too_large`、`invalid_source_time` は 422 である。検証できないトークンは 401 `unauthorized` である。枠の失敗は 503 `store_allowance` である。ほかの保存の失敗は 503 `store_unavailable` である。
 
-`need_body` は、CLI がまだテキストを送っていないことを示す。CLI は本文を取り、再び投稿する。`need_body` は報告行にしない。
+`need_body` は、CLI がまだテキストを送っていないことを示す。CLI は本文を取り、再び投稿する。`need_body` は報告行にしない。`outside_target` も 200 である。報告行にはしない。エントリは作らない。
 
 ### CLI
 
@@ -204,7 +214,7 @@ Cosense へは、CLI からの HTTPS GET で到達する。API キーは無い�
 
 ## データの取り扱い設計
 
-集めるソースのデータは、ページ ID、タイトル、プレーンテキスト、一覧の `updated` である。作成は公開のページとして保存する。したがってタイトルと本文は、誰でも読める。取り込み元のプロジェクトは、既に公開されている。
+集めるソースのデータは、ページ ID、タイトル、プレーンテキスト、一覧の `updated`、判定用の `created` である。`created` は保存しない。作成は公開のページとして保存する。したがってタイトルと本文は、誰でも読める。取り込み元のプロジェクトは、既に公開されている。
 
 スナップショットは、後の実行がローカル編集を識別するために残す。後の取り込みが確定したときだけ置き換える。公開ページとしては別に持たない。公開 HTML は `last_imported_body`、`source_updated_at`、`import_walk` を読まない。
 
@@ -233,6 +243,10 @@ Worker は、Cosense のアカウント ID を受け取らない。CLI は投稿
 所有者はサブコマンドを実行し、止められる。未完了のカーソルが、次の実行の続き位置になる。コマンドは 00:00 UTC まで眠ることがある。Cron Trigger は登録しない。
 
 ## 検討した代替手段
+
+### 後から増えたページも取り込む
+
+一覧は、このあと増えることがある。増えたページも次の走査で作ると、対象が 2026-11-03 の 7655 ページを超える。所有者は、その 7655 ページの移行を目的にした。採用した判定は、Requirements の上限より後の `created` を作らない。
 
 ### プロジェクトを Worker の一要求で取り込む
 
