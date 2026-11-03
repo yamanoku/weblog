@@ -12,4 +12,4 @@
 - [ActivityPub](products/weblog/features/activitypub/requirements.ja.md) と、その [設計](products/weblog/features/activitypub/design.ja.md)
 - [移設](products/weblog/features/relocation/requirements.ja.md) と、その [設計](products/weblog/features/relocation/design.ja.md)
 
-Worker アプリケーションは [Worker アプリケーションの設計](engineering/design/worker.ja.md) にある。ページ構成は [ページ構成](engineering/design/pages.ja.md) にある。フロントエンドのパッケージは [フロントエンドのパッケージ](engineering/design/frontend.ja.md) にある。バックエンドのパッケージは [バックエンドのパッケージ](engineering/design/backend.ja.md) にある。
+Worker アプリケーションは [Worker アプリケーションの設計](engineering/design/worker.ja.md) にある。ページ構成は [ページ構成](engineering/design/pages.ja.md) にある。フロントエンドのパッケージは [フロントエンドのパッケージ](engineering/design/frontend.ja.md) にある。バックエンドのパッケージは [バックエンドのパッケージ](engineering/design/backend.ja.md) にある。Cloudflare のサービスは [Cloudflare のサービス](engineering/design/cloudflare.ja.md) にある。
