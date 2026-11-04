@@ -5,4 +5,11 @@ export default defineConfig({
   worker: {
     compatibility_date: "2026-02-24",
   },
+  // One Workers Free app. The only store is this D1 binding.
+  // database_id stays unset until a real provision records it.
+  // KV, Queues, R2, cron, Durable Objects, and a second database stay out.
+  cloudflare: {
+    name: "weblog",
+    d1_databases: [{ binding: "DB", database_name: "weblog" }],
+  },
 });

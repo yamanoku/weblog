@@ -5,6 +5,7 @@
 </script>
 
 <h1>Deliverable entries</h1>
+<p>weblog.yamanoku.net</p>
 <ul>
   {#each entries as entry (entry.id)}
     <li>
