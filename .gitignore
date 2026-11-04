@@ -1,1 +1,6 @@
 /.sdev/
+node_modules/
+.void/
+dist/
+.wrangler/
+.void-wrangler.jsonc
