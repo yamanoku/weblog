@@ -307,7 +307,7 @@ test("domain and pages stay free of the store and the Access check", () => {
   assert.match(config, /name:\s*"weblog"/);
   assert.match(config, /binding:\s*"DB"/);
   assert.match(config, /database_name:\s*"weblog"/);
-  assert.equal(/database_id\s*:/.test(config), false);
+  assert.match(config, /database_id:\s*"3ca9f890-f6a1-4bdd-973d-e3a72b0004f3"/);
   assert.equal(config.includes("kv_namespaces"), false);
   assert.equal(config.includes("r2_buckets"), false);
   assert.equal(config.includes("queues"), false);
