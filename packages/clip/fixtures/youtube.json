@@ -1,0 +1,7 @@
+{
+  "source": "youtube",
+  "title": "Example video",
+  "body": "A video the owner noticed.",
+  "url": "https://www.youtube.com/watch?v=example",
+  "visibility": "draft"
+}

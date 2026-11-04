@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "weblog clip",
+  "version": "0.0.0",
+  "description": "Clip one article, one tweet, or one YouTube video into the weblog. Sources: article, tweet, youtube.",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["extension.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "clip_sources": ["article", "tweet", "youtube"]
+}

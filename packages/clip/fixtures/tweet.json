@@ -1,0 +1,7 @@
+{
+  "source": "tweet",
+  "title": "Example tweet",
+  "body": "A post the owner noticed.",
+  "url": "https://x.com/example/status/1",
+  "visibility": "public"
+}

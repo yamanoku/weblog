@@ -11,5 +11,6 @@ Feature specifications go under `docs/products/weblog/features/`. Open questions
 - [Cosense import](products/weblog/features/cosense-import/requirements.md) and its [design](products/weblog/features/cosense-import/design.md)
 - [ActivityPub](products/weblog/features/activitypub/requirements.md) and its [design](products/weblog/features/activitypub/design.md)
 - [Relocation](products/weblog/features/relocation/requirements.md) and its [design](products/weblog/features/relocation/design.md)
+- [Clip](products/weblog/features/clip/requirements.md) and its [design](products/weblog/features/clip/design.md)
 
 The Worker application is [Worker application design](engineering/design/worker.md). The page map is [Page map](engineering/design/pages.md). The frontend packages are [Frontend packages](engineering/design/frontend.md). The backend packages are [Backend packages](engineering/design/backend.md). The Cloudflare services are [Cloudflare services](engineering/design/cloudflare.md). The database design is [Database design](engineering/design/database.md).

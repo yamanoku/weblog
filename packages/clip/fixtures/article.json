@@ -1,0 +1,7 @@
+{
+  "source": "article",
+  "title": "Example article",
+  "body": "A paragraph the owner noticed.",
+  "url": "https://example.com/articles/noticed",
+  "visibility": "public"
+}
