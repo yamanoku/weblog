@@ -1,6 +1,7 @@
 /.sdev/
 node_modules/
 .void/
+.cloudflare/
 dist/
 .wrangler/
 .void-wrangler.jsonc

@@ -1,7 +1,26 @@
 import { voidSvelte } from "@void/svelte/plugin";
-import { defineConfig } from "vite";
+import { defineConfig } from "vite-plus";
 import { voidPlugin } from "void";
+
+const outsideTheApp = [
+  "docs/**",
+  "packages/**",
+  "bin/**",
+  "AGENTS.md",
+  "README.md",
+  "README.ja.md",
+  "sdev.toml",
+];
 
 export default defineConfig({
   plugins: [voidPlugin(), voidSvelte()],
+  test: {
+    include: ["test/**/*.test.mjs"],
+  },
+  fmt: {
+    ignorePatterns: outsideTheApp,
+  },
+  lint: {
+    ignorePatterns: outsideTheApp,
+  },
 });

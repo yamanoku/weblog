@@ -1,29 +1,33 @@
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { test } from "node:test";
+import { fileURLToPath } from "node:url";
+import { test } from "vitest";
+import {
+  deliverableEntries,
+  entryById,
+  isReservedTitle,
+  publicEntries,
+  publicEntryByTitle,
+  reservedTitles,
+} from "../domain/catalog.js";
 
 const root = new URL("..", import.meta.url);
+const rootDir = fileURLToPath(root);
+
+function readRoot(path) {
+  return readFileSync(join(rootDir, path), "utf8");
+}
 
 const required = ["svelte", "@void/svelte", "void"];
-const rejected = [
-  "@void/react",
-  "@void/vue",
-  "@void/solid",
-  "@sveltejs/adapter-cloudflare",
-];
+const rejected = ["@void/react", "@void/vue", "@void/solid", "@sveltejs/adapter-cloudflare"];
 
 function readJson(path) {
   return JSON.parse(readFileSync(new URL(path, root), "utf8"));
 }
 
 function declaredNames(manifest) {
-  const sections = [
-    "dependencies",
-    "devDependencies",
-    "optionalDependencies",
-    "peerDependencies",
-  ];
+  const sections = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"];
   return sections.flatMap((section) => Object.keys(manifest[section] ?? {}));
 }
 
@@ -42,8 +46,8 @@ function walk(dir, files = []) {
   return files;
 }
 
-const appSourceRoots = ["pages", "routes", "src", "middleware"].map((name) =>
-  new URL(`${name}/`, root),
+const appSourceRoots = ["pages", "routes", "src", "middleware"].map(
+  (name) => new URL(`${name}/`, root),
 );
 
 test("the app manifest declares the Svelte Void packages", () => {
@@ -57,8 +61,13 @@ test("the app manifest declares the Svelte Void packages", () => {
   }
 });
 
-test("Vite registers voidPlugin and voidSvelte from @void/svelte/plugin", () => {
+test("Vite+ runs the app tasks and registers the Void Svelte plugins", () => {
+  const manifest = readJson("package.json");
+  for (const name of ["dev", "build", "preview", "test", "check"]) {
+    assert.match(manifest.scripts[name], /^vp\s/);
+  }
   const config = readFileSync(new URL("vite.config.js", root), "utf8");
+  assert.match(config, /from ["']vite-plus["']/);
   assert.match(config, /from ["']@void\/svelte\/plugin["']/);
   assert.match(config, /voidSvelte\s*\(/);
   assert.match(config, /voidPlugin\s*\(/);
@@ -78,6 +87,56 @@ test("app source does not export ssr = false", () => {
     const source = readFileSync(file, "utf8");
     assert.equal(/export\s+(?:const|let|var)\s+ssr\s*=\s*false\b/.test(source), false, file);
   }
+});
+
+test("pages render the shipped mock and leave reserved keys off the title entry", () => {
+  const catalog = readRoot("domain/catalog.js");
+  assert.equal(catalog.includes("void/db"), false);
+  assert.equal(/\bfrom\s+["']void["']/.test(catalog), false);
+  assert.equal(catalog.includes("@void/svelte"), false);
+  assert.equal(catalog.includes("svelte"), false);
+
+  const deliverable = deliverableEntries();
+  assert.equal(deliverable.length > 0, true);
+  assert.equal(
+    deliverable.some((entry) => entry.title === "index-only"),
+    false,
+  );
+  const titles = publicEntries().map((entry) => entry.title);
+  assert.equal(titles.includes("index-only"), true);
+  assert.equal(titles.includes("draft-thought"), false);
+  const sample = deliverable[0];
+  assert.equal(publicEntryByTitle(sample.title).id, sample.id);
+  assert.equal(publicEntryByTitle("missing-title"), null);
+  assert.equal(entryById(sample.id).title, sample.title);
+  assert.deepEqual(reservedTitles, [
+    "e",
+    "edit",
+    "entries",
+    "tokens",
+    "feed",
+    "feed.xml",
+    "feed.json",
+    "pages",
+    "users",
+    "gyazo",
+    ".well-known",
+  ]);
+  for (const key of reservedTitles) {
+    assert.equal(isReservedTitle(key), true);
+  }
+  assert.equal(isReservedTitle(sample.title), false);
+
+  const titleLoader = readRoot("pages/[title].server.js");
+  assert.match(titleLoader, /domain\/catalog/);
+  assert.match(titleLoader, /isReservedTitle/);
+  const titlePage = readRoot("pages/[title].svelte");
+  assert.match(titlePage, /Empty page/);
+  assert.match(titlePage, /entry\.body/);
+  const homeLoader = readRoot("pages/index.server.js");
+  assert.match(homeLoader, /deliverableEntries/);
+  const editForm = readRoot("pages/edit/index.svelte");
+  assert.match(editForm, /Create an entry/);
 });
 
 test("page files do not import void/db", () => {
