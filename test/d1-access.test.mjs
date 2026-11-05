@@ -7,6 +7,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
 import {
   accessIssuer,
+  accessAssertion,
   decideEditAccess,
   editAccessDecision,
   importAccessPublicKey,
@@ -283,6 +284,64 @@ test("edit access accepts only a verified owner JWT on /edit and /edit/*", async
     assert.equal(decision.ok, true, path);
     assert.equal(decision.skipped, true, path);
   }
+});
+
+test("access assertion prefers the header and otherwise reads the cookie", () => {
+  assert.equal(accessAssertion("header-token", "CF_Authorization=cookie-token"), "header-token");
+  assert.equal(
+    accessAssertion("", "other=1; CF_Authorization=cookie-token; theme=light"),
+    "cookie-token",
+  );
+  assert.equal(accessAssertion("", ""), "");
+});
+
+test("edit access verifies with the certificate whose kid matches", async () => {
+  const previous = await keyPair();
+  const current = await keyPair();
+  const previousJwk = await crypto.subtle.exportKey("jwk", previous.publicKey);
+  const currentJwk = await crypto.subtle.exportKey("jwk", current.publicKey);
+  previousJwk.kid = "previous";
+  previousJwk.alg = "RS256";
+  currentJwk.kid = "current";
+  currentJwk.alg = "RS256";
+  const publicKey = await importAccessPublicKey(
+    JSON.stringify({ keys: [previousJwk, currentJwk] }),
+  );
+  const claims = {
+    iss: issuer,
+    aud: audience,
+    exp: 1_700_000_060,
+    email: ownerEmail,
+  };
+  const currentToken = await signJwt(current.privateKey, claims, {
+    alg: "RS256",
+    typ: "JWT",
+    kid: "current",
+  });
+  assert.equal((await decideEditAccess({ header: currentToken, ...settings(publicKey) })).ok, true);
+  const previousToken = await signJwt(previous.privateKey, claims, {
+    alg: "RS256",
+    typ: "JWT",
+    kid: "previous",
+  });
+  assert.equal((await decideEditAccess({ header: previousToken, ...settings(publicKey) })).ok, true);
+  const labeledWithTheOtherKey = await signJwt(current.privateKey, claims, {
+    alg: "RS256",
+    typ: "JWT",
+    kid: "previous",
+  });
+  assert.equal(
+    (await decideEditAccess({ header: labeledWithTheOtherKey, ...settings(publicKey) })).status,
+    401,
+  );
+  const unknownKid = await signJwt(current.privateKey, claims, {
+    alg: "RS256",
+    typ: "JWT",
+    kid: "missing",
+  });
+  assert.equal((await decideEditAccess({ header: unknownKid, ...settings(publicKey) })).status, 401);
+  const noKid = await signJwt(current.privateKey, claims);
+  assert.equal((await decideEditAccess({ header: noKid, ...settings(publicKey) })).status, 401);
 });
 
 test("domain and pages stay free of the store and the Access check", () => {

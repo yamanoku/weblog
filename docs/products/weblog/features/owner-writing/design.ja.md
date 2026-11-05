@@ -217,7 +217,7 @@ GET `/{比較キー}` は、固定パスのあとで判定する。
 
 ブラウザの所有者確認は、Cloudflare Access の Free プランである。契約条件は Requirements にある。この設計が追加するのは、検証の手順である。
 
-Access アプリケーションのパスは `/edit` と `/edit/*` だけである。Worker は、その経路で `Cf-Access-Jwt-Assertion` を取り、チームの証明書で署名を検証する。証明書の URL は `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/certs` である。iss はチームドメイン、aud は Access アプリケーションの AUD と一致させる。検証に通った JWT の email が、設定した所有者のメールと一致するときだけ所有者とする。大小文字の違いは無視する。email が無い、署名が違う、期限切れ、aud が違う場合は所有者ではない。
+Access アプリケーションのパスは `/edit` と `/edit/*` だけである。Worker は、その経路で `Cf-Access-Jwt-Assertion` を取る。そのヘッダが無いときだけ `CF_Authorization` Cookie を取る。署名は、JWT ヘッダの `kid` と一致するチームの証明書で検証する。`kid` が無い、または証明書集合に無い場合は所有者ではない。証明書の URL は `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/certs` である。iss はチームドメイン、aud は Access アプリケーションの AUD と一致させる。検証に通った JWT の email が、設定した所有者のメールと一致するときだけ所有者とする。大小文字の違いは無視する。email が無い、署名が違う、期限切れ、aud が違う場合は所有者ではない。
 
 証明書の取得はアダプタに閉じ、JWT の鍵集合は isolate 内にキャッシュする。ドメインはこの URL を知らない。検証ライブラリはアダプタだけが依存する。Cloudflare の Worker 例は `jose` を使っている。同じ例に合わせ、ドメインからは import しない。
 
