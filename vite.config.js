@@ -15,7 +15,7 @@ const outsideTheApp = [
 export default defineConfig({
   plugins: [voidPlugin(), voidSvelte()],
   test: {
-    include: ["test/**/*.test.mjs"],
+    include: ["src/test/**/*.test.mjs"],
   },
   fmt: {
     ignorePatterns: outsideTheApp,

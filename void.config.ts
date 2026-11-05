@@ -2,6 +2,8 @@
 import { defineConfig } from "void/config";
 
 export default defineConfig({
+  // Application source lives here. Dev, build, and deploy run from the repository root.
+  sourceDir: "src",
   worker: {
     compatibility_date: "2026-02-24",
   },

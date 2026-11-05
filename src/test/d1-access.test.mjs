@@ -16,6 +16,7 @@ import { importWalkProject } from "../db/schema.ts";
 import { commitEntry } from "../store/entries.js";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
+const projectDir = fileURLToPath(new URL("../..", import.meta.url));
 const now = 1_700_000_000_000;
 const ownerEmail = "owner@example.com";
 const audience = "test-aud";
@@ -23,6 +24,10 @@ const issuer = accessIssuer("team.example");
 
 function readRoot(path) {
   return readFileSync(join(rootDir, path), "utf8");
+}
+
+function readProject(path) {
+  return readFileSync(join(projectDir, path), "utf8");
 }
 
 function walk(dir, files = []) {
@@ -362,7 +367,8 @@ test("domain and pages stay free of the store and the Access check", () => {
       assert.equal(pattern.test(source), false, file);
     }
   }
-  const config = readRoot("void.config.ts");
+  const config = readProject("void.config.ts");
+  assert.match(config, /sourceDir:\s*"src"/);
   assert.match(config, /name:\s*"weblog"/);
   assert.match(config, /binding:\s*"DB"/);
   assert.match(config, /database_name:\s*"weblog"/);

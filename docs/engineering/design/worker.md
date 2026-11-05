@@ -27,7 +27,9 @@ The deliverable is one Void application on one Cloudflare Worker. There is no se
 
 [Quickstart](https://void.cloud/guide/quickstart) creates the app with the `void` package and `void init`, then deploys it. That page asks for a UI framework, a starter, and a deployment target. This design answers those with Svelte, Pages mode, and the owner's Cloudflare account.
 
-[Pages Routing](https://void.cloud/guide/pages-routing/overview) starts when a `pages/` directory exists. It can live alongside `routes/`. Page components normally run on the server for the first render and in the browser for later navigation and interaction. The first request receives rendered HTML. Later navigations run the loader and update the page without reloading the document. This app uses that mode. The screen adapter is `@void/svelte`, and the Vite plugin is `voidSvelte()` from `@void/svelte/plugin`. The same page shows `@void/react`, `@void/vue`, and `@void/solid`. This app does not install those. Public HTML pages and the edit screen live under `pages/`. HTTP that is not a page stays under `routes/`. This app does not export `ssr = false`. That export returns a client-mounted shell instead of server-rendered component HTML. The same page's table is the source for that row.
+[Pages Routing](https://void.cloud/guide/pages-routing/overview) starts when a `pages/` directory exists. It can live alongside `routes/`. Page components normally run on the server for the first render and in the browser for later navigation and interaction. The first request receives rendered HTML. Later navigations run the loader and update the page without reloading the document. This app uses that mode. The screen adapter is `@void/svelte`, and the Vite plugin is `voidSvelte()` from `@void/svelte/plugin`. The same page shows `@void/react`, `@void/vue`, and `@void/solid`. This app does not install those. Public HTML pages and the edit screen live under `src/pages/`. HTTP that is not a page stays under `src/routes/`. This app does not export `ssr = false`. That export returns a client-mounted shell instead of server-rendered component HTML. The same page's table is the source for that row.
+
+Void `sourceDir` is `src`. Application source, including `pages/`, `routes/`, `middleware/`, and `db/`, lives under that directory. `void.config.ts`, `vite.config.js`, and `package.json` stay at the repository root. `npm run dev`, `npm run build`, and deploy run from that root and read `src/`.
 
 [Server Routing](https://void.cloud/guide/server-routing) says Void uses Hono for routing and middleware. A route handler calls the domain and returns that result. The domain does not import `void`, `void/db`, Hono, Svelte, `@void/svelte`, an ORM, Fedify, or the Cloudflare SDK. Page files import Svelte through `@void/svelte`. The federation adapter does not use Fedify.
 
@@ -71,7 +73,7 @@ The domain stays free of `void`, `void/db`, Hono, Svelte, `@void/svelte`, Fedify
 
 ## Deployment notes
 
-Publish with `void deploy --platform cloudflare`. Do not install a Void platform. Do not enable Sandboxes. Do not add a second Worker. The hostname stays `weblog.yamanoku.net`.
+Publish with `void deploy --platform cloudflare` from the repository root. The command reads application source from `src/`. Do not install a Void platform. Do not enable Sandboxes. Do not add a second Worker. The hostname stays `weblog.yamanoku.net`.
 
 ## Alternatives considered
 

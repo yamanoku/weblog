@@ -25,9 +25,9 @@ The requirements linked above. One Void application serves this host. The screen
 
 The deliverable is one map for the paths the requirements already name. This design adds no path.
 
-[Pages Routing](https://void.cloud/guide/pages-routing/overview) starts when a `pages/` directory exists. It can live alongside `routes/`. The first request for a page receives rendered HTML. Later navigation on this host runs the loader and updates the page without reloading the document. Public HTML and the edit screen use that mode. The screen adapter is `@void/svelte`. This app does not export `ssr = false`.
+[Pages Routing](https://void.cloud/guide/pages-routing/overview) starts when a `pages/` directory exists. It can live alongside `routes/`. The first request for a page receives rendered HTML. Later navigation on this host runs the loader and updates the page without reloading the document. Public HTML and the edit screen use that mode. The screen adapter is `@void/svelte`. This app does not export `ssr = false`. Void `sourceDir` is `src`, so those directories are `src/pages/` and `src/routes/`. `npm run dev`, `npm run build`, and deploy run from the repository root. `void.config.ts`, `vite.config.js`, and `package.json` stay there.
 
-A path whose response is not an HTML page stays under `routes/`. Feeds, image bytes, Activity Streams, and the owner JSON API are those paths. A loader calls the domain and returns props. An action calls the same write operation as the CLI. The domain does not import Svelte or `void/db`. Page files do not import `void/db`.
+A path whose response is not an HTML page stays under `src/routes/`. Feeds, image bytes, Activity Streams, and the owner JSON API are those paths. A loader calls the domain and returns props. An action calls the same write operation as the CLI. The domain does not import Svelte or `void/db`. Page files do not import `void/db`.
 
 The Worker matches a fixed path before a title path. A title is one path segment. Owner writing reserves these comparison keys, so a title does not take their URL: `e`, `edit`, `entries`, `tokens`, `feed`, `feed.xml`, `feed.json`, `pages`, `users`, `gyazo`, and `.well-known`.
 
@@ -45,7 +45,7 @@ The host in every absolute URL is `https://weblog.yamanoku.net`. The request Hos
 
 ### Svelte pages
 
-These files live under `pages/`. The first response is HTML. After that, a move to another page in this table runs in the browser and does not replace the whole document. A direct request still returns the status the linked requirements name.
+These files live under `src/pages/`. The first response is HTML. After that, a move to another page in this table runs in the browser and does not replace the whole document. A direct request still returns the status the linked requirements name.
 
 | Path | Role |
 | --- | --- |
@@ -114,11 +114,11 @@ None. Publishing this app does not add a path and does not change the hostname.
 
 ### Serve feeds from Svelte pages
 
-A feed URL would then be a page in the browser. Public reading requires Atom and JSON Feed documents, and image bytes, on those paths. Those responses stay under `routes/`.
+A feed URL would then be a page in the browser. Public reading requires Atom and JSON Feed documents, and image bytes, on those paths. Those responses stay under `src/routes/`.
 
-### Keep the edit screen off `pages/`
+### Keep the edit screen off `src/pages/`
 
-The edit form would be a route with no browser move. Owner writing requires the edit screen to run in the browser after the first HTML. The form stays under `pages/`.
+The edit form would be a route with no browser move. Owner writing requires the edit screen to run in the browser after the first HTML. The form stays under `src/pages/`.
 
 ## Open questions
 

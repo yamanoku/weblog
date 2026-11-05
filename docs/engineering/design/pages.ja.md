@@ -25,9 +25,9 @@
 
 成果物は、要件が既に名付けた経路の一覧である。この設計は経路を足さない。
 
-[ページルーティング](https://void.cloud/guide/pages-routing/overview) は、`pages/` があると始まると説明している。`routes/` と並べて置ける。ページの最初の要求は、描画された HTML を受け取る。このホスト内の後の移動は、ローダを実行し、文書を読み直さずにページを更新する。公開 HTML と編集画面は、そのモードを使う。画面のアダプタは `@void/svelte` である。このアプリは `ssr = false` を出さない。
+[ページルーティング](https://void.cloud/guide/pages-routing/overview) は、`pages/` があると始まると説明している。`routes/` と並べて置ける。ページの最初の要求は、描画された HTML を受け取る。このホスト内の後の移動は、ローダを実行し、文書を読み直さずにページを更新する。公開 HTML と編集画面は、そのモードを使う。画面のアダプタは `@void/svelte` である。このアプリは `ssr = false` を出さない。Void の `sourceDir` は `src` である。これらのディレクトリは `src/pages/` と `src/routes/` である。`npm run dev`、`npm run build`、デプロイは、リポジトリのルートから実行する。`void.config.ts`、`vite.config.js`、`package.json` は、そこに残す。
 
-HTML のページでない経路は `routes/` に置く。フィード、画像のバイト列、Activity Streams、所有者向けの JSON API がそれである。ローダはドメインを呼び、props を返す。action は、CLI と同じ書き込み処理を呼ぶ。ドメインは Svelte を import しない。ドメインは `void/db` を import しない。ページのファイルは `void/db` を import しない。
+HTML のページでない経路は `src/routes/` に置く。フィード、画像のバイト列、Activity Streams、所有者向けの JSON API がそれである。ローダはドメインを呼び、props を返す。action は、CLI と同じ書き込み処理を呼ぶ。ドメインは Svelte を import しない。ドメインは `void/db` を import しない。ページのファイルは `void/db` を import しない。
 
 Worker は、タイトルの経路より前に固定の経路を一致させる。タイトルはパス要素一つである。所有者の書き込みは、次の比較キーを予約する。タイトルは、その URL を取らない。キーは `e`、`edit`、`entries`、`tokens`、`feed`、`feed.xml`、`feed.json`、`pages`、`users`、`gyazo`、`.well-known` である。
 
@@ -45,7 +45,7 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 
 ### Svelte のページ
 
-これらのファイルは `pages/` に置く。最初の応答は HTML である。そのあと、この表の別のページへの移動はブラウザで行う。文書全体は置き換えない。直接の要求は、リンクした要件が定めるステータスを返す。
+これらのファイルは `src/pages/` に置く。最初の応答は HTML である。そのあと、この表の別のページへの移動はブラウザで行う。文書全体は置き換えない。直接の要求は、リンクした要件が定めるステータスを返す。
 
 | 経路 | 役割 |
 | --- | --- |
@@ -114,11 +114,11 @@ Access が覆うのは `/edit` と `/edit/*` だけである。公開 HTML、フ
 
 ### フィードを Svelte のページにする
 
-フィードの URL は、ブラウザのページになる。公開閲覧は、その経路に Atom、JSON Feed、画像のバイト列を求める。それらの応答は `routes/` に残す。
+フィードの URL は、ブラウザのページになる。公開閲覧は、その経路に Atom、JSON Feed、画像のバイト列を求める。それらの応答は `src/routes/` に残す。
 
-### 編集画面を `pages/` の外に置く
+### 編集画面を `src/pages/` の外に置く
 
-編集フォームは、ブラウザ移動の無い経路になる。所有者の書き込みは、編集画面が最初の HTML のあとブラウザで動くことを求める。フォームは `pages/` に残す。
+編集フォームは、ブラウザ移動の無い経路になる。所有者の書き込みは、編集画面が最初の HTML のあとブラウザで動くことを求める。フォームは `src/pages/` に残す。
 
 ## 未決事項
 

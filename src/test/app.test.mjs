@@ -12,8 +12,9 @@ import {
   reservedTitles,
 } from "../domain/catalog.js";
 
-const root = new URL("..", import.meta.url);
-const rootDir = fileURLToPath(root);
+const source = new URL("..", import.meta.url);
+const root = new URL("../..", import.meta.url);
+const rootDir = fileURLToPath(source);
 
 function readRoot(path) {
   return readFileSync(join(rootDir, path), "utf8");
@@ -21,6 +22,10 @@ function readRoot(path) {
 
 const required = ["svelte", "@void/svelte", "void"];
 const rejected = ["@void/react", "@void/vue", "@void/solid", "@sveltejs/adapter-cloudflare"];
+
+function readProject(path) {
+  return readFileSync(fileURLToPath(new URL(path, root)), "utf8");
+}
 
 function readJson(path) {
   return JSON.parse(readFileSync(new URL(path, root), "utf8"));
@@ -46,8 +51,8 @@ function walk(dir, files = []) {
   return files;
 }
 
-const appSourceRoots = ["pages", "routes", "src", "middleware"].map(
-  (name) => new URL(`${name}/`, root),
+const appSourceRoots = ["pages", "middleware", "access", "domain", "store", "db"].map(
+  (name) => new URL(`${name}/`, source),
 );
 
 test("the app manifest declares the Svelte Void packages", () => {
@@ -140,7 +145,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
 });
 
 test("page files do not import void/db", () => {
-  const pages = walk(new URL("pages/", root).pathname);
+  const pages = walk(new URL("pages/", source).pathname);
   assert.equal(pages.length > 0, true);
   for (const file of pages) {
     const source = readFileSync(file, "utf8");
