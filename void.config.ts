@@ -11,6 +11,15 @@ export default defineConfig({
   // KV, Queues, R2, cron, Durable Objects, and a second database stay out.
   cloudflare: {
     name: "weblog",
+    // These match the live Worker. Void will not republish while they are absent.
+    workers_dev: true,
+    preview_urls: true,
+    routes: [
+      {
+        pattern: "weblog.yamanoku.net",
+        custom_domain: true,
+      },
+    ],
     d1_databases: [
       {
         binding: "DB",

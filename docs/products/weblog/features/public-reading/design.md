@@ -175,7 +175,7 @@ Both parameters are required together. `before_id` is a lowercase UUID. `before`
 
 ### Shared HTML
 
-One function renders public HTML. It escapes the stored text, then inserts only anchors and media the renderer created. The raw body is never inserted. Every line of the stored body remains. Lines inside a `code:` or `table:` block stay escaped source text. Decoration, icons, and formulas stay source text except where a link span sits inside them.
+One function renders public HTML. For an article, it renders the stored plain text as Markdown: headings, paragraphs, unordered lists, emphasis, inline code, fenced code, and links. It escapes raw HTML in that text and never inserts the stored string as HTML. For every other kind, it escapes the stored text, then inserts only anchors and media the renderer created. Lines inside a `code:` or `table:` block stay escaped source text. Icons, tables, formulas, and Cosense decoration stay source text except where a link span sits inside them.
 
 Page-edge spans come from the shared extract function. An external URL is an `http://` or `https://` run outside a code or table block, ending at whitespace, `[`, or `]`. Generated hrefs are only `http` or `https`. Any other scheme is escaped text.
 
@@ -334,4 +334,4 @@ The owner could open a draft at its view path. A cache that varies on the cookie
 
 None that block implementation.
 
-The order for rendering Cosense notation other than links stays with the requirements of that rendering. Until those requirements exist, this feature shows the source text. The CPU time of this HTML render is unmeasured. That measurement does not change the routes above.
+Article Markdown is rendered by one function, as the body HTML requirement says. Icons, tables, formulas, and Cosense decoration stay with the requirements of that rendering. Until those requirements exist, this feature shows that source text. The CPU time of this HTML render is unmeasured. That measurement does not change the routes above.

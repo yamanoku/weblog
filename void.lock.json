@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "source": {
+    "name": "weblog",
+    "workers_dev": true,
+    "preview_urls": true,
+    "routes": [
+      {
+        "pattern": "weblog.yamanoku.net",
+        "custom_domain": true
+      }
+    ],
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "weblog",
+        "database_id": "3ca9f890-f6a1-4bdd-973d-e3a72b0004f3"
+      }
+    ]
+  },
+  "resolved": {
+    "name": "weblog",
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "weblog",
+        "database_id": "3ca9f890-f6a1-4bdd-973d-e3a72b0004f3",
+        "migrations_dir": "./src/db/migrations"
+      }
+    ],
+    "account_id": "1b16f7266470fc5782fd6254ba8efec9",
+    "workers_dev": true,
+    "preview_urls": true,
+    "routes": [
+      {
+        "pattern": "weblog.yamanoku.net",
+        "custom_domain": true
+      }
+    ]
+  },
+  "text": "{\n  \"name\": \"weblog\",\n  \"d1_databases\": [\n    {\n      \"binding\": \"DB\",\n      \"database_name\": \"weblog\",\n      \"database_id\": \"3ca9f890-f6a1-4bdd-973d-e3a72b0004f3\",\n      \"migrations_dir\": \"./src/db/migrations\"\n    }\n  ],\n  \"account_id\": \"1b16f7266470fc5782fd6254ba8efec9\",\n  \"workers_dev\": true,\n  \"preview_urls\": true,\n  \"routes\": [\n    {\n      \"pattern\": \"weblog.yamanoku.net\",\n      \"custom_domain\": true\n    }\n  ]\n}\n"
+}

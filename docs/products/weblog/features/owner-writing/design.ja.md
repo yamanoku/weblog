@@ -166,9 +166,9 @@ erDiagram
 
 ### 編集画面
 
-GET `/edit` は空のフォームを返す。GET `/edit/{id}` は、所有者ならそのエントリのフォームを返す。編集できない ID は 404 である。POST `/edit` は作成、POST `/edit/{id}` は更新である。POST `/edit/tokens` はトークンを発行するか、再発行する。
+GET `/edit` は、作成フォームと、保存済み article の一覧を返す。一覧は draft と public を含み、note、bookmark、page を含めない。各項目は GET `/edit/{id}` へ進む。順序は updatedAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォームを返す。編集できない ID は 404 である。POST `/edit` は article を draft で作成する。POST `/edit/{id}` は、その article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。POST `/edit/tokens` はトークンを発行するか、再発行する。
 
-フォームの項目は、kind、title、body、visibility、bookmarkUrl である。応答の HTML には、確定した正規 URL か、拒否コードを出す。トークンを含む応答には `Cache-Control: no-store` を付ける。GET ではトークンの値を出さない。
+共有の書き込み項目は、kind、title、body、visibility、bookmarkUrl である。記事の編集フォームが送るのは title、body、visibility である。応答の HTML には、確定した正規 URL か、拒否コードを出す。トークンを含む応答には `Cache-Control: no-store` を付ける。GET ではトークンの値を出さない。
 
 ### CLI と `/entries`
 

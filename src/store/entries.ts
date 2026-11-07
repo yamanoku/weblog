@@ -24,6 +24,7 @@ export type StoredEntry = {
   title: string;
   body: string;
   visibility: string;
+  publishedAt: string | null;
 };
 
 // Reads one entries row. commitEntry uses this after it writes.
@@ -40,6 +41,7 @@ export async function readStoredEntry(
     title: saved.title,
     body: saved.body,
     visibility: saved.visibility,
+    publishedAt: saved.publishedAt,
   };
 }
 

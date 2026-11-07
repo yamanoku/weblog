@@ -166,9 +166,9 @@ The shared operations are createEntry, updateEntry, deleteEntry, getEntryForOwne
 
 ### Edit screen
 
-GET `/edit` returns an empty form. GET `/edit/{id}` returns that entry's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates. POST `/edit/{id}` updates. POST `/edit/tokens` issues a token, or reissues one.
+GET `/edit` returns the create form and the list of stored articles. The list includes draft and public, and omits notes, bookmarks, and pages. Each item opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
 
-The form fields are kind, title, body, visibility, and bookmarkUrl. The HTML response shows the committed canonical URL, or the refusal code. A response that contains a token uses `Cache-Control: no-store`. GET responses do not show the token value.
+The shared write fields are kind, title, body, visibility, and bookmarkUrl. The article edit form submits title, body, and visibility. The HTML response shows the committed canonical URL, or the refusal code. A response that contains a token uses `Cache-Control: no-store`. GET responses do not show the token value.
 
 ### CLI and `/entries`
 

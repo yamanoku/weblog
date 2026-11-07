@@ -112,6 +112,18 @@ Scenario: When view paths collide, both entries are public only at their canonic
 - When: The owner saves a public entry titled `A_B`.
 - Then: Neither entry receives a view path. Both are read at their canonical URLs. The path that `A B` had redirects with 301 to that entry's canonical URL.
 
+### See saved articles on the edit screen
+
+As the owner, I want the logged-in edit screen to list draft articles too, so that I can open an unpublished article and save a new visibility.
+
+**Acceptance criteria:**
+
+Scenario: The edit screen lists draft articles too
+
+- Given: The request is verified as the owner. One article is draft and another is public. One note exists.
+- When: The owner opens GET `/edit`.
+- Then: Both articles appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item opens that article's edit screen. The note is not in this list. The unauthenticated home page and title index do not include the draft body.
+
 ### Change visibility
 
 As the owner, I want to switch between draft and public so that unfinished text leaves the public site and only published articles, notes, and bookmarks can become deliverable.
@@ -284,6 +296,8 @@ An unauthenticated resolution target is only a public entry whose current title 
 ##### Get and list
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
+
+GET `/edit`, when the request is verified as the owner, returns the create form and a list of stored articles. The list includes draft and public. It does not include notes, bookmarks, or pages. Each item opens that article's edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return this list.
 
 ##### A store that is past the free allowance
 

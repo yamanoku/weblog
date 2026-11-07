@@ -226,6 +226,7 @@ test("commitEntry reads back the entries row it writes", async () => {
     title: "stored-note",
     body: "plain text",
     visibility: "draft",
+    publishedAt: null,
   });
   sqlite.close();
 });

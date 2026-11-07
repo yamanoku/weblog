@@ -204,11 +204,15 @@ An old path of a public entry redirects with 301 to the current view path. When 
 
 ##### HTML of the body
 
-The stored body stays plain text. The HTML keeps every line of that text. Page edges become links to the target's view path. When the public target has no view path, the link uses the canonical URL. A link to a title with no public entry remains, so the empty page can be opened. External URLs become external links.
+The stored body stays plain text. Public HTML does not replace that string.
+
+Public HTML for an article renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, `*` and `**` emphasis, inline code in backticks, fenced code, and `[label](URL)` links into HTML. A link URL is only `http`, `https`, or a path on this host. Raw HTML in the body is escaped and is not executed.
+
+Public HTML for any other kind keeps the stored lines. Page edges become links to the target's view path. When the public target has no view path, the link uses the canonical URL. A link to a title with no public entry remains, so the empty page can be opened. External URLs become external links.
 
 A bookmark's external URL is shown as an external link. The host does not insert that URL into the stored body.
 
-Decoration, icons, tables, code blocks, and formulas stay source text. The host interprets links only. The order of any later HTML for the other notation is decided when that rendering's requirements are written.
+Icons, tables, formulas, and Cosense decoration stay source text. The order of HTML for those is decided when that rendering's requirements are written.
 
 A `i.gyazo.com` or `gyazo.com` URL uses the image rule below. A `scrapbox.io/files` URL stays the original URL string. This feature does not copy that file.
 
@@ -332,6 +336,6 @@ The image route returns one object's bytes. It does not list the bucket.
 
 None that block Design for this feature.
 
-The order for rendering Cosense notation other than links is decided by the owner when that rendering's requirements are written. Until then, this feature shows the source text. Changing that order does not change the stored body or the edge rules.
+Article Markdown is rendered as the body HTML section says. The order for rendering icons, tables, formulas, and Cosense decoration is decided by the owner when that rendering's requirements are written. Until then, this feature shows that source text. Changing that order does not change the stored body or the edge rules.
 
 The billed size of bucket `gyazo-archives` is unmeasured. The 26.3 GiB figure above is the local expansion, not a bill. No billed size is written until the owner measures it. This gap does not change the image URL. Storage beyond 10 GB a month stays outside the zero-yen target.
