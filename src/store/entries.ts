@@ -26,6 +26,23 @@ export type StoredEntry = {
   visibility: string;
 };
 
+// Reads one entries row. commitEntry uses this after it writes.
+export async function readStoredEntry(
+  database: BetterSQLite3Database,
+  id: string,
+): Promise<StoredEntry | null> {
+  const found = await database.select().from(entries).where(eq(entries.id, id));
+  const saved = found[0];
+  if (!saved) return null;
+  return {
+    id: saved.id,
+    kind: saved.kind,
+    title: saved.title,
+    body: saved.body,
+    visibility: saved.visibility,
+  };
+}
+
 // Writes one entries row through the store adapter and reads it back.
 // Callers pass a database. This module does not touch the void/db proxy.
 export async function commitEntry(
@@ -47,14 +64,7 @@ export async function commitEntry(
     lastImportedBody: row.lastImportedBody ?? null,
     sourceUpdatedAt: row.sourceUpdatedAt ?? null,
   });
-  const found = await database.select().from(entries).where(eq(entries.id, row.id));
-  const saved = found[0];
+  const saved = await readStoredEntry(database, row.id);
   if (!saved) throw new Error("entry was not stored");
-  return {
-    id: saved.id,
-    kind: saved.kind,
-    title: saved.title,
-    body: saved.body,
-    visibility: saved.visibility,
-  };
+  return saved;
 }

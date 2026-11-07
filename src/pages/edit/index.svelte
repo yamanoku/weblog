@@ -5,7 +5,8 @@
     <input name="title" value="" />
   </label>
   <label>
-    Body
-    <textarea name="body"></textarea>
+    Markdown
+    <textarea name="body" rows="16"></textarea>
   </label>
+  <button type="submit">Save article</button>
 </form>
