@@ -2,6 +2,7 @@
   "name": "@weblog/clip",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "description": "Separate package that clips one article, one tweet, and one YouTube video. Sources: article, tweet, youtube.",
   "main": "extension.js"
 }

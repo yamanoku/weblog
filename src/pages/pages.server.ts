@@ -1,4 +1,4 @@
-import { publicEntries } from "../domain/catalog.js";
+import { publicEntries } from "../domain/catalog.ts";
 import { defineHandler } from "void";
 
 export const loader = defineHandler(() => {

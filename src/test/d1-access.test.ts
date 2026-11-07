@@ -11,9 +11,11 @@ import {
   decideEditAccess,
   editAccessDecision,
   importAccessPublicKey,
-} from "../access/edit-gate.js";
+} from "../access/edit-gate.ts";
 import { importWalkProject } from "../db/schema.ts";
-import { commitEntry } from "../store/entries.js";
+import { commitEntry } from "../store/entries.ts";
+
+type SqliteDatabase = InstanceType<typeof Database>;
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 const projectDir = fileURLToPath(new URL("../..", import.meta.url));
@@ -22,15 +24,15 @@ const ownerEmail = "owner@example.com";
 const audience = "test-aud";
 const issuer = accessIssuer("team.example");
 
-function readRoot(path) {
+function readRoot(path: string) {
   return readFileSync(join(rootDir, path), "utf8");
 }
 
-function readProject(path) {
+function readProject(path: string) {
   return readFileSync(join(projectDir, path), "utf8");
 }
 
-function walk(dir, files = []) {
+function walk(dir: string, files: string[] = []) {
   for (const name of readdirSync(dir)) {
     if (name === "node_modules" || name === ".git" || name === ".void" || name === "dist") continue;
     const path = join(dir, name);
@@ -57,17 +59,20 @@ function applyShippedMigrations() {
   return sqlite;
 }
 
-function tableSql(sqlite, name) {
-  const row = sqlite.prepare("SELECT sql FROM sqlite_master WHERE name = ?").get(name);
+function tableSql(sqlite: SqliteDatabase, name: string) {
+  const row = sqlite.prepare<[string], { sql: string }>("SELECT sql FROM sqlite_master WHERE name = ?").get(name);
   assert.equal(typeof row?.sql, "string", name);
+  if (!row) throw new Error(name);
   return row.sql;
 }
 
-function columns(sqlite, name) {
-  return sqlite.prepare(`PRAGMA table_info(${JSON.stringify(name)})`).all();
+type TableColumn = { name: string; pk: number };
+
+function columns(sqlite: SqliteDatabase, name: string): TableColumn[] {
+  return sqlite.prepare<[], TableColumn>(`PRAGMA table_info(${JSON.stringify(name)})`).all();
 }
 
-function primaryKey(sqlite, name) {
+function primaryKey(sqlite: SqliteDatabase, name: string) {
   return columns(sqlite, name)
     .filter((column) => column.pk > 0)
     .sort((left, right) => left.pk - right.pk)
@@ -87,14 +92,18 @@ async function keyPair() {
   );
 }
 
-function base64Url(bytes) {
+function base64Url(bytes: Uint8Array | ArrayBuffer) {
   const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   let binary = "";
   for (const byte of view) binary += String.fromCharCode(byte);
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
-async function signJwt(privateKey, payload, header = { alg: "RS256", typ: "JWT" }) {
+async function signJwt(
+  privateKey: CryptoKey,
+  payload: Record<string, unknown>,
+  header: { alg: string; typ: string; kid?: string } = { alg: "RS256", typ: "JWT" },
+) {
   const encodedHeader = base64Url(new TextEncoder().encode(JSON.stringify(header)));
   const encodedPayload = base64Url(new TextEncoder().encode(JSON.stringify(payload)));
   const signature = await crypto.subtle.sign(
@@ -105,14 +114,14 @@ async function signJwt(privateKey, payload, header = { alg: "RS256", typ: "JWT" 
   return `${encodedHeader}.${encodedPayload}.${base64Url(signature)}`;
 }
 
-function settings(publicKey) {
+function settings(publicKey: Awaited<ReturnType<typeof importAccessPublicKey>> | null) {
   return { ownerEmail, issuer, audience, publicKey, now };
 }
 
 test("the shipped migration creates the database.md tables, keys, and indexes", () => {
   const sqlite = applyShippedMigrations();
   const tables = sqlite
-    .prepare(
+    .prepare<[], { name: string }>(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
     )
     .all()
@@ -303,8 +312,9 @@ test("access assertion prefers the header and otherwise reads the cookie", () =>
 test("edit access verifies with the certificate whose kid matches", async () => {
   const previous = await keyPair();
   const current = await keyPair();
-  const previousJwk = await crypto.subtle.exportKey("jwk", previous.publicKey);
-  const currentJwk = await crypto.subtle.exportKey("jwk", current.publicKey);
+  type LabeledJwk = { kid?: string; alg?: string };
+  const previousJwk = (await crypto.subtle.exportKey("jwk", previous.publicKey)) as LabeledJwk;
+  const currentJwk = (await crypto.subtle.exportKey("jwk", current.publicKey)) as LabeledJwk;
   previousJwk.kid = "previous";
   previousJwk.alg = "RS256";
   currentJwk.kid = "current";
@@ -380,6 +390,6 @@ test("domain and pages stay free of the store and the Access check", () => {
   assert.equal(config.includes("crons"), false);
   assert.match(readRoot("pages/index.svelte"), /weblog\.yamanoku\.net/);
   assert.equal(readRoot("pages/index.svelte").includes("OWNER_EMAIL"), false);
-  assert.match(readRoot("middleware/01.access.js"), /editAccessDecision/);
-  assert.match(readRoot("middleware/01.access.js"), /Cf-Access-Jwt-Assertion/);
+  assert.match(readRoot("middleware/01.access.ts"), /editAccessDecision/);
+  assert.match(readRoot("middleware/01.access.ts"), /Cf-Access-Jwt-Assertion/);
 });

@@ -5,21 +5,66 @@ import vm from "node:vm";
 
 const script = readFileSync(new URL("../extension.js", import.meta.url), "utf8");
 
-function loadClip() {
-  const window = {};
+type OwnerWrite = {
+  kind: string;
+  title: string;
+  body: string;
+  visibility: string;
+  bookmarkUrl: string;
+};
+
+type ClipResult = {
+  source: string | null;
+  ownerWrite: OwnerWrite | null;
+  refusal: string | null;
+};
+
+type SubmitResult = {
+  stored: boolean;
+  reason: string;
+  count: number;
+};
+
+type WeblogClip = {
+  SOURCE_KINDS: string[];
+  clipSource: (fixture: unknown) => ClipResult;
+  submitClip: (
+    result: unknown,
+    credentials: { token?: string } | undefined,
+    store: object[],
+  ) => SubmitResult;
+};
+
+type ClipFixture = {
+  source: string;
+  title: string;
+  body: string;
+  url: string;
+  visibility: string;
+};
+
+function loadClip(): WeblogClip {
+  const window: { weblogClip?: WeblogClip } = {};
   const context = vm.createContext({ window });
   vm.runInContext(script, context, { filename: "extension.js" });
   assert.equal("module" in context, false);
   assert.equal("require" in context, false);
-  return context.window.weblogClip;
+  const clip = window.weblogClip;
+  if (!clip) throw new Error("window.weblogClip missing");
+  return clip;
 }
 
-function readBack(value) {
-  return JSON.parse(JSON.stringify(value));
+function readBack<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
-function readFixture(name) {
-  return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), "utf8"));
+function readFixture(name: string): ClipFixture {
+  return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), "utf8")) as ClipFixture;
+}
+
+function ownerWrite(result: ClipResult): OwnerWrite {
+  if (!result.ownerWrite) throw new Error("expected ownerWrite");
+  return result.ownerWrite;
 }
 
 test("the package lists the three sources", () => {
@@ -43,15 +88,16 @@ for (const name of ["article", "tweet", "youtube"]) {
     const clip = loadClip();
     const fixture = readFixture(name);
     const result = readBack(clip.clipSource(fixture));
+    const write = ownerWrite(result);
     assert.equal(result.source, name);
     assert.equal(result.refusal, null);
-    assert.equal(result.ownerWrite.kind, "bookmark");
-    assert.equal(result.ownerWrite.title, fixture.title);
-    assert.equal(result.ownerWrite.body, fixture.body);
-    assert.equal(result.ownerWrite.visibility, fixture.visibility);
-    assert.equal(result.ownerWrite.bookmarkUrl, fixture.url);
-    assert.equal(result.ownerWrite.body.includes(fixture.url), false);
-    assert.deepEqual(Object.keys(result.ownerWrite).sort(), [
+    assert.equal(write.kind, "bookmark");
+    assert.equal(write.title, fixture.title);
+    assert.equal(write.body, fixture.body);
+    assert.equal(write.visibility, fixture.visibility);
+    assert.equal(write.bookmarkUrl, fixture.url);
+    assert.equal(write.body.includes(fixture.url), false);
+    assert.deepEqual(Object.keys(write).sort(), [
       "body",
       "bookmarkUrl",
       "kind",
@@ -67,7 +113,7 @@ for (const name of ["article", "tweet", "youtube"]) {
     const second = clip.clipSource(fixture);
     assert.notEqual(first, second);
     assert.deepEqual(readBack(first), readBack(second));
-    assert.equal(readBack(first).ownerWrite.kind, "bookmark");
+    assert.equal(ownerWrite(readBack(first)).kind, "bookmark");
   });
 }
 
@@ -82,10 +128,11 @@ test("title whitespace is normalized and extra fixture fields are dropped", () =
     author: "ignored",
   };
   const result = readBack(clip.clipSource(fixture));
-  assert.equal(result.ownerWrite.title, "Example article");
-  assert.equal(result.ownerWrite.body, fixture.body);
-  assert.equal(result.ownerWrite.bookmarkUrl, fixture.url);
-  assert.equal(Object.hasOwn(result.ownerWrite, "author"), false);
+  const write = ownerWrite(result);
+  assert.equal(write.title, "Example article");
+  assert.equal(write.body, fixture.body);
+  assert.equal(write.bookmarkUrl, fixture.url);
+  assert.equal(Object.hasOwn(write, "author"), false);
   assert.equal(JSON.stringify(result).includes("ignored"), false);
 });
 
@@ -109,9 +156,10 @@ test("owner-writing refusals return no payload", () => {
   assert.equal(readBack(clip.clipSource({ ...base, body: "", visibility: "public" })).refusal, "empty_body");
   assert.equal(readBack(clip.clipSource({ ...base, visibility: "secret" })).refusal, "invalid_visibility");
   const draft = readBack(clip.clipSource({ ...base, body: "", visibility: "draft" }));
+  const draftWrite = ownerWrite(draft);
   assert.equal(draft.refusal, null);
-  assert.equal(draft.ownerWrite.kind, "bookmark");
-  assert.equal(draft.ownerWrite.body, "");
-  assert.equal(draft.ownerWrite.visibility, "draft");
-  assert.equal(draft.ownerWrite.bookmarkUrl, base.url);
+  assert.equal(draftWrite.kind, "bookmark");
+  assert.equal(draftWrite.body, "");
+  assert.equal(draftWrite.visibility, "draft");
+  assert.equal(draftWrite.bookmarkUrl, base.url);
 });

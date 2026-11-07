@@ -10,33 +10,37 @@ import {
   publicEntries,
   publicEntryByTitle,
   reservedTitles,
-} from "../domain/catalog.js";
+} from "../domain/catalog.ts";
 
 const source = new URL("..", import.meta.url);
 const root = new URL("../..", import.meta.url);
 const rootDir = fileURLToPath(source);
 
-function readRoot(path) {
+function readRoot(path: string) {
   return readFileSync(join(rootDir, path), "utf8");
 }
 
 const required = ["svelte", "@void/svelte", "void"];
 const rejected = ["@void/react", "@void/vue", "@void/solid", "@sveltejs/adapter-cloudflare"];
 
-function readProject(path) {
-  return readFileSync(fileURLToPath(new URL(path, root)), "utf8");
+type PackageManifest = {
+  scripts: Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+};
+
+function readJson(path: string): PackageManifest {
+  return JSON.parse(readFileSync(new URL(path, root), "utf8")) as PackageManifest;
 }
 
-function readJson(path) {
-  return JSON.parse(readFileSync(new URL(path, root), "utf8"));
-}
-
-function declaredNames(manifest) {
-  const sections = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"];
+function declaredNames(manifest: PackageManifest) {
+  const sections = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"] as const;
   return sections.flatMap((section) => Object.keys(manifest[section] ?? {}));
 }
 
-function walk(dir, files = []) {
+function walk(dir: string, files: string[] = []) {
   for (const name of readdirSync(dir)) {
     if (name === "node_modules" || name === ".git" || name === ".void" || name === "dist") {
       continue;
@@ -71,7 +75,7 @@ test("Vite+ runs the app tasks and registers the Void Svelte plugins", () => {
   for (const name of ["dev", "build", "preview", "test", "check"]) {
     assert.match(manifest.scripts[name], /^vp\s/);
   }
-  const config = readFileSync(new URL("vite.config.js", root), "utf8");
+  const config = readFileSync(new URL("vite.config.ts", root), "utf8");
   assert.match(config, /from ["']vite-plus["']/);
   assert.match(config, /from ["']@void\/svelte\/plugin["']/);
   assert.match(config, /voidSvelte\s*\(/);
@@ -80,12 +84,13 @@ test("Vite+ runs the app tasks and registers the Void Svelte plugins", () => {
 });
 
 test("app source does not export ssr = false", () => {
-  const files = [new URL("vite.config.js", root).pathname];
+  const files = [new URL("vite.config.ts", root).pathname];
   for (const dir of appSourceRoots) {
     try {
       files.push(...walk(dir.pathname));
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
+    } catch (error: unknown) {
+      const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+      if (code !== "ENOENT") throw error;
     }
   }
   for (const file of files) {
@@ -95,7 +100,7 @@ test("app source does not export ssr = false", () => {
 });
 
 test("pages render the shipped mock and leave reserved keys off the title entry", () => {
-  const catalog = readRoot("domain/catalog.js");
+  const catalog = readRoot("domain/catalog.ts");
   assert.equal(catalog.includes("void/db"), false);
   assert.equal(/\bfrom\s+["']void["']/.test(catalog), false);
   assert.equal(catalog.includes("@void/svelte"), false);
@@ -111,9 +116,14 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.equal(titles.includes("index-only"), true);
   assert.equal(titles.includes("draft-thought"), false);
   const sample = deliverable[0];
-  assert.equal(publicEntryByTitle(sample.title).id, sample.id);
+  if (!sample) throw new Error("deliverable catalog is empty");
+  const found = publicEntryByTitle(sample.title);
+  if (!found) throw new Error("deliverable title is missing");
+  assert.equal(found.id, sample.id);
   assert.equal(publicEntryByTitle("missing-title"), null);
-  assert.equal(entryById(sample.id).title, sample.title);
+  const byId = entryById(sample.id);
+  if (!byId) throw new Error("deliverable id is missing");
+  assert.equal(byId.title, sample.title);
   assert.deepEqual(reservedTitles, [
     "e",
     "edit",
@@ -132,13 +142,13 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   }
   assert.equal(isReservedTitle(sample.title), false);
 
-  const titleLoader = readRoot("pages/[title].server.js");
+  const titleLoader = readRoot("pages/[title].server.ts");
   assert.match(titleLoader, /domain\/catalog/);
   assert.match(titleLoader, /isReservedTitle/);
   const titlePage = readRoot("pages/[title].svelte");
   assert.match(titlePage, /Empty page/);
   assert.match(titlePage, /entry\.body/);
-  const homeLoader = readRoot("pages/index.server.js");
+  const homeLoader = readRoot("pages/index.server.ts");
   assert.match(homeLoader, /deliverableEntries/);
   const editForm = readRoot("pages/edit/index.svelte");
   assert.match(editForm, /Create an entry/);

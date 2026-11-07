@@ -5,19 +5,64 @@ import vm from "node:vm";
 
 const script = readFileSync(new URL("../extension.js", import.meta.url), "utf8");
 
-function loadClip() {
-  const window = {};
+type OwnerWrite = {
+  kind: string;
+  title: string;
+  body: string;
+  visibility: string;
+  bookmarkUrl: string;
+};
+
+type ClipResult = {
+  source: string | null;
+  ownerWrite: OwnerWrite | null;
+  refusal: string | null;
+};
+
+type SubmitResult = {
+  stored: boolean;
+  reason: string;
+  count: number;
+};
+
+type WeblogClip = {
+  SOURCE_KINDS: string[];
+  clipSource: (fixture: unknown) => ClipResult;
+  submitClip: (
+    result: unknown,
+    credentials: { token?: string } | undefined,
+    store: object[],
+  ) => SubmitResult;
+};
+
+type ClipFixture = {
+  source: string;
+  title: string;
+  body: string;
+  url: string;
+  visibility: string;
+};
+
+function loadClip(): WeblogClip {
+  const window: { weblogClip?: WeblogClip } = {};
   const context = vm.createContext({ window });
   vm.runInContext(script, context, { filename: "extension.js" });
-  return context.window.weblogClip;
+  const clip = window.weblogClip;
+  if (!clip) throw new Error("window.weblogClip missing");
+  return clip;
 }
 
-function readBack(value) {
-  return JSON.parse(JSON.stringify(value));
+function readBack<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
-function readFixture(name) {
-  return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), "utf8"));
+function readFixture(name: string): ClipFixture {
+  return JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), "utf8")) as ClipFixture;
+}
+
+function ownerWrite(result: ClipResult): OwnerWrite {
+  if (!result.ownerWrite) throw new Error("expected ownerWrite");
+  return result.ownerWrite;
 }
 
 test("a decided clip payload is stored only with the CLI token", () => {
@@ -25,7 +70,7 @@ test("a decided clip payload is stored only with the CLI token", () => {
   for (const name of ["article", "tweet", "youtube"]) {
     const fixture = readFixture(name);
     const result = readBack(clip.clipSource(fixture));
-    assert.equal(result.ownerWrite.kind, "bookmark");
+    assert.equal(ownerWrite(result).kind, "bookmark");
     const store = [{ id: "already-there" }];
 
     const missing = readBack(clip.submitClip(result, undefined, store));
@@ -56,7 +101,7 @@ test("a refused clip stores nothing even with a CLI token", () => {
   const fixture = readFixture("article");
   const refused = readBack(clip.clipSource({ ...fixture, title: " " }));
   assert.equal(refused.ownerWrite, null);
-  const store = [];
+  const store: object[] = [];
   const withToken = readBack(clip.submitClip(refused, { token: "owner-cli-token" }, store));
   assert.deepEqual(withToken, { stored: false, reason: "no_payload", count: 0 });
   assert.deepEqual(store, []);

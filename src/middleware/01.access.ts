@@ -4,19 +4,23 @@ import {
   accessIssuer,
   editAccessDecision,
   importAccessPublicKey,
-} from "../access/edit-gate.js";
+} from "../access/edit-gate.ts";
 
-function rawEnv() {
-  const store = globalThis[Symbol.for("void.envContext.v1")];
+type EnvStore = { getStore?: () => unknown };
+
+function rawEnv(): Record<string, unknown> | null {
+  const globals = globalThis as unknown as Record<symbol, EnvStore | undefined>;
+  const store = globals[Symbol.for("void.envContext.v1")];
   const value = store?.getStore?.();
-  return value && typeof value === "object" ? value : null;
+  if (!value || typeof value !== "object") return null;
+  return value as Record<string, unknown>;
 }
 
-function setting(context, name) {
+function readSetting(context: { env: unknown }, name: string): string {
   const sources = [rawEnv(), context.env];
   for (const source of sources) {
     if (!source || typeof source !== "object") continue;
-    const value = source[name];
+    const value = (source as Record<string, unknown>)[name];
     if (typeof value === "string") return value.trim();
   }
   const proc = globalThis.process;
@@ -25,7 +29,7 @@ function setting(context, name) {
 }
 
 export default defineMiddleware(async (context, next) => {
-  const material = setting(context, "ACCESS_PUBLIC_KEY");
+  const material = readSetting(context, "ACCESS_PUBLIC_KEY");
   let publicKey = null;
   if (material.length > 0) {
     try {
@@ -41,9 +45,9 @@ export default defineMiddleware(async (context, next) => {
       context.req.header("cookie") ?? "",
     ),
     {
-      ownerEmail: setting(context, "OWNER_EMAIL"),
-      issuer: accessIssuer(setting(context, "ACCESS_TEAM_DOMAIN")),
-      audience: setting(context, "ACCESS_AUD"),
+      ownerEmail: readSetting(context, "OWNER_EMAIL"),
+      issuer: accessIssuer(readSetting(context, "ACCESS_TEAM_DOMAIN")),
+      audience: readSetting(context, "ACCESS_AUD"),
       publicKey,
       now: Date.now(),
     },

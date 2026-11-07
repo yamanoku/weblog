@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "legacy",
+    "lib": ["ES2022"],
+    "types": [],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "removeComments": true,
+    "declaration": false,
+    "sourceMap": false,
+    "newLine": "lf",
+    "rootDir": ".",
+    "outDir": "."
+  },
+  "files": ["extension.ts"]
+}

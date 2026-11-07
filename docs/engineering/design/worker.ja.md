@@ -29,7 +29,7 @@
 
 [ページルーティング](https://void.cloud/guide/pages-routing/overview) は、`pages/` があると始まると説明している。`routes/` と並べて置ける。ページのコンポーネントは、通常、最初の描画をサーバで行い、その後の移動と操作をブラウザで行う。最初の要求は、描画された HTML を受け取る。その後の移動は、ローダを実行し、文書を読み直さずにページを更新する。このアプリは、そのモードを使う。画面のアダプタは `@void/svelte` である。Vite のプラグインは、`@void/svelte/plugin` の `voidSvelte()` である。同じページは `@void/react`、`@void/vue`、`@void/solid` も示している。このアプリは、それらをインストールしない。公開の HTML ページと編集画面は `src/pages/` に置く。ページでない HTTP は `src/routes/` に残す。このアプリは `ssr = false` を出さない。その指定は、サーバが描画したコンポーネントの HTML ではなく、ブラウザで載せる殻を返す。同じページの表が、その行の出典である。
 
-Void の `sourceDir` は `src` である。`pages/`、`routes/`、`middleware/`、`db/` を含むアプリケーションのソースは、そのディレクトリの下に置く。`void.config.ts`、`vite.config.js`、`package.json` はリポジトリのルートに残す。`npm run dev`、`npm run build`、デプロイは、そのルートから実行し、`src/` を読む。
+Void の `sourceDir` は `src` である。`pages/`、`routes/`、`middleware/`、`db/` を含むアプリケーションのソースは、そのディレクトリの下に置く。`void.config.ts`、`vite.config.ts`、`package.json` はリポジトリのルートに残す。`npm run dev`、`npm run build`、デプロイは、そのルートから実行し、`src/` を読む。
 
 [サーバルーティング](https://void.cloud/guide/server-routing) は、経路とミドルウェアに Hono を使うと説明している。経路ハンドラはドメインを呼び、その結果を返す。ドメインは `void`、`void/db`、Hono、Svelte、`@void/svelte`、ORM、Fedify、Cloudflare SDK を import しない。ページのファイルは、`@void/svelte` を通して Svelte を import する。連合のアダプタは Fedify を使わない。
 

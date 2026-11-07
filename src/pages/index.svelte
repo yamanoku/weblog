@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { Link } from "@void/svelte";
 
   let { entries } = $props();
