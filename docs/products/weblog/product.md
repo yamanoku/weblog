@@ -6,12 +6,12 @@
 
 weblog.yamanoku.net is the public hypertext of one person, yamanoku. Hypertext here means pages whose titles can be followed in both directions. The host publishes blog articles, short posts, bookmarks, and pages brought in from [the Cosense project yamanoku](https://scrapbox.io/yamanoku/). An entry is the stored unit of body text. Those four kinds are entries on this host, not separate applications. The canonical body is plain text. HTML shown to readers is produced from that text and is not the stored form.
 
-People can read the public pages and the human-readable feeds. ActivityPub is the protocol other instances use to follow an actor and receive activities. A remote instance can follow `acct:yamanoku@weblog.yamanoku.net` and receive the public entries this host delivers. Delivered entries are public articles, short posts, and bookmarks. A page brought in from Cosense stays out of the human-readable feeds and out of delivery until the owner changes its kind.
+People can read the public pages and the human-readable feeds. On a note's canonical page, they can also read the notes the owner added as replies. A reply stays on that page. ActivityPub is the protocol other instances use to follow an actor and receive activities. A remote instance can follow `acct:yamanoku@weblog.yamanoku.net` and receive the public entries this host delivers. Delivered entries are public articles, short posts, and bookmarks. A page brought in from Cosense stays out of the human-readable feeds and out of delivery until the owner changes its kind.
 
 The host is `weblog.yamanoku.net`. The only writer is the owner, and the product has no signup. The product does not include the following.
 
 - Following other actors
-- Replies, boosts, and favorites
+- Replies by anyone other than the owner, ActivityPub Reply activities, boosts, and favorites
 - WebMention
 - Realtime co-editing
 - A migration from [archives.yamanoku.net](https://archives.yamanoku.net/)
@@ -93,7 +93,7 @@ A remote ActivityPub instance has no actor `acct:yamanoku@weblog.yamanoku.net` t
 The product is successful when all of the following hold.
 
 - The owner can publish articles, short posts, and bookmarks to weblog.yamanoku.net from the browser and the CLI. The owner can also move the created pages named by the import requirements onto the same host.
-- A person who is not logged in can read public entries and follow title links in both directions. They can also read the human-readable feeds.
+- A person who is not logged in can read public entries and follow title links in both directions. They can also read the human-readable feeds. On a note's canonical page, they can read the replies the owner added. Those replies are not feed items and are not delivered.
 - A remote instance can follow `acct:yamanoku@weblog.yamanoku.net` and receive the public entries this host delivers.
 - Pages brought in from Cosense stay out of the human-readable feeds until the owner changes their kind. They also stay out of remote delivery.
 - The new cost of running the app is zero yen. Work past the free allowance fails or waits until 00:00 UTC the next day. The app does not move itself onto a paid plan.

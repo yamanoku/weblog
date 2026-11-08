@@ -19,7 +19,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Which entries are
 ### Out of scope
 
 - Following other actors from this host
-- Replies, boosts, likes, and WebMention
+- ActivityPub Reply activities, boosts, likes, and WebMention. A note the owner adds as a reply stays in owner writing. It is not deliverable, and this feature does not send it
 - More than one user on this host
 - A client posting API. Owner writes stay in owner writing
 - Human-readable HTML, Atom, JSON Feed, the title index, empty pages, and Gyazo bytes

@@ -172,7 +172,11 @@ The note field is the first block of GET `/`, directly under the navigation. It 
 
 The note field submits only the body, as `noteBody`, to POST `/edit?note`. That post stores kind note, an empty title, and visibility public. `publishedAt` is the commit time. `view_path` stays NULL. An empty `noteBody` stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. Success redirects with 302 to GET `/?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}` only when the same request is verified as the owner and `{id}` is a stored public note. An unverified GET `/?posted={id}` omits the URL and the field. The article list does not include the note. The notes list does. POST `/edit` without `note` still creates a draft article and does not read `posted`.
 
-The notes list on GET `/edit` returns draft and public notes, newest `createdAt` first, then descending id. Each item shows the body and visibility and does not open GET `/edit/{id}`. Delete submits `noteId` to POST `/edit?deleteNote`. Only a stored note is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a note is 404 and deletes nothing.
+The notes list on GET `/edit` returns draft and public notes, newest `createdAt` first, then descending id. A reply is included. Each item shows the body and visibility and does not open GET `/edit/{id}`. Delete submits `noteId` to POST `/edit?deleteNote`. Only a stored note is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. The delete does not change `in_reply_to_id` or `thread_root_id` on any other row. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a note is 404 and deletes nothing.
+
+Each public note on GET `/e/{id}` includes a reply field when that request is verified as the owner by the same JWT rules as the note field. Access still covers only `/edit` and `/edit/*`. A missing or invalid JWT leaves the page at 200 and omits every reply field. The thread of bodies does not change. When a field is included, the response uses `Cache-Control: private, no-store` and `Vary: Cookie`. On the local dev server, where Access is not in front of the process, the field is included.
+
+The reply field submits `noteBody` and `replyTo` to POST `/edit?reply`. `replyTo` is the id of the note the owner chose on that page. The post stores kind note, an empty title, and visibility public. `publishedAt` stays NULL. `view_path` stays NULL. `in_reply_to_id` is the chosen note's id. `thread_root_id` is the chosen note's `thread_root_id` when that column is set, and otherwise the chosen note's id. An empty `noteBody` stores nothing. When the chosen note is a stored public note, the response redirects with 302 to GET `/e/{replyTo}?refused=empty_body`. That page shows the empty-body refusal to the owner. A body of only whitespace is stored. When `replyTo` is missing, is not a note, or is not public, the response is 404 and stores nothing. Success redirects with 302 to GET `/e/{id}` of the new note. POST `/entries` does not set either reply column. A note created there is not a reply.
 
 GET `/edit` also returns the bookmark create form and the bookmark list described above. The bookmark list includes draft and public, and omits articles, notes, and pages. Each item shows the title, the external URL, and the visibility, and opens GET `/edit/{id}`. The order is newest `createdAt` first, then descending id. POST `/edit?bookmark` creates a bookmark as draft. The form submits `title`, `bookmarkUrl`, and `body`. The stored body is the submitted text. The host does not insert `bookmarkUrl` into the body. `bookmark_url` is the submitted URL with whitespace removed from both ends. An empty title after removing whitespace from both ends stores nothing and returns 422 `missing_title`. A `bookmarkUrl` that is missing, or empty after that trim, stores nothing and returns 422 `missing_bookmark_url`. A draft may have an empty body. The create does not set `publishedAt` and does not create an article or a note.
 
@@ -273,13 +277,21 @@ POST from the edit screen stays behind Access. `/entries` is not authorized by a
 
 ## Deployment notes
 
-The first deploy creates this document's tables in an empty D1 database. There is no migration from an existing site.
+The first deploy creates this document's tables in an empty D1 database. There is no migration from an existing site. A database that already has entries adds nullable `in_reply_to_id` and `thread_root_id`. Existing rows keep NULL in both columns. Those notes stay deliverable.
 
 Access covers only `/edit` and `/edit/*`. Putting the whole host behind Access would place the unauthenticated canonical URL behind a login screen. That placement contradicts this feature's public responses.
 
 The owner issues the first CLI token after opening `/edit`. Until then, the CLI cannot write.
 
 ## Alternatives considered
+
+### List each reply on the home page
+
+The owner would see every reply as its own item on GET `/`. The requirements keep a reply on the canonical page of its thread. GET `/` lists notes that are not replies.
+
+### Reply only to the first note
+
+The owner would append every reply to the first note and could not answer a later note. The requirements let the owner reply to any note in the thread and show which note each reply answers.
 
 ### Put the write API behind Access as well
 

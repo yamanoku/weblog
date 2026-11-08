@@ -2,7 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
 import { bookmarkDeleteId } from "../../domain/edit-bookmark.ts";
-import { noteBodyField, noteDeleteId } from "../../domain/edit-note.ts";
+import { noteBodyField, noteDeleteId, replyToField } from "../../domain/edit-note.ts";
 import {
   deleteBookmarkFromEdit,
   listBookmarksForEdit,
@@ -13,7 +13,12 @@ import {
   listArticlesForEdit,
   submitArticleFromEdit,
 } from "../../store/edit-article.ts";
-import { deleteNoteFromEdit, listNotesForEdit, submitNoteFromEdit } from "../../store/edit-note.ts";
+import {
+  deleteNoteFromEdit,
+  listNotesForEdit,
+  submitNoteFromEdit,
+  submitReplyFromEdit,
+} from "../../store/edit-note.ts";
 
 function postedText(value: unknown): string {
   return typeof value === "string" ? value : "";
@@ -46,6 +51,22 @@ export const actions = {
       throw new ValidationError({ noteBody: result.error });
     }
     return c.redirect(`/?posted=${result.id}`);
+  }),
+  reply: defineHandler(async (c) => {
+    const type = (c.req.header("content-type") ?? "").toLowerCase();
+    const payload = type.includes("application/json")
+      ? await c.req.json().catch(() => null)
+      : await c.req.parseBody();
+    const result = await submitReplyFromEdit(
+      editArticleDatabase(),
+      noteBodyField(payload),
+      replyToField(payload),
+    );
+    if ("error" in result) {
+      if (result.error === "empty_body") return c.redirect(`/e/${result.id}?refused=empty_body`);
+      throw new HTTPException(404, { message: "not_found" });
+    }
+    return c.redirect(`/e/${result.id}`);
   }),
   deleteNote: defineHandler(async (c) => {
     const posted = await c.req.parseBody();

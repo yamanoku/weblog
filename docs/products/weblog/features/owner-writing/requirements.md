@@ -184,6 +184,48 @@ Scenario: When the note delete is sent an article ID, the article remains
 - When: The owner submits the note delete with that article's ID.
 - Then: The article remains. The response is not a successful note deletion.
 
+### Reply to a note from its canonical page
+
+As the owner, I want a reply field on each note shown at a note's canonical URL, so that a body becomes a public note linked to the note I chose and I can read the connected notes on that page. The field is absent unless the request is verified as the owner.
+
+**Acceptance criteria:**
+
+Scenario: An unverified note page omits the reply field
+
+- Given: The request is not verified as the owner. One public note exists.
+- When: The caller opens that note's canonical URL.
+- Then: The response is 200 and includes the body. The reply field is absent.
+
+Scenario: When the owner replies to a note, the host stores a public note in that thread
+
+- Given: The request is verified as the owner. Public note A does not reply to another note. The canonical page of A shows a reply field on A.
+- When: The owner submits a body from that field.
+- Then: One entry is stored with kind note, an empty title, the submitted body, and visibility public. It has no view path and no publishedAt. It replies to A and belongs to A's thread. It is not deliverable. No article is created. The response shows the thread, including the new body, in created-time order, and shows that the new note replies to A. The notes list includes it. GET `/` does not. An unauthenticated request for the new note's canonical URL returns the thread.
+
+Scenario: When the owner replies to a reply, the new note stays in the same thread
+
+- Given: The request is verified as the owner. Public note A does not reply to another note. Public note B replies to A.
+- When: The owner submits a body from the reply field on B.
+- Then: One public note is stored. It replies to B and belongs to A's thread. It is not deliverable. The canonical page of A, of B, and of the new note each shows the three bodies in created-time order. The new note shows that it replies to B.
+
+Scenario: When the reply body is empty, the host stores nothing and shows the refusal
+
+- Given: The request is verified as the owner. Public note A exists.
+- When: The owner submits an empty body from the reply field on A.
+- Then: The host stores no entry. The response lets the owner distinguish that the refusal is the empty body. This is not an authentication failure. A body of only whitespace is not empty.
+
+Scenario: When the reply target is not a public note, the host stores nothing
+
+- Given: The request is verified as the owner. One public article exists. One draft note exists.
+- When: The owner submits a body as a reply to the public article, to the draft note, and to an id that is not stored.
+- Then: The host stores no entry. The article and the draft note remain. The response is not an authentication failure.
+
+Scenario: When the owner deletes one note in a thread, the other notes remain
+
+- Given: The request is verified as the owner. Public note A does not reply to another note. Public note B replies to A. Public note C replies to B. None of them has a delivered record.
+- When: The owner deletes B.
+- Then: B disappears from the notes list. The canonical URL of B is 404 and does not return B's body. A and C remain. The canonical page of C includes the bodies of A and C, does not include B's body, and shows no reply target on C.
+
 ### Save a bookmark on the edit screen
 
 As the owner, I want the edit screen to create, list, update, and delete bookmarks so that an external URL and a comment are stored on this host apart from articles and notes.
@@ -371,7 +413,7 @@ A bookmark's external URL is required and is separate from the body. The host st
 
 Visibility is draft or public. Any other value is refused and stored nowhere.
 
-A deliverable entry has kind article, note, or bookmark, and visibility public. A page is not deliverable even when public. A draft is not deliverable.
+A deliverable entry has kind article, note, or bookmark, and visibility public. A note that replies to another note is not deliverable. That note is public at its canonical URL and has no publishedAt. A page is not deliverable even when public. A draft is not deliverable.
 
 publishedAt is the time the entry became deliverable. An entry that is not deliverable has no publishedAt. An update of an entry that is already deliverable does not change publishedAt. When an entry stops being deliverable and later becomes deliverable again, publishedAt becomes that later time.
 
@@ -417,7 +459,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
 
-GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry.
+GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only.
 
 ##### A store that is past the free allowance
 
@@ -463,14 +505,14 @@ When the browser authentication service cannot verify the owner, a browser write
 
 ### Required data
 
-- **Entry:** Immutable ID, kind, normalized current title, past titles, body line text, visibility, created time, updated time, bookmark external URL, publishedAt, and Cosense page ID. After deletion, an undelivered entry leaves public get. A delivered deleted ID remains as a 410 without the body.
+- **Entry:** Immutable ID, kind, normalized current title, past titles, body line text, visibility, created time, updated time, bookmark external URL, publishedAt, and Cosense page ID. A note that replies to another note also has the id of the note it replies to and the id of the note that started the thread. After deletion, an undelivered entry leaves public get. A delivered deleted ID remains as a 410 without the body.
 - **Edge:** Source immutable ID, title written in the body, and target immutable ID. The edges are replaced in the same update that stores the source body. An edge remains when it has no target.
 - **CLI token hash:** Used to verify a token the owner issued. The token value is not retained. Reissue invalidates the previous hash.
 - **Delivered record:** Shows that the entry was delivered at least once. The ActivityPub feature records it. This feature does not remove that record when visibility or kind changes, or when an undelivered entry is deleted. After deletion of a delivered ID, the record remains so the URL can return 410.
 
 ### Relationships
 
-An entry has one immutable ID. It has one current title, except a note with an empty title. A past title is a former current title of that entry. An edge belongs to one source entry and points at zero or one target through the title written in the body. A bookmark's external URL is a field separate from that entry's body. A CLI token hash is the owner's write credential and does not belong to an entry. A delivered record corresponds to one immutable ID.
+An entry has one immutable ID. It has one current title, except a note with an empty title. A past title is a former current title of that entry. An edge belongs to one source entry and points at zero or one target through the title written in the body. A bookmark's external URL is a field separate from that entry's body. A note that replies to another note stores that note's id and the id of the note that started the thread. A note that is not a reply leaves both empty. Deleting one note does not change those two ids on another note. A CLI token hash is the owner's write credential and does not belong to an entry. A delivered record corresponds to one immutable ID.
 
 ### Personal information
 

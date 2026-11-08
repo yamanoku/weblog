@@ -29,7 +29,7 @@ The signature joint follows the Social Web Incubator Community Group report on A
 - Owner validation, the edit screen, and the CLI token
 - Human-readable HTML, Atom, JSON Feed, the title index, empty pages, and Gyazo bytes
 - Cosense listing, the import cursor, and merging a local edit with a newer source
-- A block list, replies, boosts, likes, and a client posting API
+- A block list, ActivityPub Reply activities, boosts, likes, and a client posting API. An owner reply on a note stays in owner writing and is not delivered
 - The UI framework and the ORM
 
 ## Implementation approach
@@ -42,7 +42,7 @@ The save response returns after that batch. It does not wait for a follower POST
 
 ### Which change plans an activity
 
-`planDelivery` compares the stored entry with the next one. A missing previous entry is not deliverable. Deliverable means kind `article`, `note`, or `bookmark`, and visibility `public`.
+`planDelivery` compares the stored entry with the next one. A missing previous entry is not deliverable. Deliverable means kind `article`, `note`, or `bookmark`, visibility `public`, and the entry is not a reply to another note. Owner writing defines that reply.
 
 - The entry becomes deliverable. The plan is `create`. The batch inserts `delivery_records` even when no follower exists.
 - The entry stays deliverable and the plain-text body changes. The plan is `update`.

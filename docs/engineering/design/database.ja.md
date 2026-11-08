@@ -37,11 +37,13 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 ### `entries`
 
-列の前半は `id`、`kind`、`title`、`body`、`visibility`、`bookmark_url`、`published_at` である。残りの列は `cosense_page_id`、`created_at`、`updated_at`、`view_path`、`last_imported_body`、`source_updated_at` である。
+列の前半は `id`、`kind`、`title`、`body`、`visibility`、`bookmark_url`、`published_at` である。続く列は `cosense_page_id`、`created_at`、`updated_at`、`view_path`、`last_imported_body`、`source_updated_at` である。返信の列は `in_reply_to_id` と `thread_root_id` である。
 
 `id` は主キーである。`kind` は article、note、bookmark、page のいずれかである。`visibility` は draft か public である。`view_path` は一意である。NULL の行は複数あってよい。`cosense_page_id` は一意である。NULL でもよい。所有者の HTTP API は、`cosense_page_id` を受け付けない。所有者の更新 SQL は、その列を書かない。
 
 `last_imported_body` と `source_updated_at` は NULL でもよい。書くのは、取り込みの確定だけである。`source_updated_at` は Unix 秒の整数である。`updated_at` ではない。
+
+`in_reply_to_id` と `thread_root_id` は NULL でもよい。どちらにも外部キーは無い。他の note への返信ではない note は、両方を NULL のままにする。返信は、選んだ note の id を `in_reply_to_id` に入れる。選んだ note に `thread_root_id` があるときはその値を入れ、無いときは選んだ note の id を入れる。一つの note を削除しても、他の行のこれらの列は変えない。
 
 ### `edges`
 
@@ -71,10 +73,11 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 列は `image_id`、`extension`、`object_key` である。`extension` は小文字である。ドットは含まない。`object_key` は、書き出しディレクトリの名を含む。主キーは `image_id` と `extension` である。公開の要求は、このテーブルを書かない。エントリの書き込み batch にも入らない。
 
-読み取り用の索引は、次の二つである。一意な `view_path` は置き換えない。辺と過去タイトルの索引も置き換えない。
+読み取り用の索引は、次の三つである。一意な `view_path` は置き換えない。辺と過去タイトルの索引も置き換えない。
 
 - `entries_feed` は `(kind, published_at, id)` である。条件は `visibility = 'public'` かつ `published_at` が NULL でないことである。
 - `entries_titles` は `(updated_at, id)` である。条件は `visibility = 'public'` かつ `title <> ''` である。
+- `entries_thread` は `(thread_root_id, created_at, id)` である。
 
 ### 配送
 

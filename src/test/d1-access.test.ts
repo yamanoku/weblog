@@ -161,6 +161,8 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
       "view_path",
       "last_imported_body",
       "source_updated_at",
+      "in_reply_to_id",
+      "thread_root_id",
     ],
   );
   assert.deepEqual(primaryKey(sqlite, "entries"), ["id"]);
@@ -169,6 +171,7 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
     /visibility = 'public' AND published_at IS NOT NULL/,
   );
   assert.match(tableSql(sqlite, "entries_titles"), /visibility = 'public' AND title <> ''/);
+  assert.match(tableSql(sqlite, "entries_thread"), /thread_root_id/);
   assert.match(tableSql(sqlite, "entries_view_path_unique"), /UNIQUE/i);
   assert.match(tableSql(sqlite, "entries_cosense_page_id_unique"), /UNIQUE/i);
 
@@ -226,7 +229,10 @@ test("commitEntry reads back the entries row it writes", async () => {
     title: "stored-note",
     body: "plain text",
     visibility: "draft",
+    bookmarkUrl: null,
     publishedAt: null,
+    inReplyToId: null,
+    threadRootId: null,
   });
   sqlite.close();
 });

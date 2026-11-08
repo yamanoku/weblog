@@ -121,6 +121,7 @@ The owner can take out the following items. Being able to restore them is an acc
 - **Times:** The stored times, including created time, updated time, and publishedAt when one is stored.
 - **Cosense page ID:** The external page id, when one is stored.
 - **Edges:** The links stored for the entry.
+- **Reply link:** For a note that replies to another note, the id of that note and the id of the note that started the thread. Restore keeps both. Deleting one note does not remove the other notes from that thread.
 - **Follower actor URL:** The actor URL of each current follower.
 - **Delivered activity IDs:** The IDs of activities that were delivered.
 - **Actor private key:** The signing key. It is part of this set and is not a public field.

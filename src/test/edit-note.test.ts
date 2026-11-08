@@ -5,12 +5,25 @@ import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
-import { noteBodyField, noteDeleteId, noteFromEditField, postedNoteUrl } from "../domain/edit-note.ts";
+import {
+  noteBodyField,
+  noteDeleteId,
+  noteFromEditField,
+  orderedNoteThread,
+  postedNoteUrl,
+  replyToField,
+} from "../domain/edit-note.ts";
 import { deliveryRecords, edges, entries, tombstones } from "../db/schema.ts";
 import { eq } from "void/db";
 import { commitEntry, hasTombstone, listDeliverableEntries, readStoredEntry } from "../store/entries.ts";
 import { listArticlesForEdit } from "../store/edit-article.ts";
-import { deleteNoteFromEdit, listNotesForEdit, submitNoteFromEdit } from "../store/edit-note.ts";
+import {
+  deleteNoteFromEdit,
+  listNotesForEdit,
+  listPublicNoteThread,
+  submitNoteFromEdit,
+  submitReplyFromEdit,
+} from "../store/edit-note.ts";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 
@@ -141,10 +154,9 @@ test("the edit screen lists notes and deletes only that note", async () => {
 test("the home page shows the note field to the owner and the edit screen keeps the list", () => {
   const home = readFileSync(join(rootDir, "pages/index.svelte"), "utf8");
   assert.match(home, /\{#if owner\}/);
-  assert.match(home, /Post a note/);
+  assert.match(home, /いまどうしてる？/);
   assert.match(home, /useForm\(\s*"\/edit\?note"/);
   assert.match(home, /name="noteBody"/);
-  assert.match(home, /postedNote\.canonicalUrl/);
   assert.equal(home.includes("noteForm.errors.noteBody"), false);
   const homeServer = readFileSync(join(rootDir, "pages/index.server.ts"), "utf8");
   assert.match(homeServer, /verifiedOwner\(/);
@@ -171,4 +183,102 @@ test("the home page shows the note field to the owner and the edit screen keeps 
   assert.match(server, /redirect\(`\/\?posted=\$\{result\.id\}`\)/);
   assert.equal(server.includes("postedNoteUrl"), false);
   assert.equal(server.includes("void/db"), false);
+  assert.match(server, /reply:/);
+  assert.match(server, /submitReplyFromEdit\(/);
+  assert.match(server, /replyToField\(payload\)/);
+  assert.match(server, /refused=empty_body/);
+});
+
+test("a reply stays on the note thread and off the home list", async () => {
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  const root = await submitNoteFromEdit(database, "root");
+  assert.ok(!("error" in root));
+  const missing = await submitReplyFromEdit(database, "nope", "missing");
+  assert.deepEqual(missing, { error: "not_found" });
+  await commitEntry(database, {
+    id: "article-1",
+    kind: "article",
+    title: "Keep",
+    body: "article",
+    visibility: "public",
+    publishedAt: "2026-11-08T00:00:00.000Z",
+    createdAt: "2026-11-08T00:00:00.000Z",
+    updatedAt: "2026-11-08T00:00:00.000Z",
+  });
+  await commitEntry(database, {
+    id: "draft-note",
+    kind: "note",
+    title: "",
+    body: "draft",
+    visibility: "draft",
+    createdAt: "2026-11-08T00:00:00.000Z",
+    updatedAt: "2026-11-08T00:00:00.000Z",
+  });
+  assert.deepEqual(await submitReplyFromEdit(database, "nope", "article-1"), { error: "not_found" });
+  assert.deepEqual(await submitReplyFromEdit(database, "nope", "draft-note"), { error: "not_found" });
+  const empty = await submitReplyFromEdit(database, "", root.id);
+  assert.deepEqual(empty, { error: "empty_body", id: root.id });
+
+  const first = await submitReplyFromEdit(database, "to root", root.id);
+  assert.ok(!("error" in first));
+  const second = await submitReplyFromEdit(database, "to reply", first.id);
+  assert.ok(!("error" in second));
+  const saved = await readStoredEntry(database, second.id);
+  assert.equal(saved?.publishedAt, null);
+  assert.equal(saved?.inReplyToId, first.id);
+  assert.equal(saved?.threadRootId, root.id);
+  const listed = await listDeliverableEntries(database);
+  assert.deepEqual(listed.map((entry) => entry.id).sort(), ["article-1", root.id].sort());
+
+  const thread = await listPublicNoteThread(database, second.id);
+  assert.deepEqual(
+    thread.map((note) => note.id),
+    [root.id, first.id, second.id],
+  );
+  assert.equal(thread[1]?.replyToId, root.id);
+  assert.equal(thread[2]?.replyToId, first.id);
+  assert.equal(thread[0]?.replyToId, null);
+
+  const removed = await deleteNoteFromEdit(database, first.id);
+  assert.deepEqual(removed, { ok: true });
+  const remaining = await listPublicNoteThread(database, second.id);
+  assert.deepEqual(
+    remaining.map((note) => note.id),
+    [root.id, second.id],
+  );
+  assert.equal(remaining[1]?.replyToId, null);
+  const rootGone = await deleteNoteFromEdit(database, root.id);
+  assert.deepEqual(rootGone, { ok: true });
+  const onlyReply = await listPublicNoteThread(database, second.id);
+  assert.deepEqual(onlyReply.map((note) => note.body), ["to reply"]);
+  assert.equal(onlyReply[0]?.replyToId, null);
+  sqlite.close();
+});
+
+test("the note page shows the thread and a reply field for the owner", () => {
+  assert.deepEqual(
+    orderedNoteThread([
+      { id: "b", body: "second", createdAt: "2026-11-08T01:00:00.000Z", inReplyToId: "a" },
+      { id: "a", body: "first", createdAt: "2026-11-08T00:00:00.000Z", inReplyToId: null },
+    ]),
+    [
+      { id: "a", body: "first", replyToId: null },
+      { id: "b", body: "second", replyToId: "a" },
+    ],
+  );
+  assert.equal(replyToField({ replyTo: "abc" }), "abc");
+  assert.equal(replyToField({}), "");
+  const page = readFileSync(join(rootDir, "pages/e/[id].svelte"), "utf8");
+  assert.match(page, /thread as note/);
+  assert.match(page, /action="\/edit\?reply"/);
+  assert.match(page, /name="replyTo"/);
+  assert.match(page, /返信先/);
+  assert.match(page, /本文が空です/);
+  assert.match(page, /markdownToHtml\(entry\.body\)/);
+  const loader = readFileSync(join(rootDir, "pages/e/[id].server.ts"), "utf8");
+  assert.match(loader, /listPublicNoteThread\(/);
+  assert.match(loader, /verifiedOwner\(/);
+  assert.match(loader, /private, no-store/);
+  assert.equal(loader.includes("void/db"), false);
 });

@@ -38,7 +38,7 @@ The deliverable is the public routes on the same Worker that handles owner write
 
 The domain reads public rows, resolves public titles, and renders HTML. Adapters read D1 and the R2 bucket. The domain does not import the Cloudflare SDK, D1 types, R2 types, an ORM, or Fedify types. Replacing the host means replacing those adapters. Rendering is the render port. The object port is the image-fetch port. The store port is the entry store for these reads.
 
-Public routes do not read owner credentials, except GET `/`. That page reads the Access JWT only to include or omit the note field from owner writing. The deliverable list is the same for every caller. A draft is absent from every response this feature returns. The owner reads a draft at GET `/entries/{id}` and GET `/edit/{id}`, which belong to owner writing.
+Public routes do not read owner credentials, except GET `/` and GET `/e/{id}`. GET `/` reads the Access JWT only to include or omit the note field from owner writing. GET `/e/{id}` reads it only to include or omit the reply fields on a public note. The deliverable list is the same for every caller. A draft is absent from every response this feature returns. The owner reads a draft at GET `/entries/{id}` and GET `/edit/{id}`, which belong to owner writing.
 
 The read flow is as follows.
 
@@ -50,7 +50,7 @@ The read flow is as follows.
 
 A page that needs title resolution uses two `batch()` calls. The first reads the entry or the 11-row page. The second resolves titles and Gyazo ids, with `IN` lists chunked at 80 bound parameters. [Limits](https://developers.cloudflare.com/d1/platform/limits/) counts one `batch()` as one query toward the 50-query invocation limit. Statement length and the 100-parameter limit still apply inside the batch. An image request uses one SELECT and one R2 `get`. This feature does not issue one query per edge. This design does not claim that HTML rendering fits the free tier's CPU time per invocation. That time is unmeasured. A request that cannot finish inside the free tier fails for that request. The app does not move onto a paid plan.
 
-`vp dev` answers the public HTML pages from the in-memory domain catalog. Those loaders do not query D1. `/` lists the catalog's deliverable entries. `/pages` lists its public entries. `/{title}` resolves a public catalog title. `/e/{id}` returns the catalog entry for that id. An article saved from the edit screen during `vp dev` is written to local D1 and does not appear on those pages.
+`vp dev` answers the public HTML pages from the in-memory domain catalog. Those loaders do not query D1. `/` lists the catalog's deliverable entries. `/pages` lists its public entries. `/{title}` resolves a public catalog title. `/e/{id}` returns the catalog entry for that id. A catalog note is one note and has no reply link. A reply saved during `vp dev` is written to local D1 and does not appear on that page. An article saved from the edit screen during `vp dev` is written to local D1 and does not appear on those pages.
 
 `vp preview` and the deployed Worker read those pages from D1 through the store adapter. They do not add catalog rows. An empty table stays an empty list. A draft row stays absent. Page files do not import `void/db`. The edit screens read D1 in both modes. The acceptance criteria describe the deployed Worker. The catalog is not a second store.
 
@@ -218,13 +218,17 @@ Document responses use `text/html; charset=utf-8` and `Cache-Control: no-cache`.
 default-src 'none'; img-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'
 ```
 
-The document language is `ja`. The visible next-page anchor text is `次へ`. These responses do not vary on a cookie.
+When GET `/e/{id}` includes a reply field, that response sets `form-action` to this host's `/edit`. Other document responses keep `form-action 'none'`.
+
+The document language is `ja`. The visible next-page anchor text is `次へ`. These responses do not vary on a cookie, except the owner response for GET `/` and for a note's GET `/e/{id}`.
 
 Entry HTML has a canonical link, plus alternate links to `/feed.xml` and `/feed.json`. The `h1` is the current title. An empty title omits the `h1`, and the document title is the canonical URL. Feed and index pages use the same head links.
 
+A public note's GET `/e/{id}` lists the thread. The thread root is that note's `thread_root_id` when the column is set, and otherwise that note's id. The rows are the public note whose id is the root, plus public notes whose `thread_root_id` is the root. Order is `created_at` ascending, then `id` ascending. Each body is shown in that order. A reply whose `in_reply_to_id` is still in the thread has a same-page link to that note. A reply whose target is absent has no target link. An article, a bookmark, and a page load one entry and do not run the thread query.
+
 ### Feeds
 
-A feed row is `visibility = 'public'`, `published_at` is not null, and `kind` is `article`, `note`, or `bookmark`. Order is `published_at` descending, then `id` descending. Text comparison of the lowercase UUID is the tie-break. A public page is excluded. A kind feed adds `kind = ?`. There is no per-kind JSON Feed.
+A feed row is `visibility = 'public'`, `published_at` is not null, `in_reply_to_id` is null, and `kind` is `article`, `note`, or `bookmark`. Order is `published_at` descending, then `id` descending. Text comparison of the lowercase UUID is the tie-break. A public page is excluded. A kind feed adds `kind = ?`. There is no per-kind JSON Feed.
 
 `GET /` is the HTML timeline. Each item has a heading link, the rendered body, and the bookmark line when the kind is bookmark. For a bookmark whose external URL starts with `http://` or `https://`, the heading link is that URL. For every other item, the heading link uses the view path when one exists, and otherwise the canonical URL.
 
@@ -294,13 +298,13 @@ Public bodies, titles, and bookmark URLs may name a person. They are world-reada
 
 ## Authentication and authorization notes
 
-None of these routes check a credential to choose a draft or a different entry list. GET `/` reads `Cf-Access-Jwt-Assertion`, or the `CF_Authorization` cookie when that header is absent, only to include or omit the note field. A missing or invalid JWT stays 200 and omits the field. The owner response uses `Cache-Control: private, no-store`. Other routes do not read `Cf-Access-Jwt-Assertion` or `Authorization`. Drafts stay on the owner routes from owner writing.
+None of these routes check a credential to choose a draft or a different entry list. GET `/` reads `Cf-Access-Jwt-Assertion`, or the `CF_Authorization` cookie when that header is absent, only to include or omit the note field. GET `/e/{id}` reads the same values only to include or omit the reply fields on a public note. A missing or invalid JWT stays 200 and omits the field. The owner response uses `Cache-Control: private, no-store`. Other routes do not read `Cf-Access-Jwt-Assertion` or `Authorization`. Drafts stay on the owner routes from owner writing.
 
 ## Security considerations
 
 Public HTML escapes stored text before it inserts generated `http` and `https` anchors. The content security policy refuses scripts and refuses images from other hosts. A rewritten image is loaded from this host. An original Gyazo URL that this feature keeps is an anchor, so the policy does not fetch it as an image.
 
-Responses on these routes do not include a draft body. GET `/` for a verified owner also sends `Cache-Control: private, no-store` and `Vary: Cookie`, so a shared cache does not store the note field. Other responses do not vary on a cookie. A deleted body is not selected. The image route returns one object's bytes. A path that is not the image route does not return archive bytes and does not list the bucket.
+Responses on these routes do not include a draft body. GET `/` for a verified owner also sends `Cache-Control: private, no-store` and `Vary: Cookie`, so a shared cache does not store the note field. A verified owner's GET `/e/{id}` for a public note sends the same two headers, so a shared cache does not store the reply fields. Other responses do not vary on a cookie. A deleted body is not selected. The image route returns one object's bytes. A path that is not the image route does not return archive bytes and does not list the bucket.
 
 ## Deployment notes
 

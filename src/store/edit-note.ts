@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, desc, eq } from "void/db";
+import { and, desc, eq, or } from "void/db";
 import {
   deliveryRecords,
   edges,
@@ -8,7 +8,7 @@ import {
   pathRedirects,
   tombstones,
 } from "../db/schema.ts";
-import { noteFromEditField } from "../domain/edit-note.ts";
+import { noteFromEditField, orderedNoteThread, type NoteThreadView } from "../domain/edit-note.ts";
 import { commitEntry, readStoredEntry } from "./entries.ts";
 
 export type OwnerNote = {
@@ -53,6 +53,69 @@ export async function deleteNoteFromEdit(
     await database.insert(tombstones).values({ entryId: id, deletedAt });
   }
   return { ok: true };
+}
+
+export type ReplyResult =
+  | { id: string }
+  | { error: "empty_body"; id: string }
+  | { error: "not_found" };
+
+function isPublicNote<T extends { kind: string; visibility: string }>(
+  entry: T | null,
+): entry is T {
+  return entry !== null && entry.kind === "note" && entry.visibility === "public";
+}
+
+// Public notes that share a thread, oldest first. A missing target stays in the list.
+export async function listPublicNoteThread(
+  database: BetterSQLite3Database,
+  id: string,
+): Promise<NoteThreadView[]> {
+  const current = await readStoredEntry(database, id);
+  if (!isPublicNote(current) || !current) return [];
+  const rootId = current.threadRootId ?? current.id;
+  const rows = await database
+    .select()
+    .from(entries)
+    .where(
+      and(
+        eq(entries.kind, "note"),
+        eq(entries.visibility, "public"),
+        or(eq(entries.id, rootId), eq(entries.threadRootId, rootId)),
+      ),
+    );
+  return orderedNoteThread(
+    rows.map((row) => ({
+      id: row.id,
+      body: row.body,
+      createdAt: row.createdAt,
+      inReplyToId: row.inReplyToId ?? null,
+    })),
+  );
+}
+
+export async function submitReplyFromEdit(
+  database: BetterSQLite3Database,
+  body: string,
+  replyTo: string,
+): Promise<ReplyResult> {
+  const note = noteFromEditField(body);
+  const target = replyTo === "" ? null : await readStoredEntry(database, replyTo);
+  if (!isPublicNote(target) || !target) return { error: "not_found" };
+  if ("error" in note) return { error: "empty_body", id: target.id };
+  const now = new Date().toISOString();
+  const saved = await commitEntry(database, {
+    id: crypto.randomUUID(),
+    kind: "note",
+    title: "",
+    body: note.body,
+    visibility: "public",
+    createdAt: now,
+    updatedAt: now,
+    inReplyToId: target.id,
+    threadRootId: target.threadRootId ?? target.id,
+  });
+  return { id: saved.id };
 }
 
 export async function submitNoteFromEdit(

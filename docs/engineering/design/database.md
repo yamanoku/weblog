@@ -37,11 +37,13 @@ No diagram. The sections below are the schema. A picture would repeat the same n
 
 ### `entries`
 
-Columns are `id`, `kind`, `title`, `body`, `visibility`, `bookmark_url`, `published_at`, `cosense_page_id`, `created_at`, `updated_at`, `view_path`, `last_imported_body`, and `source_updated_at`.
+Columns are `id`, `kind`, `title`, `body`, `visibility`, `bookmark_url`, `published_at`, `cosense_page_id`, `created_at`, `updated_at`, `view_path`, `last_imported_body`, `source_updated_at`, `in_reply_to_id`, and `thread_root_id`.
 
 `id` is the primary key. `kind` is article, note, bookmark, or page. `visibility` is draft or public. `view_path` is unique, and many rows may be NULL. `cosense_page_id` is unique and may be NULL. The owner's HTTP API does not accept `cosense_page_id`. Owner update SQL does not write it.
 
 `last_imported_body` and `source_updated_at` may be NULL. Only an import commit writes them. `source_updated_at` is an integer number of Unix seconds. It is not `updated_at`.
+
+`in_reply_to_id` and `thread_root_id` may be NULL. Neither column has a foreign key. A note that does not reply to another note leaves both NULL. A reply stores the chosen note's id in `in_reply_to_id`. It stores that note's `thread_root_id` when the chosen note has one, and otherwise stores the chosen note's id. Deleting a note does not change these columns on another row.
 
 ### `edges`
 
@@ -75,6 +77,7 @@ Read indexes, and they do not replace the unique `view_path` or the edge and pas
 
 - `entries_feed` on `(kind, published_at, id)` where `visibility = 'public'` and `published_at` is not null
 - `entries_titles` on `(updated_at, id)` where `visibility = 'public'` and `title <> ''`
+- `entries_thread` on `(thread_root_id, created_at, id)`
 
 ### Delivery
 

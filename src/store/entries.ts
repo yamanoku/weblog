@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, desc, eq, isNotNull, ne, or } from "void/db";
+import { and, desc, eq, isNotNull, isNull, ne, or } from "void/db";
 import { entries, tombstones } from "../db/schema.ts";
 
 export type EntryCommit = {
@@ -16,6 +16,8 @@ export type EntryCommit = {
   viewPath?: string | null;
   lastImportedBody?: string | null;
   sourceUpdatedAt?: number | null;
+  inReplyToId?: string | null;
+  threadRootId?: string | null;
 };
 
 export type StoredEntry = {
@@ -26,6 +28,8 @@ export type StoredEntry = {
   visibility: string;
   bookmarkUrl: string | null;
   publishedAt: string | null;
+  inReplyToId: string | null;
+  threadRootId: string | null;
 };
 
 // A deleted delivered id remains as a tombstone. The row has no body.
@@ -53,6 +57,8 @@ export async function readStoredEntry(
     visibility: saved.visibility,
     bookmarkUrl: saved.bookmarkUrl ?? null,
     publishedAt: saved.publishedAt,
+    inReplyToId: saved.inReplyToId ?? null,
+    threadRootId: saved.threadRootId ?? null,
   };
 }
 
@@ -76,6 +82,8 @@ export async function commitEntry(
     viewPath: row.viewPath ?? null,
     lastImportedBody: row.lastImportedBody ?? null,
     sourceUpdatedAt: row.sourceUpdatedAt ?? null,
+    inReplyToId: row.inReplyToId ?? null,
+    threadRootId: row.threadRootId ?? null,
   });
   const saved = await readStoredEntry(database, row.id);
   if (!saved) throw new Error("entry was not stored");
@@ -103,7 +111,14 @@ export async function listDeliverableEntries(
   const rows = await database
     .select()
     .from(entries)
-    .where(and(eq(entries.visibility, "public"), isNotNull(entries.publishedAt), deliverableKind))
+    .where(
+      and(
+        eq(entries.visibility, "public"),
+        isNotNull(entries.publishedAt),
+        isNull(entries.inReplyToId),
+        deliverableKind,
+      ),
+    )
     .orderBy(desc(entries.publishedAt), desc(entries.id));
   return rows.map((row) => ({
     id: row.id,

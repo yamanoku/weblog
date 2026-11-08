@@ -59,6 +59,42 @@ Scenario: When the reader opens the canonical URL, the same public entry is retu
 - When: An unauthenticated client requests that URL and does not ask for Activity Streams.
 - Then: The response is 200 HTML for that entry. The canonical URL stays the one issued at creation.
 
+### Read the notes connected to a note
+
+As an unauthenticated reader, I want the canonical page of a note to list that note and the owner's replies together, oldest first, so that I can read the connected posts in one place.
+
+**Acceptance criteria:**
+
+Scenario: When a note has no reply, the canonical page shows that note
+
+- Given: A public note does not reply to another note. No public note replies in its thread. One public article exists.
+- When: An unauthenticated client requests the note's canonical URL and does not ask for Activity Streams.
+- Then: The response is 200 HTML and includes that note's body. It does not include the article's body. It does not include a reply field.
+
+Scenario: When any note in a thread is opened, the same posts appear oldest first
+
+- Given: Public note A does not reply to another note. Public note B replies to A. Public note C replies to B. One public article exists.
+- When: An unauthenticated client requests the canonical URL of A, of B, and of C, and does not ask for Activity Streams.
+- Then: Each response is 200 HTML. Each includes the bodies of A, B, and C. The order is created time ascending, then the immutable id ascending. B shows that it replies to A. C shows that it replies to B. A shows no reply target. The article body is absent. B and C are absent from GET `/` and from the note feed.
+
+Scenario: When one note in the thread was deleted, the remaining notes stay together
+
+- Given: Public note A does not reply to another note. Public note B replies to A. Public note C replies to B. B was deleted and has no delivered record.
+- When: An unauthenticated client requests the canonical URL of C and does not ask for Activity Streams.
+- Then: The response is 200 HTML. It includes the bodies of A and C. It does not include B's body. C shows no reply target. The canonical URL of B is 404.
+
+Scenario: When the first note was deleted, a remaining reply stays on its canonical page
+
+- Given: Public note A does not reply to another note. Public note B replies to A. A was deleted and has no delivered record.
+- When: An unauthenticated client requests the canonical URL of B and does not ask for Activity Streams.
+- Then: The response is 200 HTML and includes B's body. It does not include A's body. B shows no reply target. The canonical URL of A is 404.
+
+Scenario: When the entry is not a note, the page does not list a note thread
+
+- Given: A public article exists. A public note replies to another public note.
+- When: An unauthenticated client requests the article's canonical URL and does not ask for Activity Streams.
+- Then: The response is 200 HTML for that article. It does not include the note bodies.
+
 Scenario: When the entry is a draft, the response matches a missing entry
 
 - Given: An entry is draft. It may have a view path.
@@ -222,6 +258,10 @@ Icons, tables, formulas, and Cosense decoration stay source text. The order of H
 
 A `i.gyazo.com` or `gyazo.com` URL uses the image rule below. A `scrapbox.io/files` URL stays the original URL string. This feature does not copy that file.
 
+##### Note thread
+
+The canonical page of a public note lists every public note in its thread. The order is created time ascending, then the immutable id ascending. The first note shows no reply target. A later note shows the note it replies to when that note is still in the thread. When the target is absent, the later note stays in the thread and shows no reply target. Opening any remaining note in the thread returns that same list. A deleted id follows owner writing and does not return the deleted body. An article, a bookmark, and a page stay one entry. Their pages do not list a note thread. An unverified request does not include a reply field. Owner writing defines that field.
+
 ##### Empty pages
 
 When no public entry has the requested title, and a public entry has an inbound edge to that title, the response is 200. The page shows the title and the current titles of those public sources. Each source links to its view path, or to its canonical URL when it has no view path. The page does not include a draft body and does not say that a draft exists.
@@ -252,7 +292,7 @@ When no public entry has the title and no public inbound edge points at it, the 
 
 `GET /feed/articles.xml`, `GET /feed/notes.xml`, and `GET /feed/bookmarks.xml` are Atom feeds for that kind only. There is no per-kind JSON Feed.
 
-A feed includes only deliverable entries, ordered by `publishedAt` descending. When `publishedAt` is equal, the immutable id descending breaks the tie. A page is excluded. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
+A feed includes only deliverable entries, ordered by `publishedAt` descending. When `publishedAt` is equal, the immutable id descending breaks the tie. A page is excluded. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
 
 The owner's API list of 50 entries is a different list. It is not this page size.
 

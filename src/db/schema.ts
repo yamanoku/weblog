@@ -20,6 +20,8 @@ export const entries = sqliteTable(
     viewPath: text("view_path").unique(),
     lastImportedBody: text("last_imported_body"),
     sourceUpdatedAt: integer("source_updated_at"),
+    inReplyToId: text("in_reply_to_id"),
+    threadRootId: text("thread_root_id"),
   },
   (table) => [
     index("entries_feed")
@@ -28,6 +30,7 @@ export const entries = sqliteTable(
     index("entries_titles")
       .on(table.updatedAt, table.id)
       .where(sql`visibility = 'public' AND title <> ''`),
+    index("entries_thread").on(table.threadRootId, table.createdAt, table.id),
   ],
 );
 

@@ -172,7 +172,11 @@ note 欄は GET `/` の先頭、ナビゲーションの直下に置く。`/edit
 
 note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/?posted={id}` へ 302 で移す。同じ要求が所有者であり、`{id}` が保存済みの公開 note であるときだけ、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。確認できていない GET `/?posted={id}` は、URL を出さない。欄も出さない。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
 
-GET `/edit` の note 一覧は、draft と public の note を createdAt の新しい順、同じ時刻なら id の降順で返す。各項目は本文と visibility を示し、GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。保存済みの note だけを消す。消すときは、その source の辺、過去タイトル、パス移転も消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。note でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
+GET `/edit` の note 一覧は、draft と public の note を createdAt の新しい順、同じ時刻なら id の降順で返す。返信も含める。各項目は本文と visibility を示し、GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。保存済みの note だけを消す。消すときは、その source の辺、過去タイトル、パス移転も消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。削除は、他の行の `in_reply_to_id` と `thread_root_id` を変えない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。note でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
+
+公開の note の GET `/e/{id}` は、note 欄と同じ JWT の規則で所有者と確認できたとき、並んでいる各 note に返信欄を出す。Access の対象は `/edit` と `/edit/*` のままである。JWT が無い、または無効なとき、ページは 200 のままで返信欄を出さない。本文の並びは変えない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
+
+返信欄は `noteBody` と `replyTo` を POST `/edit?reply` へ送る。`replyTo` は、そのページで所有者が選んだ note の id である。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は NULL のままである。`view_path` も NULL のままである。`in_reply_to_id` は、選んだ note の id である。選んだ note に `thread_root_id` があるときは、その値を `thread_root_id` にする。無いときは、選んだ note の id にする。空の `noteBody` は保存しない。選んだ note が保存済みの公開 note なら、応答は GET `/e/{replyTo}?refused=empty_body` へ 302 で移す。そのページは、所有者に本文が空である拒否を示す。空白だけの本文は空にしない。`replyTo` が無い、note でない、または public でないときは、404 にして保存しない。成功は、新しい note の GET `/e/{id}` へ 302 で移す。POST `/entries` は、返信の二つの列を書かない。そこで作った note は返信ではない。
 
 GET `/edit` は、上に書いたブックマークの作成フォームと bookmark の一覧も返す。bookmark の一覧は draft と public を含み、article、note、page を含めない。各項目はタイトル、外部 URL、visibility を示し、GET `/edit/{id}` へ進む。順序は createdAt の新しい順で、同じ時刻なら id の降順である。POST `/edit?bookmark` は bookmark を draft で作成する。フォームは `title`、`bookmarkUrl`、`body` を送る。保存する本文は、送ったテキストである。`bookmarkUrl` は本文へ入れない。`bookmark_url` は、送った URL の前後の空白を除いた文字列である。前後の空白を除いたタイトルが空のときは保存せず、422 `missing_title` を返す。`bookmarkUrl` が無い、またはその空白を除くと空のときは保存せず、422 `missing_bookmark_url` を返す。draft の本文は空でも保存する。作成は `publishedAt` を付けない。article は作らない。note は作らない。
 
@@ -273,13 +277,21 @@ draft の公開応答は、行が無いときと同じ 404 である。エラー
 
 ## デプロイに関する特記事項
 
-初回は空の D1 に、この文書の表を作る。既存サイトからのデータ移行は無い。
+初回は空の D1 に、この文書の表を作る。既存サイトからのデータ移行は無い。既にエントリがあるデータベースには、NULL を許す `in_reply_to_id` と `thread_root_id` を足す。既存の行は、両方を NULL のままにする。それらの note は配送対象のままである。
 
 Access の対象は `/edit` と `/edit/*` だけにする。ホスト全体を Access の背後に置くと、未認証の正規 URL がログイン画面の背後に入る。その配置はこの機能の公開応答に反する。
 
 最初の CLI トークンは、所有者が `/edit` を開いてから発行する。発行前の CLI は書き込めない。
 
 ## 検討した代替手段
+
+### 返信をホームに一件ずつ出す
+
+所有者は、返信の一つ一つを GET `/` の項目として見ることになる。Requirements は、返信をそのスレッドの正規 URL に置く。GET `/` に出す note は、返信ではない note である。
+
+### 最初の note にだけ返信を足す
+
+所有者は、すべての返信を最初の note へ足し、後の note には答えられない。Requirements は、スレッドのどの note にも返信でき、各返信がどの note への返事かを示す。
 
 ### 書き込み API も Access の背後に置く
 

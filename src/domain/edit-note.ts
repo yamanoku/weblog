@@ -13,6 +13,42 @@ export function noteBodyField(value: unknown): string {
   return typeof body === "string" ? body : "";
 }
 
+export function replyToField(value: unknown): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  const id = (value as { replyTo?: unknown }).replyTo;
+  return typeof id === "string" ? id : "";
+}
+
+export type NoteThreadItem = {
+  id: string;
+  body: string;
+  createdAt: string;
+  inReplyToId: string | null;
+};
+
+export type NoteThreadView = {
+  id: string;
+  body: string;
+  replyToId: string | null;
+};
+
+// Oldest first. A reply target is shown only when that note is still in the thread.
+export function orderedNoteThread(notes: NoteThreadItem[]): NoteThreadView[] {
+  const sorted = [...notes].sort((left, right) => {
+    if (left.createdAt < right.createdAt) return -1;
+    if (left.createdAt > right.createdAt) return 1;
+    if (left.id < right.id) return -1;
+    if (left.id > right.id) return 1;
+    return 0;
+  });
+  const ids = new Set(sorted.map((note) => note.id));
+  return sorted.map((note) => ({
+    id: note.id,
+    body: note.body,
+    replyToId: note.inReplyToId !== null && ids.has(note.inReplyToId) ? note.inReplyToId : null,
+  }));
+}
+
 export function noteDeleteId(value: unknown): { id: string } | { error: "not_found" } {
   if (!value || typeof value !== "object" || Array.isArray(value)) return { error: "not_found" };
   const id = (value as { noteId?: unknown }).noteId;
