@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { Form, Link, useForm } from "@void/svelte";
+  import { Link } from "@void/svelte";
 
-  let { articles = [], notes = [], postedNote = null } = $props();
-  const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
+  let { articles = [], notes = [] } = $props();
 </script>
 
 <h1>Create an entry</h1>
@@ -17,18 +16,6 @@
   </label>
   <button type="submit">Save article</button>
 </form>
-
-<h2>Post a note</h2>
-{#if postedNote}
-  <p>Saved <a href={postedNote.canonicalUrl}>{postedNote.canonicalUrl}</a></p>
-{/if}
-<Form form={noteForm}>
-  <label>
-    Body
-    <textarea name="noteBody" rows="4" bind:value={noteForm.data.noteBody}></textarea>
-  </label>
-  <button type="submit">Post</button>
-</Form>
 
 <h2>Notes</h2>
 {#if notes.length === 0}

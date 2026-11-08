@@ -1,9 +1,24 @@
 <script lang="ts">
-  import { Link } from "@void/svelte";
+  import { Form, Link, useForm } from "@void/svelte";
   import { markdownToHtml } from "../domain/markdown-html.ts";
 
-  let { entries } = $props();
+  let { entries, owner = false, postedNote = null } = $props();
+  const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
 </script>
+
+{#if owner}
+  <h2>Post a note</h2>
+  {#if postedNote}
+    <p>Saved <a href={postedNote.canonicalUrl}>{postedNote.canonicalUrl}</a></p>
+  {/if}
+  <Form form={noteForm}>
+    <label>
+      Body
+      <textarea name="noteBody" rows="4" bind:value={noteForm.data.noteBody}></textarea>
+    </label>
+    <button type="submit">Post</button>
+  </Form>
+{/if}
 
 <h1>Deliverable entries</h1>
 <p>weblog.yamanoku.net</p>

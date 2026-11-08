@@ -1,8 +1,10 @@
 import { deliverableEntries } from "../domain/catalog.ts";
+import { postedNoteUrl } from "../domain/edit-note.ts";
 import { publicArticleHref } from "../domain/public-article.ts";
 import { defineHandler } from "void";
+import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
-import { listDeliverableEntries } from "../store/entries.ts";
+import { listDeliverableEntries, readStoredEntry } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
 function homeEntry(entry: { id: string; title: string; kind: string; body: string }) {
@@ -15,10 +17,22 @@ function homeEntry(entry: { id: string; title: string; kind: string; body: strin
   };
 }
 
-export const loader = defineHandler(async () => {
+export const loader = defineHandler(async (c) => {
+  // Local `vp dev` has no Access login. A deployed home page includes the field only for the owner.
+  const owner = readsDevCatalog() || (await verifiedOwner(c));
+  if (owner) {
+    c.header("cache-control", "private, no-store");
+    c.header("vary", "Cookie");
+  }
+  const postedId = owner ? (c.req.query("posted") ?? "") : "";
+  const postedEntry =
+    postedId === "" || readsDevCatalog()
+      ? null
+      : await readStoredEntry(editArticleDatabase(), postedId);
+  const postedNote = postedNoteUrl(postedEntry);
   if (readsDevCatalog()) {
-    return { entries: deliverableEntries().map(homeEntry) };
+    return { entries: deliverableEntries().map(homeEntry), owner, postedNote };
   }
   const stored = await listDeliverableEntries(editArticleDatabase());
-  return { entries: stored.map(homeEntry) };
+  return { entries: stored.map(homeEntry), owner, postedNote };
 });

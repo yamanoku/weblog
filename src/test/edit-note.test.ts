@@ -138,13 +138,22 @@ test("the edit screen lists notes and deletes only that note", async () => {
   sqlite.close();
 });
 
-test("the edit screen posts the note field separately from the article form", () => {
+test("the home page shows the note field to the owner and the edit screen keeps the list", () => {
+  const home = readFileSync(join(rootDir, "pages/index.svelte"), "utf8");
+  assert.match(home, /\{#if owner\}/);
+  assert.match(home, /Post a note/);
+  assert.match(home, /useForm\(\s*"\/edit\?note"/);
+  assert.match(home, /name="noteBody"/);
+  assert.match(home, /postedNote\.canonicalUrl/);
+  assert.equal(home.includes("noteForm.errors.noteBody"), false);
+  const homeServer = readFileSync(join(rootDir, "pages/index.server.ts"), "utf8");
+  assert.match(homeServer, /verifiedOwner\(/);
+  assert.match(homeServer, /readsDevCatalog\(\)/);
+  assert.match(homeServer, /private, no-store/);
+  assert.match(homeServer, /postedNoteUrl\(/);
   const page = readFileSync(join(rootDir, "pages/edit/index.svelte"), "utf8");
-  assert.match(page, /Post a note/);
-  assert.match(page, /useForm\(\s*"\/edit\?note"/);
-  assert.match(page, /name="noteBody"/);
-  assert.match(page, /postedNote\.canonicalUrl/);
-  assert.equal(page.includes("noteForm.errors.noteBody"), false);
+  assert.equal(page.includes("Post a note"), false);
+  assert.equal(page.includes("noteBody"), false);
   assert.match(page, /<h2>Notes<\/h2>/);
   assert.match(page, /action="\?deleteNote"/);
   assert.match(page, /name="noteId"/);
@@ -159,7 +168,7 @@ test("the edit screen posts the note field separately from the article form", ()
   assert.match(server, /deleteNoteFromEdit\(/);
   assert.match(server, /deleteNote:/);
   assert.match(server, /ValidationError\(\{\s*noteBody:\s*result\.error\s*\}\)/);
-  assert.match(server, /redirect\(`\/edit\?posted=\$\{result\.id\}`\)/);
-  assert.match(server, /postedNoteUrl\(/);
+  assert.match(server, /redirect\(`\/\?posted=\$\{result\.id\}`\)/);
+  assert.equal(server.includes("postedNoteUrl"), false);
   assert.equal(server.includes("void/db"), false);
 });

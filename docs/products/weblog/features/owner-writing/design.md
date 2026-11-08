@@ -166,9 +166,11 @@ The shared operations are createEntry, updateEntry, deleteEntry, getEntryForOwne
 
 ### Edit screen
 
-GET `/edit` returns the article create form, a separate note field, the list of stored articles, and a separate list of stored notes. The article list includes draft and public, and omits notes, bookmarks, and pages. Each article opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
+GET `/edit` returns the article create form, the list of stored articles, and a separate list of stored notes. It does not return the note field. The article list includes draft and public, and omits notes, bookmarks, and pages. Each article opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
 
-The note field submits only the body, as `noteBody`, to POST `/edit?note`. That post stores kind note, an empty title, and visibility public. `publishedAt` is the commit time. `view_path` stays NULL. An empty `noteBody` stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. Success redirects with 302 to GET `/edit?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}`. The URL appears only when `{id}` is a stored public note. The article list does not include the note. The notes list does. POST `/edit` without `note` still creates a draft article and does not read `posted`.
+The note field is the first block of GET `/`, directly under the navigation. It is included only when that request is verified as the owner by the same JWT rules as `/edit`. Access still covers only `/edit` and `/edit/*`, so GET `/` is not a login wall. A missing or invalid JWT leaves GET `/` at 200 and omits the field. The Worker reads `Cf-Access-Jwt-Assertion`, and reads the `CF_Authorization` cookie only when that header is absent. The deliverable list does not change, and the response does not include a draft body. When the field is included, the response uses `Cache-Control: private, no-store` and `Vary: Cookie`. On the local dev server, where Access is not in front of the process, the field is included.
+
+The note field submits only the body, as `noteBody`, to POST `/edit?note`. That post stores kind note, an empty title, and visibility public. `publishedAt` is the commit time. `view_path` stays NULL. An empty `noteBody` stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. Success redirects with 302 to GET `/?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}` only when the same request is verified as the owner and `{id}` is a stored public note. An unverified GET `/?posted={id}` omits the URL and the field. The article list does not include the note. The notes list does. POST `/edit` without `note` still creates a draft article and does not read `posted`.
 
 The notes list on GET `/edit` returns draft and public notes, newest `updatedAt` first, then descending id. Each item shows the body and visibility and does not open GET `/edit/{id}`. Delete submits `noteId` to POST `/edit?deleteNote`. Only a stored note is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a note is 404 and deletes nothing.
 
@@ -279,7 +281,7 @@ The CLI would also pass through a login screen. The requirements say the CLI doe
 
 ### Forward the cookie to unprotected `/entries`
 
-The browser could post the form directly to `/entries`. Cloudflare does not say the cookie is always passed, and it recommends verifying the header. The edit screen posts to `/edit`, and the JWT is read only on the path where Access adds the header.
+The browser could post the form directly to `/entries`. Cloudflare does not say the cookie is always passed, and it recommends verifying the header. The note field posts to `/edit`, where Access adds the header. GET `/` reads the cookie only to include or omit that field.
 
 ### INSERT one edge row at a time
 
@@ -295,7 +297,7 @@ The owner would pick note on the article form. The decided screen is a separate 
 
 ### Show the new note in the article list
 
-The owner would see the post again on `/edit`. The requirements keep notes out of that list. The success response carries the canonical URL.
+The owner would see the post again on `/edit`. The requirements keep notes out of the article list. The success response on GET `/` carries the canonical URL.
 
 ### Import an ORM or D1 types from the domain
 

@@ -49,11 +49,11 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 
 | Path | Role |
 | --- | --- |
-| `GET /` | HTML list of deliverable entries. A later page uses `before` and `before_id` on this path. |
+| `GET /` | HTML list of deliverable entries. When the request is verified as the owner, the note field is under the navigation. An unverified response omits it. A later page uses `before` and `before_id` on this path. |
 | `GET /pages` | HTML list of public titles. A later page uses the same cursor shape. |
 | `GET /{title}` | Public entry HTML, or the empty page when the requirements say so. |
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. |
-| `GET /edit` | Article create form, a separate note field, the owner's articles, and a separate list of the owner's notes. Drafts are included. Notes do not open the article edit form. |
+| `GET /edit` | Article create form, the owner's articles, and a separate list of the owner's notes. No note field. Drafts are included. Notes do not open the article edit form. |
 | `GET /edit/{id}` | Edit form for that entry. |
 | `POST /edit` | Create a draft article. |
 | `POST /edit?note` | Create a public note from the note field. |

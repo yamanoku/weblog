@@ -38,7 +38,7 @@ The deliverable is the public routes on the same Worker that handles owner write
 
 The domain reads public rows, resolves public titles, and renders HTML. Adapters read D1 and the R2 bucket. The domain does not import the Cloudflare SDK, D1 types, R2 types, an ORM, or Fedify types. Replacing the host means replacing those adapters. Rendering is the render port. The object port is the image-fetch port. The store port is the entry store for these reads.
 
-Public routes do not read owner credentials. A draft is absent from every response this feature returns. The owner reads a draft at GET `/entries/{id}` and GET `/edit/{id}`, which belong to owner writing.
+Public routes do not read owner credentials, except GET `/`. That page reads the Access JWT only to include or omit the note field from owner writing. The deliverable list is the same for every caller. A draft is absent from every response this feature returns. The owner reads a draft at GET `/entries/{id}` and GET `/edit/{id}`, which belong to owner writing.
 
 The read flow is as follows.
 
@@ -294,13 +294,13 @@ Public bodies, titles, and bookmark URLs may name a person. They are world-reada
 
 ## Authentication and authorization notes
 
-None of these routes check a credential. The Worker does not read `Cf-Access-Jwt-Assertion` or `Authorization` for them. The same document is returned to every caller. Drafts stay on the owner routes from owner writing.
+None of these routes check a credential to choose a draft or a different entry list. GET `/` reads `Cf-Access-Jwt-Assertion`, or the `CF_Authorization` cookie when that header is absent, only to include or omit the note field. A missing or invalid JWT stays 200 and omits the field. The owner response uses `Cache-Control: private, no-store`. Other routes do not read `Cf-Access-Jwt-Assertion` or `Authorization`. Drafts stay on the owner routes from owner writing.
 
 ## Security considerations
 
 Public HTML escapes stored text before it inserts generated `http` and `https` anchors. The content security policy refuses scripts and refuses images from other hosts. A rewritten image is loaded from this host. An original Gyazo URL that this feature keeps is an anchor, so the policy does not fetch it as an image.
 
-Responses on these routes do not include a draft body and do not vary on a cookie, so a shared cache cannot attach a draft to a public URL. A deleted body is not selected. The image route returns one object's bytes. A path that is not the image route does not return archive bytes and does not list the bucket.
+Responses on these routes do not include a draft body. GET `/` for a verified owner also sends `Cache-Control: private, no-store` and `Vary: Cookie`, so a shared cache does not store the note field. Other responses do not vary on a cookie. A deleted body is not selected. The image route returns one object's bytes. A path that is not the image route does not return archive bytes and does not list the bucket.
 
 ## Deployment notes
 

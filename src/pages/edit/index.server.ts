@@ -1,30 +1,22 @@
 import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
-import { noteBodyField, noteDeleteId, postedNoteUrl } from "../../domain/edit-note.ts";
+import { noteBodyField, noteDeleteId } from "../../domain/edit-note.ts";
 import {
   editArticleDatabase,
   listArticlesForEdit,
   submitArticleFromEdit,
 } from "../../store/edit-article.ts";
 import { deleteNoteFromEdit, listNotesForEdit, submitNoteFromEdit } from "../../store/edit-note.ts";
-import { readStoredEntry } from "../../store/entries.ts";
 
 function postedText(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-function postedQuery(value: string | undefined): string {
-  return value ?? "";
-}
-
-export const loader = defineHandler(async (c) => {
-  const id = postedQuery(c.req.query("posted"));
-  const entry = id === "" ? null : await readStoredEntry(editArticleDatabase(), id);
+export const loader = defineHandler(async () => {
   return {
     articles: await listArticlesForEdit(editArticleDatabase()),
     notes: await listNotesForEdit(editArticleDatabase()),
-    postedNote: postedNoteUrl(entry),
   };
 });
 
@@ -46,7 +38,7 @@ export const actions = {
     if ("error" in result) {
       throw new ValidationError({ noteBody: result.error });
     }
-    return c.redirect(`/edit?posted=${result.id}`);
+    return c.redirect(`/?posted=${result.id}`);
   }),
   deleteNote: defineHandler(async (c) => {
     const posted = await c.req.parseBody();

@@ -124,17 +124,23 @@ Scenario: The edit screen lists draft articles too
 - When: The owner opens GET `/edit`.
 - Then: Both articles appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item opens that article's edit screen. The note is not in this list. The unauthenticated home page and title index do not include the draft body.
 
-### Post a note from the edit screen
+### Post a note from the home page
 
-As the owner, I want a field on the edit screen, separate from the article form, so that a body becomes a public note with no title and I can see its canonical URL. The article draft form and the article list stay as they are.
+As the owner, I want a note field on the home page, under the navigation, so that a body becomes a public note with no title and I can see its canonical URL. The field is absent unless the request is verified as the owner. The article draft form, the article list, and the notes list stay on the edit screen.
 
 **Acceptance criteria:**
 
+Scenario: An unverified home page omits the note field
+
+- Given: The request is not verified as the owner. One deliverable entry exists.
+- When: The caller opens GET `/`.
+- Then: The response is 200 and lists that deliverable entry. The note field is absent. The response does not include a draft body.
+
 Scenario: When the note field has a body, the host stores a public note and shows the canonical URL
 
-- Given: The request is verified as the owner. GET `/edit` shows the article create form, a separate note field, and the article list.
+- Given: The request is verified as the owner. GET `/` shows the note field under the navigation. GET `/edit` shows the article create form and the article list, and does not show the note field.
 - When: The owner submits a body from the note field and does not submit a title.
-- Then: One entry is stored with kind note, an empty title, the submitted body, and visibility public. It has no view path. No article is created. The response lets the owner see that the save succeeded and shows the canonical URL. The article list does not include this note. The notes list does. An unauthenticated request for the canonical URL returns the body.
+- Then: One entry is stored with kind note, an empty title, the submitted body, and visibility public. It has no view path. No article is created. The response lets the owner see that the save succeeded and shows the canonical URL. The article list does not include this note. The notes list does. An unauthenticated request for the canonical URL returns the body. An unverified GET `/` does not show the note field.
 
 Scenario: When the note field body is empty, the host stores nothing and shows the refusal
 
@@ -351,7 +357,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
 
-GET `/edit`, when the request is verified as the owner, returns the article create form, a separate note field, a list of stored articles, and a separate list of stored notes. Both lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article.
+GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, and a separate list of stored notes. It does not show the note field. Both lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article.
 
 ##### A store that is past the free allowance
 

@@ -166,9 +166,11 @@ erDiagram
 
 ### 編集画面
 
-GET `/edit` は、記事の作成フォームと、それとは別の note 欄と、保存済み article の一覧と、それとは別の note の一覧を返す。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は updatedAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォームを返す。編集できない ID は 404 である。POST `/edit` は article を draft で作成する。POST `/edit/{id}` は、その article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。POST `/edit/tokens` はトークンを発行するか、再発行する。
+GET `/edit` は、記事の作成フォームと、保存済み article の一覧と、それとは別の note の一覧を返す。note 欄は返さない。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は updatedAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォームを返す。編集できない ID は 404 である。POST `/edit` は article を draft で作成する。POST `/edit/{id}` は、その article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。POST `/edit/tokens` はトークンを発行するか、再発行する。
 
-note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/edit?posted={id}` へ 302 で移す。その応答は、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。`{id}` が保存済みの公開 note であるときだけ、この URL を出す。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
+note 欄は GET `/` の先頭、ナビゲーションの直下に置く。`/edit` と同じ JWT の規則で所有者と確認できたときだけ含める。Access の対象は `/edit` と `/edit/*` のままなので、GET `/` はログイン画面にしない。JWT が無い、または無効なとき、GET `/` は 200 のままで欄を出さない。Worker は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。配送対象の一覧は変えない。draft の本文は含めない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
+
+note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/?posted={id}` へ 302 で移す。同じ要求が所有者であり、`{id}` が保存済みの公開 note であるときだけ、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。確認できていない GET `/?posted={id}` は、URL も欄も出さない。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
 
 GET `/edit` の note 一覧は、draft と public の note を updatedAt の新しい順、同じ時刻なら id の降順で返す。各項目は本文と visibility を示し、GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。対象が保存済みの note であるときだけ、そのエントリと、その source の辺、過去タイトル、パス移転を消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。公開の GET `/e/{id}` は、行が無く tombstone があるとき 410 であり、削除前の本文を含まない。対象が note でない、または無いときは 404 であり、行を消さない。
 
@@ -279,7 +281,7 @@ CLI もログイン画面を通る。Requirements は、CLI がブラウザの�
 
 ### 保護していない `/entries` へ Cookie を転送する
 
-ブラウザがフォームを `/entries` へ直接送れる。Cloudflare は Cookie が必ず渡るとは書いておらず、ヘッダの検証を推奨している。編集画面の POST を `/edit` に残し、ヘッダが付く経路だけで JWT を見る。
+ブラウザがフォームを `/entries` へ直接送れる。Cloudflare は Cookie が必ず渡るとは書いておらず、ヘッダの検証を推奨している。note 欄の POST は `/edit` に残し、Access がヘッダを付ける経路で保存する。GET `/` が Cookie を読むのは、その欄を出すか省くかだけである。
 
 ### 辺を一行ずつ INSERT する
 
@@ -295,7 +297,7 @@ CLI もログイン画面を通る。Requirements は、CLI がブラウザの�
 
 ### 投稿した note を記事一覧に出す
 
-所有者は、`/edit` で投稿を再び見る。Requirements は、この一覧に note を出さない。成功の応答が正規 URL を持つ。
+所有者は、`/edit` で投稿を再び見る。Requirements は、記事一覧に note を出さない。成功した GET `/` の応答が正規 URL を持つ。
 
 ### ドメインから ORM または D1 の型を使う
 
