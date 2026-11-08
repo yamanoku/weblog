@@ -122,7 +122,7 @@ Scenario: The edit screen lists draft articles too
 
 - Given: The request is verified as the owner. One article is draft and another is public. One note exists.
 - When: The owner opens GET `/edit`.
-- Then: Both articles appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item opens that article's edit screen. The note is not in this list. The unauthenticated home page and title index do not include the draft body.
+- Then: Both articles appear, newest `createdAt` first. The same timestamp is broken by descending immutable ID. Each item opens that article's edit screen. The note is not in this list. The unauthenticated home page and title index do not include the draft body.
 
 ### Post a note from the home page
 
@@ -164,7 +164,7 @@ Scenario: The edit screen lists notes apart from articles
 
 - Given: The request is verified as the owner. One note is draft and another is public. One article exists.
 - When: The owner opens GET `/edit`.
-- Then: Both notes appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item shows the body and the visibility. Neither item opens the article edit screen. The article list does not include the notes.
+- Then: Both notes appear, newest `createdAt` first. The same timestamp is broken by descending immutable ID. Each item shows the body and the visibility. Neither item opens the article edit screen. The article list does not include the notes.
 
 Scenario: When the owner deletes an undelivered note from the edit screen, it leaves the list and the canonical URL is 404
 
@@ -212,7 +212,7 @@ Scenario: The edit screen lists bookmarks apart from articles and notes
 
 - Given: The request is verified as the owner. One bookmark is draft and another is public. One article and one note exist.
 - When: The owner opens GET `/edit`.
-- Then: Both bookmarks appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item shows the title, the external URL, and the visibility, and opens that bookmark's edit screen. The article list and the notes list do not include the bookmarks.
+- Then: Both bookmarks appear, newest `createdAt` first. The same timestamp is broken by descending immutable ID. Each item shows the title, the external URL, and the visibility, and opens that bookmark's edit screen. The article list and the notes list do not include the bookmarks.
 
 Scenario: When the owner updates a bookmark, the host replaces the title, body, visibility, and external URL
 
@@ -417,7 +417,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
 
-GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry.
+GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry.
 
 ##### A store that is past the free allowance
 

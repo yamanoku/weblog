@@ -39,7 +39,7 @@ export async function listBookmarksForEdit(
     .select()
     .from(entries)
     .where(eq(entries.kind, "bookmark"))
-    .orderBy(desc(entries.updatedAt), desc(entries.id));
+    .orderBy(desc(entries.createdAt), desc(entries.id));
   return rows.flatMap((row) => {
     if (!row.bookmarkUrl) return [];
     return [

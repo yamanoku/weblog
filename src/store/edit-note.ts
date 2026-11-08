@@ -24,7 +24,7 @@ export async function listNotesForEdit(database: BetterSQLite3Database): Promise
     .select()
     .from(entries)
     .where(eq(entries.kind, "note"))
-    .orderBy(desc(entries.updatedAt), desc(entries.id));
+    .orderBy(desc(entries.createdAt), desc(entries.id));
   return rows.map((row) => ({
     id: row.id,
     body: row.body,

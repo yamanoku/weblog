@@ -60,7 +60,7 @@ export async function listArticlesForEdit(
     .select()
     .from(entries)
     .where(eq(entries.kind, "article"))
-    .orderBy(desc(entries.updatedAt), desc(entries.id));
+    .orderBy(desc(entries.createdAt), desc(entries.id));
   return rows.map((row) => ({
     id: row.id,
     title: row.title,

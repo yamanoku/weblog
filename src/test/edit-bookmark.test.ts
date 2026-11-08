@@ -99,7 +99,7 @@ test("the edit screen lists bookmarks and updates only that bookmark", async () 
     visibility: "draft",
     bookmarkUrl: "https://example.com/old",
     createdAt: now,
-    updatedAt: "2026-11-08T00:00:00.000Z",
+    updatedAt: "2026-11-08T03:00:00.000Z",
   });
   await commitEntry(database, {
     id: "bookmark-new",
@@ -109,7 +109,7 @@ test("the edit screen lists bookmarks and updates only that bookmark", async () 
     visibility: "public",
     bookmarkUrl: "https://example.com/new",
     publishedAt: "2026-11-08T01:00:00.000Z",
-    createdAt: now,
+    createdAt: "2026-11-08T01:00:00.000Z",
     updatedAt: "2026-11-08T01:00:00.000Z",
   });
   await commitEntry(database, {

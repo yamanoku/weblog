@@ -117,7 +117,7 @@ test("the edit screen lists draft and public articles, newest first", async () =
     body: "draft body",
     visibility: "draft",
     createdAt: "2026-11-07T00:00:00.000Z",
-    updatedAt: "2026-11-07T00:00:00.000Z",
+    updatedAt: "2026-11-07T05:00:00.000Z",
   });
   await commitEntry(database, {
     id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",

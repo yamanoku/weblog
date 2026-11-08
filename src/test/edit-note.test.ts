@@ -83,7 +83,7 @@ test("the edit screen lists notes and deletes only that note", async () => {
     body: "older",
     visibility: "draft",
     createdAt: now,
-    updatedAt: "2026-11-08T00:00:00.000Z",
+    updatedAt: "2026-11-08T03:00:00.000Z",
   });
   await commitEntry(database, {
     id: "note-new",
@@ -92,7 +92,7 @@ test("the edit screen lists notes and deletes only that note", async () => {
     body: "newer",
     visibility: "public",
     publishedAt: "2026-11-08T01:00:00.000Z",
-    createdAt: now,
+    createdAt: "2026-11-08T01:00:00.000Z",
     updatedAt: "2026-11-08T01:00:00.000Z",
   });
   await commitEntry(database, {
