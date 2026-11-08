@@ -1,6 +1,6 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { and, desc, eq, isNotNull, ne, or } from "void/db";
-import { entries } from "../db/schema.ts";
+import { entries, tombstones } from "../db/schema.ts";
 
 export type EntryCommit = {
   id: string;
@@ -26,6 +26,15 @@ export type StoredEntry = {
   visibility: string;
   publishedAt: string | null;
 };
+
+// A deleted delivered id remains as a tombstone. The row has no body.
+export async function hasTombstone(
+  database: BetterSQLite3Database,
+  id: string,
+): Promise<boolean> {
+  const found = await database.select().from(tombstones).where(eq(tombstones.entryId, id));
+  return found.length > 0;
+}
 
 // Reads one entries row. commitEntry uses this after it writes.
 export async function readStoredEntry(

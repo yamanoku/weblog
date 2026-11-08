@@ -166,9 +166,11 @@ erDiagram
 
 ### 編集画面
 
-GET `/edit` は、記事の作成フォームと、それとは別の note 欄と、保存済み article の一覧を返す。一覧は draft と public を含み、note、bookmark、page を含めない。各項目は GET `/edit/{id}` へ進む。順序は updatedAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォームを返す。編集できない ID は 404 である。POST `/edit` は article を draft で作成する。POST `/edit/{id}` は、その article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。POST `/edit/tokens` はトークンを発行するか、再発行する。
+GET `/edit` は、記事の作成フォームと、それとは別の note 欄と、保存済み article の一覧と、それとは別の note の一覧を返す。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は updatedAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォームを返す。編集できない ID は 404 である。POST `/edit` は article を draft で作成する。POST `/edit/{id}` は、その article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。POST `/edit/tokens` はトークンを発行するか、再発行する。
 
-note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/edit?posted={id}` へ 302 で移す。その応答は、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。`{id}` が保存済みの公開 note であるときだけ、この URL を出す。記事一覧には note を出さない。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
+note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/edit?posted={id}` へ 302 で移す。その応答は、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。`{id}` が保存済みの公開 note であるときだけ、この URL を出す。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
+
+GET `/edit` の note 一覧は、draft と public の note を updatedAt の新しい順、同じ時刻なら id の降順で返す。各項目は本文と visibility を示し、GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。対象が保存済みの note であるときだけ、そのエントリと、その source の辺、過去タイトル、パス移転を消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。公開の GET `/e/{id}` は、行が無く tombstone があるとき 410 であり、削除前の本文を含まない。対象が note でない、または無いときは 404 であり、行を消さない。
 
 共有の書き込み項目は、kind、title、body、visibility、bookmarkUrl である。記事の編集フォームが送るのは title、body、visibility である。応答の HTML には、確定した正規 URL か、拒否コードを出す。トークンを含む応答には `Cache-Control: no-store` を付ける。GET ではトークンの値を出さない。
 
@@ -282,6 +284,10 @@ CLI もログイン画面を通る。Requirements は、CLI がブラウザの�
 ### 辺を一行ずつ INSERT する
 
 実装は単純である。リンクの多いページは、Free の 1 回 50 クエリを超える。`json_each` の一つの INSERT を選んだ。100 KB を超えるページは、batch の前に 422 で拒否する。
+
+### note を記事一覧の項目にする
+
+所有者は、記事と同じ一覧で note を見る。記事の項目は編集画面へ進む。note は進まない。決めた画面は、note を別の一覧にし、削除だけを付ける。
 
 ### 記事フォームに種類の選択を足す
 

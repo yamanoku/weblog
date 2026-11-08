@@ -134,7 +134,7 @@ Scenario: When the note field has a body, the host stores a public note and show
 
 - Given: The request is verified as the owner. GET `/edit` shows the article create form, a separate note field, and the article list.
 - When: The owner submits a body from the note field and does not submit a title.
-- Then: One entry is stored with kind note, an empty title, the submitted body, and visibility public. It has no view path. No article is created. The response lets the owner see that the save succeeded and shows the canonical URL. The article list does not include this note. An unauthenticated request for the canonical URL returns the body.
+- Then: One entry is stored with kind note, an empty title, the submitted body, and visibility public. It has no view path. No article is created. The response lets the owner see that the save succeeded and shows the canonical URL. The article list does not include this note. The notes list does. An unauthenticated request for the canonical URL returns the body.
 
 Scenario: When the note field body is empty, the host stores nothing and shows the refusal
 
@@ -147,6 +147,36 @@ Scenario: When the owner uses the article form, the host still creates a draft a
 - Given: The request is verified as the owner.
 - When: The owner submits a title and body from the article create form.
 - Then: One entry is stored with kind article and visibility draft. No note is created. This response does not show a note canonical URL.
+
+### See and delete saved notes on the edit screen
+
+As the owner, I want the edit screen to list saved notes so that I can check the body I posted and delete a note without opening an edit screen.
+
+**Acceptance criteria:**
+
+Scenario: The edit screen lists notes apart from articles
+
+- Given: The request is verified as the owner. One note is draft and another is public. One article exists.
+- When: The owner opens GET `/edit`.
+- Then: Both notes appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item shows the body and the visibility. Neither item opens the article edit screen. The article list does not include the notes.
+
+Scenario: When the owner deletes an undelivered note from the edit screen, it leaves the list and the canonical URL is 404
+
+- Given: The request is verified as the owner. One note exists and it has no delivered record. One article exists.
+- When: The owner submits deletion for that note.
+- Then: The note disappears from the edit list. The unauthenticated canonical URL is 404 and does not return the deleted body. The article remains.
+
+Scenario: When the owner deletes a delivered note from the edit screen, the canonical URL is 410
+
+- Given: The request is verified as the owner. One note exists and it has a delivered record.
+- When: The owner submits deletion for that note.
+- Then: The note disappears from the edit list. The unauthenticated canonical URL is 410 and does not return the deleted body. The delivered record remains.
+
+Scenario: When the note delete is sent an article ID, the article remains
+
+- Given: The request is verified as the owner. One article exists.
+- When: The owner submits the note delete with that article's ID.
+- Then: The article remains. The response is not a successful note deletion.
 
 ### Change visibility
 
@@ -321,7 +351,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
 
-GET `/edit`, when the request is verified as the owner, returns the article create form, a separate note field, and a list of stored articles. The list includes draft and public. It does not include notes, bookmarks, or pages. Each item opens that article's edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return this list. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing.
+GET `/edit`, when the request is verified as the owner, returns the article create form, a separate note field, a list of stored articles, and a separate list of stored notes. Both lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article.
 
 ##### A store that is past the free allowance
 

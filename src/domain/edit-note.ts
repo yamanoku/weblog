@@ -13,6 +13,13 @@ export function noteBodyField(value: unknown): string {
   return typeof body === "string" ? body : "";
 }
 
+export function noteDeleteId(value: unknown): { id: string } | { error: "not_found" } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return { error: "not_found" };
+  const id = (value as { noteId?: unknown }).noteId;
+  if (typeof id !== "string" || id === "") return { error: "not_found" };
+  return { id };
+}
+
 export function canonicalEntryUrl(id: string): string {
   return `https://weblog.yamanoku.net/e/${id}`;
 }

@@ -166,9 +166,11 @@ The shared operations are createEntry, updateEntry, deleteEntry, getEntryForOwne
 
 ### Edit screen
 
-GET `/edit` returns the article create form, a separate note field, and the list of stored articles. The list includes draft and public, and omits notes, bookmarks, and pages. Each item opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
+GET `/edit` returns the article create form, a separate note field, the list of stored articles, and a separate list of stored notes. The article list includes draft and public, and omits notes, bookmarks, and pages. Each article opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
 
-The note field submits only the body, as `noteBody`, to POST `/edit?note`. That post stores kind note, an empty title, and visibility public. `publishedAt` is the commit time. `view_path` stays NULL. An empty `noteBody` stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. Success redirects with 302 to GET `/edit?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}`. The URL appears only when `{id}` is a stored public note. The article list does not include the note. POST `/edit` without `note` still creates a draft article and does not read `posted`.
+The note field submits only the body, as `noteBody`, to POST `/edit?note`. That post stores kind note, an empty title, and visibility public. `publishedAt` is the commit time. `view_path` stays NULL. An empty `noteBody` stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. Success redirects with 302 to GET `/edit?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}`. The URL appears only when `{id}` is a stored public note. The article list does not include the note. The notes list does. POST `/edit` without `note` still creates a draft article and does not read `posted`.
+
+The notes list on GET `/edit` returns draft and public notes, newest `updatedAt` first, then descending id. Each item shows the body and visibility and does not open GET `/edit/{id}`. Delete submits `noteId` to POST `/edit?deleteNote`. Only a stored note is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a note is 404 and deletes nothing.
 
 The shared write fields are kind, title, body, visibility, and bookmarkUrl. The article edit form submits title, body, and visibility. The HTML response shows the committed canonical URL, or the refusal code. A response that contains a token uses `Cache-Control: no-store`. GET responses do not show the token value.
 
@@ -282,6 +284,10 @@ The browser could post the form directly to `/entries`. Cloudflare does not say 
 ### INSERT one edge row at a time
 
 The code is simpler. A page with many links would exceed the Free plan's 50 queries per invocation. The selected write is one INSERT that uses `json_each`. A page that exceeds 100 KB is refused with 422 before the batch.
+
+### Put notes in the article list
+
+The owner would see notes in the same list as articles. Article items open an edit screen. Notes would not. The decided screen is a separate notes list with delete only.
 
 ### Add a kind select to the article form
 

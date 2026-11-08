@@ -1,12 +1,13 @@
+import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
-import { noteBodyField, postedNoteUrl } from "../../domain/edit-note.ts";
+import { noteBodyField, noteDeleteId, postedNoteUrl } from "../../domain/edit-note.ts";
 import {
   editArticleDatabase,
   listArticlesForEdit,
   submitArticleFromEdit,
 } from "../../store/edit-article.ts";
-import { submitNoteFromEdit } from "../../store/edit-note.ts";
+import { deleteNoteFromEdit, listNotesForEdit, submitNoteFromEdit } from "../../store/edit-note.ts";
 import { readStoredEntry } from "../../store/entries.ts";
 
 function postedText(value: unknown): string {
@@ -22,6 +23,7 @@ export const loader = defineHandler(async (c) => {
   const entry = id === "" ? null : await readStoredEntry(editArticleDatabase(), id);
   return {
     articles: await listArticlesForEdit(editArticleDatabase()),
+    notes: await listNotesForEdit(editArticleDatabase()),
     postedNote: postedNoteUrl(entry),
   };
 });
@@ -45,5 +47,12 @@ export const actions = {
       throw new ValidationError({ noteBody: result.error });
     }
     return c.redirect(`/edit?posted=${result.id}`);
+  }),
+  deleteNote: defineHandler(async (c) => {
+    const posted = await c.req.parseBody();
+    const target = noteDeleteId(posted);
+    if ("error" in target) throw new HTTPException(404, { message: "not_found" });
+    const result = await deleteNoteFromEdit(editArticleDatabase(), target.id);
+    if ("error" in result) throw new HTTPException(404, { message: "not_found" });
   }),
 };

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Form, Link, useForm } from "@void/svelte";
 
-  let { articles = [], postedNote = null } = $props();
+  let { articles = [], notes = [], postedNote = null } = $props();
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
 </script>
 
@@ -29,6 +29,24 @@
   </label>
   <button type="submit">Post</button>
 </Form>
+
+<h2>Notes</h2>
+{#if notes.length === 0}
+  <p>No notes yet.</p>
+{:else}
+  <ul>
+    {#each notes as note (note.id)}
+      <li>
+        <p style="white-space: pre-wrap">{note.body}</p>
+        {note.visibility}
+        <form method="post" action="?deleteNote">
+          <input type="hidden" name="noteId" value={note.id} />
+          <button type="submit">Delete</button>
+        </form>
+      </li>
+    {/each}
+  </ul>
+{/if}
 
 <h2>Articles</h2>
 {#if articles.length === 0}

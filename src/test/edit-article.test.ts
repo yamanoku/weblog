@@ -279,7 +279,9 @@ test("the article edit form posts visibility", () => {
   assert.equal(canonical.includes("void/db"), false);
   assert.match(canonical, /readsDevCatalog\(/);
   assert.match(canonical, /readStoredEntry\(/);
-  assert.match(canonical, /visibility !== "public"/);
+  assert.match(canonical, /visibility === "public"/);
+  assert.match(canonical, /hasTombstone\(/);
+  assert.match(canonical, /410/);
   assert.match(canonical, /entryById\(/);
 });
 

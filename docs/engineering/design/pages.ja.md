@@ -53,10 +53,11 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /pages` | 公開タイトルの HTML 一覧。続きは、同じ形のカーソルを使う。 |
 | `GET /{タイトル}` | 公開エントリ。要件が空ページとするときは、空ページである。 |
 | `GET /e/{id}` | 正規 URL の HTML。下の Activity Streams の場合を除く。 |
-| `GET /edit` | 記事の作成フォームと、別の note 欄と、所有者の記事一覧。下書きを含む。 |
+| `GET /edit` | 記事の作成フォームと、別の note 欄と、所有者の記事一覧と、それとは別の note 一覧。下書きを含む。note は記事の編集フォームへ進まない。 |
 | `GET /edit/{id}` | そのエントリの編集フォーム。 |
 | `POST /edit` | 下書きの article を作成する。 |
 | `POST /edit?note` | note 欄から公開の note を作成する。 |
+| `POST /edit?deleteNote` | 編集画面から note を一つ削除する。 |
 | `POST /edit/{id}` | 更新。 |
 | `POST /edit/tokens` | ブラウザからの CLI トークンの発行と再発行。 |
 
