@@ -7,6 +7,6 @@
 <nav>
   <Link href="/">Home</Link>
   <Link href="/pages">Titles</Link>
-  <Link href="/edit">New entry</Link>
+  <Link href="/edit">Edit</Link>
 </nav>
 {@render children()}

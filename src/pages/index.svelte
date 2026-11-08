@@ -6,6 +6,8 @@
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
 </script>
 
+<h1>weblog.yamanoku.net</h1>
+
 {#if owner}
   <h2>Post a note</h2>
   {#if postedNote}
@@ -20,8 +22,6 @@
   </Form>
 {/if}
 
-<h1>Deliverable entries</h1>
-<p>weblog.yamanoku.net</p>
 <ul>
   {#each entries as entry (entry.id)}
     <li>
