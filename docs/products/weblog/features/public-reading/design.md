@@ -50,9 +50,13 @@ The read flow is as follows.
 
 A page that needs title resolution uses two `batch()` calls. The first reads the entry or the 11-row page. The second resolves titles and Gyazo ids, with `IN` lists chunked at 80 bound parameters. [Limits](https://developers.cloudflare.com/d1/platform/limits/) counts one `batch()` as one query toward the 50-query invocation limit. Statement length and the 100-parameter limit still apply inside the batch. An image request uses one SELECT and one R2 `get`. This feature does not issue one query per edge. This design does not claim that HTML rendering fits the free tier's CPU time per invocation. That time is unmeasured. A request that cannot finish inside the free tier fails for that request. The app does not move onto a paid plan.
 
+`vp dev` answers the public HTML pages from the in-memory domain catalog. Those loaders do not query D1. `/` lists the catalog's deliverable entries. `/pages` lists its public entries. `/{title}` resolves a public catalog title. `/e/{id}` returns the catalog entry for that id. An article saved from the edit screen during `vp dev` is written to local D1 and does not appear on those pages.
+
+`vp preview` and the deployed Worker read those pages from D1 through the store adapter. They do not add catalog rows. An empty table stays an empty list. A draft row stays absent. Page files do not import `void/db`. The edit screens read D1 in both modes. The acceptance criteria describe the deployed Worker. The catalog is not a second store.
+
 ## Architecture and sequence diagrams
 
-The reader talks only to the Worker. The Worker calls the domain. The domain calls a store port and, for an image, an object port. The store port's first adapter is D1, binding `DB`. The object port's adapter is R2, binding `GYAZO_BUCKET`, bucket `gyazo-archives`.
+The reader talks only to the Worker. The Worker calls the domain. The domain calls a store port and, for an image, an object port. The store port's first adapter is D1, binding `DB`. The object port's adapter is R2, binding `GYAZO_BUCKET`, bucket `gyazo-archives`. During `vp dev`, the public HTML loaders stop at the catalog and do not call D1. The diagram is the deployed read.
 
 ```mermaid
 sequenceDiagram

@@ -150,6 +150,11 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.match(titlePage, /entry\.body/);
   const homeLoader = readRoot("pages/index.server.ts");
   assert.match(homeLoader, /deliverableEntries/);
+  assert.match(homeLoader, /readsDevCatalog\(/);
+  const pagesLoader = readRoot("pages/pages.server.ts");
+  assert.match(pagesLoader, /publicEntries/);
+  assert.match(pagesLoader, /listPublicTitles\(/);
+  assert.equal(pagesLoader.includes("void/db"), false);
   const editForm = readRoot("pages/edit/index.svelte");
   assert.match(editForm, /Create an entry/);
 });

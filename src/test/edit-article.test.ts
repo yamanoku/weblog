@@ -7,7 +7,13 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
 import { publicArticleFields } from "../domain/edit-article.ts";
 import { publicArticleHref, publicArticleMatchesPath } from "../domain/public-article.ts";
-import { commitEntry, readStoredEntry } from "../store/entries.ts";
+import {
+  commitEntry,
+  listDeliverableEntries,
+  listPublicTitles,
+  readPublicEntryByPath,
+  readStoredEntry,
+} from "../store/entries.ts";
 import {
   listArticlesForEdit,
   listPublicArticles,
@@ -237,10 +243,12 @@ test("public articles are listed for the home page and matched by the title path
   const title = readRoot("pages/[title].server.ts");
   assert.equal(home.includes("void/db"), false);
   assert.equal(title.includes("void/db"), false);
-  assert.match(home, /listPublicArticles\(/);
+  assert.match(home, /readsDevCatalog\(/);
+  assert.match(home, /listDeliverableEntries\(/);
   assert.match(home, /deliverableEntries/);
-  assert.match(title, /listPublicArticles\(/);
-  assert.match(title, /publicArticleMatchesPath\(/);
+  assert.match(title, /readsDevCatalog\(/);
+  assert.match(title, /readPublicEntryByPath\(/);
+  assert.match(title, /publicEntryByTitle\(/);
   assert.match(readRoot("pages/index.svelte"), /entry\.href/);
   assert.match(readRoot("pages/[title].svelte"), /entry\.body/);
   sqlite.close();
@@ -269,6 +277,70 @@ test("the article edit form posts visibility", () => {
 
   const canonical = readRoot("pages/e/[id].server.ts");
   assert.equal(canonical.includes("void/db"), false);
-  assert.match(canonical, /publicArticleFields\(/);
+  assert.match(canonical, /readsDevCatalog\(/);
+  assert.match(canonical, /readStoredEntry\(/);
+  assert.match(canonical, /visibility !== "public"/);
   assert.match(canonical, /entryById\(/);
+});
+
+test("deployed public reads use D1 rows and skip drafts and pages", async () => {
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  const now = "2026-11-07T06:00:00.000Z";
+  await commitEntry(database, {
+    id: "article-1",
+    kind: "article",
+    title: "Spaced title",
+    body: "Public article",
+    visibility: "public",
+    publishedAt: "2026-11-07T02:00:00.000Z",
+    createdAt: now,
+    updatedAt: now,
+    viewPath: "Spaced_title",
+  });
+  await commitEntry(database, {
+    id: "note-1",
+    kind: "note",
+    title: "short-post",
+    body: "Public note",
+    visibility: "public",
+    publishedAt: "2026-11-07T03:00:00.000Z",
+    createdAt: now,
+    updatedAt: "2026-11-07T03:00:00.000Z",
+  });
+  await commitEntry(database, {
+    id: "page-1",
+    kind: "page",
+    title: "index-only",
+    body: "Public page",
+    visibility: "public",
+    publishedAt: null,
+    createdAt: now,
+    updatedAt: "2026-11-07T04:00:00.000Z",
+  });
+  await commitEntry(database, {
+    id: "draft-1",
+    kind: "note",
+    title: "draft-thought",
+    body: "Draft",
+    visibility: "draft",
+    publishedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const deliverable = await listDeliverableEntries(database);
+  assert.deepEqual(
+    deliverable.map((entry) => entry.id),
+    ["note-1", "article-1"],
+  );
+  const titles = await listPublicTitles(database);
+  assert.deepEqual(
+    titles.map((entry) => entry.title),
+    ["Spaced title", "index-only", "short-post"],
+  );
+  const byPath = await readPublicEntryByPath(database, "Spaced_title");
+  assert.equal(byPath?.id, "article-1");
+  assert.equal(await readPublicEntryByPath(database, "draft-thought"), null);
+  sqlite.close();
 });

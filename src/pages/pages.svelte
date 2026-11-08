@@ -7,6 +7,6 @@
 <h1>Public titles</h1>
 <ul>
   {#each entries as entry (entry.id)}
-    <li><Link href={"/" + entry.title}>{entry.title}</Link></li>
+    <li><Link href={entry.href}>{entry.title}</Link></li>
   {/each}
 </ul>

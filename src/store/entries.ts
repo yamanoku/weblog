@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { eq } from "void/db";
+import { and, desc, eq, isNotNull, ne, or } from "void/db";
 import { entries } from "../db/schema.ts";
 
 export type EntryCommit = {
@@ -69,4 +69,75 @@ export async function commitEntry(
   const saved = await readStoredEntry(database, row.id);
   if (!saved) throw new Error("entry was not stored");
   return saved;
+}
+
+export type PublicEntryRow = {
+  id: string;
+  title: string;
+  kind: string;
+  body: string;
+};
+
+const deliverableKind = or(
+  eq(entries.kind, "article"),
+  eq(entries.kind, "note"),
+  eq(entries.kind, "bookmark"),
+);
+
+// Public articles, notes, and bookmarks that have a published time. Pages and drafts stay out.
+export async function listDeliverableEntries(
+  database: BetterSQLite3Database,
+): Promise<PublicEntryRow[]> {
+  const rows = await database
+    .select()
+    .from(entries)
+    .where(and(eq(entries.visibility, "public"), isNotNull(entries.publishedAt), deliverableKind))
+    .orderBy(desc(entries.publishedAt), desc(entries.id));
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    kind: row.kind,
+    body: row.body,
+  }));
+}
+
+export type PublicTitleRow = {
+  id: string;
+  title: string;
+};
+
+// Public titles for the index. An empty title is omitted. Drafts stay out.
+export async function listPublicTitles(
+  database: BetterSQLite3Database,
+): Promise<PublicTitleRow[]> {
+  const rows = await database
+    .select({ id: entries.id, title: entries.title })
+    .from(entries)
+    .where(and(eq(entries.visibility, "public"), ne(entries.title, "")))
+    .orderBy(desc(entries.updatedAt), desc(entries.id));
+  return rows;
+}
+
+// One public row for a title path. A view path wins over a raw title.
+export async function readPublicEntryByPath(
+  database: BetterSQLite3Database,
+  pathTitle: string,
+): Promise<PublicEntryRow | null> {
+  const rows = await database
+    .select()
+    .from(entries)
+    .where(
+      and(
+        eq(entries.visibility, "public"),
+        or(eq(entries.viewPath, pathTitle), eq(entries.title, pathTitle)),
+      ),
+    );
+  const saved = rows.find((row) => row.viewPath === pathTitle) ?? rows[0];
+  if (!saved) return null;
+  return {
+    id: saved.id,
+    title: saved.title,
+    kind: saved.kind,
+    body: saved.body,
+  };
 }

@@ -46,7 +46,7 @@ export function articleUpdateFromEditForm(form: ArticleEditForm): ArticleUpdate 
   };
 }
 
-// An unauthenticated canonical URL shows a public article and nothing else.
+// Fields for a stored public article. A draft or another kind returns null.
 export function publicArticleFields(
   entry: { kind: string; visibility: string; title: string; body: string } | null,
 ): { title: string; body: string } | null {

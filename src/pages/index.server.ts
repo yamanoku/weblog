@@ -1,23 +1,24 @@
 import { deliverableEntries } from "../domain/catalog.ts";
 import { publicArticleHref } from "../domain/public-article.ts";
 import { defineHandler } from "void";
-import { editArticleDatabase, listPublicArticles } from "../store/edit-article.ts";
+import { editArticleDatabase } from "../store/edit-article.ts";
+import { listDeliverableEntries } from "../store/entries.ts";
+import { readsDevCatalog } from "../store/read-source.ts";
 
-export const loader = defineHandler(async () => {
-  const stored = await listPublicArticles(editArticleDatabase());
-  const articles = stored.map((entry) => ({
-    id: entry.id,
-    title: entry.title,
-    kind: "article",
-    body: entry.body,
-    href: publicArticleHref(entry),
-  }));
-  const samples = deliverableEntries().map((entry) => ({
+function homeEntry(entry: { id: string; title: string; kind: string; body: string }) {
+  return {
     id: entry.id,
     title: entry.title,
     kind: entry.kind,
     body: entry.body,
-    href: "/" + entry.title,
-  }));
-  return { entries: [...articles, ...samples] };
+    href: publicArticleHref(entry),
+  };
+}
+
+export const loader = defineHandler(async () => {
+  if (readsDevCatalog()) {
+    return { entries: deliverableEntries().map(homeEntry) };
+  }
+  const stored = await listDeliverableEntries(editArticleDatabase());
+  return { entries: stored.map(homeEntry) };
 });
