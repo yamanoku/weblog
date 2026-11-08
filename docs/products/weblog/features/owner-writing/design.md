@@ -176,7 +176,7 @@ The notes list on GET `/edit` returns draft and public notes, newest `updatedAt`
 
 GET `/edit` also returns the bookmark create form and the bookmark list described above. The bookmark list includes draft and public, and omits articles, notes, and pages. Each item shows the title, the external URL, and the visibility, and opens GET `/edit/{id}`. POST `/edit?bookmark` creates a bookmark as draft. The form submits `title`, `bookmarkUrl`, and `body`. The stored body is the submitted text. The host does not insert `bookmarkUrl` into the body. `bookmark_url` is the submitted URL with whitespace removed from both ends. An empty title after removing whitespace from both ends stores nothing and returns 422 `missing_title`. A `bookmarkUrl` that is missing, or empty after that trim, stores nothing and returns 422 `missing_bookmark_url`. A draft may have an empty body. The create does not set `publishedAt` and does not create an article or a note.
 
-GET `/edit/{id}` for a bookmark submits `title`, `bookmarkUrl`, `body`, and `visibility`. POST `/edit/{id}` replaces those fields and keeps kind bookmark. A public save with an empty body does not store and returns 422 `empty_body`. An empty title returns 422 `missing_title`. A missing external URL returns 422 `missing_bookmark_url`. Invalid visibility returns 422 `invalid_visibility`. `publishedAt` is set when the bookmark becomes public and is kept while it stays public. A draft save clears `publishedAt`. The view path follows the same rule as an article update.
+GET `/edit/{id}` for a bookmark submits `title`, `bookmarkUrl`, `body`, and `visibility`. POST `/edit/{id}` replaces those fields and keeps kind bookmark. A public save with an empty body stores the empty string. An empty title returns 422 `missing_title`. A missing external URL returns 422 `missing_bookmark_url`. Invalid visibility returns 422 `invalid_visibility`. `publishedAt` is set when the bookmark becomes public and is kept while it stays public. A draft save clears `publishedAt`. The view path follows the same rule as an article update.
 
 Delete submits `bookmarkId` to POST `/edit?deleteBookmark`. Only a stored bookmark is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a bookmark is 404 and deletes nothing.
 
@@ -202,11 +202,11 @@ Refusal JSON has one `error` field.
 - 422 `missing_bookmark_url`. A bookmark has no external URL.
 - 422 `invalid_kind`. The kind is not one of the four.
 - 422 `invalid_visibility`. The visibility is not draft or public.
-- 422 `empty_body`. The visibility is public and the body is the empty string.
+- 422 `empty_body`. The visibility is public and the body is the empty string. A bookmark is not this refusal.
 - 422 `edges_too_large`. The edges do not fit in one SQL statement.
 - 503 `store_unavailable`. The batch failed, or D1 refused the query under the free allowance.
 
-A missing body key is treated as the empty string. When the visibility is public and the body is empty, the Worker returns 422 `empty_body` and stores nothing. When the visibility is draft and the body is empty, it stores the empty string. A whitespace-only body is not empty. If an article, note, or page omits the external URL, bookmark_url is empty.
+A missing body key is treated as the empty string. When the visibility is public and the body is empty, the Worker returns 422 `empty_body` and stores nothing, except a bookmark. A public bookmark stores the empty string. When the visibility is draft and the body is empty, it stores the empty string. A whitespace-only body is not empty. If an article, note, or page omits the external URL, bookmark_url is empty.
 
 ### Public URLs
 

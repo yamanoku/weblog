@@ -28,7 +28,7 @@ export type BookmarkUpdate =
       bookmarkUrl: string;
       visibility: BookmarkVisibility;
     }
-  | { error: "missing_title" | "missing_bookmark_url" | "invalid_visibility" | "empty_body" };
+  | { error: "missing_title" | "missing_bookmark_url" | "invalid_visibility" };
 
 function presentTitle(title: string): boolean {
   return title.trim() !== "";
@@ -55,7 +55,6 @@ export function bookmarkUpdateFromEditForm(form: BookmarkEditForm): BookmarkUpda
   if (!presentTitle(form.title)) return { error: "missing_title" };
   const bookmarkUrl = presentUrl(form.bookmarkUrl);
   if (!bookmarkUrl) return { error: "missing_bookmark_url" };
-  if (form.visibility === "public" && form.body === "") return { error: "empty_body" };
   return {
     title: form.title,
     body: form.body,

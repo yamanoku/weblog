@@ -140,14 +140,18 @@ test("the edit screen lists bookmarks and updates only that bookmark", async () 
   assert.equal((await listArticlesForEdit(database)).length, 1);
   assert.equal((await listNotesForEdit(database)).length, 1);
 
-  const refused = await updateBookmarkFromEdit(
+  const publishedEmpty = await updateBookmarkFromEdit(
     database,
     "bookmark-new",
     { title: "Newer", body: "", visibility: "public", bookmarkUrl: "https://example.com/new" },
     "2026-11-08T03:00:00.000Z",
   );
-  assert.deepEqual(refused, { error: "empty_body" });
-  assert.equal((await readStoredEntry(database, "bookmark-new"))?.body, "new comment");
+  assert.equal("entry" in publishedEmpty, true);
+  if (!("entry" in publishedEmpty)) return;
+  assert.equal(publishedEmpty.entry.visibility, "public");
+  assert.equal(publishedEmpty.entry.body, "");
+  assert.equal(publishedEmpty.entry.bookmarkUrl, "https://example.com/new");
+  assert.equal(publishedEmpty.entry.publishedAt, "2026-11-08T01:00:00.000Z");
 
   const published = await updateBookmarkFromEdit(
     database,

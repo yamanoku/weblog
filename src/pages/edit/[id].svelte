@@ -15,7 +15,7 @@
     </label>
     <label>
       Comment
-      <textarea name="body" rows="8">{entry.body}</textarea>
+      <textarea name="body" rows="8" value={entry.body}></textarea>
     </label>
     <label>
       Visibility

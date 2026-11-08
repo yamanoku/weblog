@@ -176,7 +176,7 @@ GET `/edit` の note 一覧は、draft と public の note を updatedAt の新�
 
 GET `/edit` は、上に書いたブックマークの作成フォームと bookmark の一覧も返す。bookmark の一覧は draft と public を含み、article、note、page を含めない。各項目はタイトル、外部 URL、visibility を示し、GET `/edit/{id}` へ進む。POST `/edit?bookmark` は bookmark を draft で作成する。フォームは `title`、`bookmarkUrl`、`body` を送る。保存する本文は、送ったテキストである。`bookmarkUrl` は本文へ入れない。`bookmark_url` は、送った URL の前後の空白を除いた文字列である。前後の空白を除いたタイトルが空のときは保存せず、422 `missing_title` を返す。`bookmarkUrl` が無い、またはその空白を除くと空のときは保存せず、422 `missing_bookmark_url` を返す。draft の本文は空でも保存する。作成は `publishedAt` を付けない。article は作らない。note は作らない。
 
-bookmark の GET `/edit/{id}` は、`title`、`bookmarkUrl`、`body`、`visibility` を送る。POST `/edit/{id}` は、その項目を置き換え、種類は bookmark のままにする。public で本文が空のときは保存せず、422 `empty_body` を返す。空のタイトルは 422 `missing_title` を返す。外部 URL が無いときは 422 `missing_bookmark_url` を返す。visibility が不正なときは 422 `invalid_visibility` を返す。bookmark が public になったとき、`publishedAt` を付ける。public のままなら、その時刻を維持する。draft へ保存すると、`publishedAt` を消す。閲覧用パスは、article の更新と同じ規則に従う。
+bookmark の GET `/edit/{id}` は、`title`、`bookmarkUrl`、`body`、`visibility` を送る。POST `/edit/{id}` は、その項目を置き換え、種類は bookmark のままにする。public で本文が空のときは、空文字を保存する。空のタイトルは 422 `missing_title` を返す。外部 URL が無いときは 422 `missing_bookmark_url` を返す。visibility が不正なときは 422 `invalid_visibility` を返す。bookmark が public になったとき、`publishedAt` を付ける。public のままなら、その時刻を維持する。draft へ保存すると、`publishedAt` を消す。閲覧用パスは、article の更新と同じ規則に従う。
 
 削除は `bookmarkId` を POST `/edit?deleteBookmark` へ送る。保存済みの bookmark だけを消す。消すときは、その source の辺、過去タイトル、パス移転も消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。bookmark でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
 
@@ -202,11 +202,11 @@ CLI は環境変数 `WEBLOG_TOKEN` を Bearer として送る。トークンを�
 - 422 `missing_bookmark_url`。bookmark に外部 URL が無い。
 - 422 `invalid_kind`。四つの種類でない。
 - 422 `invalid_visibility`。draft と public でない。
-- 422 `empty_body`。public であり、本文が空文字である。
+- 422 `empty_body`。public であり、本文が空文字である。bookmark はこの拒否にしない。
 - 422 `edges_too_large`。辺が一つの SQL 文に収まらない。
 - 503 `store_unavailable`。batch が失敗したか、無料枠で D1 が拒否した。
 
-本文キーが無いときは、空文字として扱う。public で本文が空文字のときは、422 `empty_body` を返して保存しない。draft で本文が空文字のときは、空文字を保存する。空白だけの本文は、空文字にしない。article、note、page で外部 URL が無ければ、bookmark_url は空にする。
+本文キーが無いときは、空文字として扱う。public で本文が空文字のときは、bookmark を除き、422 `empty_body` を返して保存しない。public の bookmark は空文字を保存する。draft で本文が空文字のときは、空文字を保存する。空白だけの本文は、空文字にしない。article、note、page で外部 URL が無ければ、bookmark_url は空にする。
 
 ### 公開の URL
 

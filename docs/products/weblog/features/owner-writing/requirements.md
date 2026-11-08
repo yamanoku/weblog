@@ -79,8 +79,8 @@ Scenario: When an update fails validation, the previous body and edges remain
 Scenario: When a public write has an empty body, the host stores nothing
 
 - Given: The request is verified as the owner.
-- When: The owner submits visibility public and an empty body.
-- Then: A create does not make an entry. An update leaves the previous body and edges. The response is not an authentication failure.
+- When: The owner submits visibility public and an empty body for an article, a note, or a page.
+- Then: A create does not make an entry. An update leaves the previous body and edges. The response is not an authentication failure. A bookmark is not this refusal.
 
 Scenario: When a draft write has an empty body, the host stores the empty string
 
@@ -220,11 +220,11 @@ Scenario: When the owner updates a bookmark, the host replaces the title, body, 
 - When: The owner opens GET `/edit/{id}` for that bookmark and submits a new title, body, visibility, and external URL.
 - Then: Those four fields become the submitted values. The kind stays bookmark. The body does not gain the URL. The immutable ID stays.
 
-Scenario: When a public bookmark update has an empty body, the previous bookmark remains
+Scenario: When a public bookmark has an empty comment, the host stores it
 
-- Given: The request is verified as the owner. One bookmark exists and has a body.
-- When: The owner submits visibility public and an empty body for that bookmark.
-- Then: The host does not store the update. The previous title, body, visibility, and external URL remain.
+- Given: The request is verified as the owner. One bookmark has a title and an external URL.
+- When: The owner submits visibility public and an empty body for that bookmark, with the title and the external URL.
+- Then: The bookmark is public. The body is the empty string. The external URL stays apart from the body. The response is not a refusal for an empty body.
 
 Scenario: When the owner deletes an undelivered bookmark from the edit screen, the canonical URL is 404
 
@@ -391,7 +391,7 @@ The entry and the edges made from its body commit in the same update. A reader c
 
 An empty body is the empty string. A body that contains only whitespace is not empty.
 
-A write with visibility public and an empty body is not stored. A create does not make an entry. An update leaves the previous body and edges. A change from draft to public is also not stored when the body is empty. This refusal is separate from an authentication failure.
+A write with visibility public and an empty body is not stored when the kind is article, note, or page. A create does not make an entry. An update leaves the previous body and edges. A change from draft to public is also not stored when the body is empty. This refusal is separate from an authentication failure. A bookmark may be public with an empty comment. The external URL stays required and stays apart from the body.
 
 A write with visibility draft stores an empty body as the empty string. A change from public to draft also stores the empty string when the body is empty.
 

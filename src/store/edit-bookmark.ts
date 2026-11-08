@@ -29,7 +29,7 @@ export type OwnerBookmark = {
 export type BookmarkEditResult =
   | { entry: StoredEntry }
   | {
-      error: "not_found" | "missing_title" | "missing_bookmark_url" | "invalid_visibility" | "empty_body";
+      error: "not_found" | "missing_title" | "missing_bookmark_url" | "invalid_visibility";
     };
 
 export async function listBookmarksForEdit(
