@@ -75,6 +75,10 @@ The domain stays free of `void`, `void/db`, Hono, Svelte, `@void/svelte`, Fedify
 
 Publish with `void deploy --platform cloudflare` from the repository root. The command reads application source from `src/`. Do not install a Void platform. Do not enable Sandboxes. Do not add a second Worker. The hostname stays `weblog.yamanoku.net`.
 
+A push to `main` runs that command in GitHub Actions. The workflow is `.github/workflows/void-deploy.yml`. The job checks out that commit, installs with `npm ci` on Node 24, and runs `npx void deploy --platform cloudflare`. Node 24 meets the `void` engine range `^24.22.0 || >=26.12.0`. A later push to `main` cancels the job that is still running. [Deployment](https://void.cloud/guide/deployment) is the source for generating this Cloudflare workflow. The same command remains the publish path from a workstation.
+
+The job reads `CLOUDFLARE_API_TOKEN` from the Actions secret. [Deploying from CI](https://void.cloud/integrations/cloudflare#deploying-from-ci) says the token needs Workers Scripts edit, read access to bound resources, and edit access to products Void provisions. The workflow sets `CLOUDFLARE_ACCOUNT_ID` to the account recorded in `void.lock.json`, so a token that can see more than one account still publishes this app. The workflow sets `CLOUDFLARE_WORKERS_SUBDOMAIN` to `yamanoku`, the account subdomain of `https://weblog.yamanoku.workers.dev`. The token value stays out of the repository. This app supplies no `DATABASE_URL`. Access service tokens stay unset. Readiness uses the workers.dev host. Access covers `/edit` and `/edit/*` only.
+
 ## Alternatives considered
 
 ### React, Vue, or Solid

@@ -73,7 +73,7 @@ D1 が保存先である。KV に置くのは、リモート鍵の短時間の�
 
 ## デプロイに関する特記事項
 
-上の公開コマンド以外は無い。この文書は、何も用意しない。
+`main` への push は、GitHub Actions で `void deploy --platform cloudflare` を実行する。ジョブは、Actions のシークレット `CLOUDFLARE_API_TOKEN` で認証する。ワークフローは `CLOUDFLARE_ACCOUNT_ID` を、`void.lock.json` のアカウントに固定する。この文書は、Cloudflare の製品を用意しない。トークンには、Workers Scripts の編集、束ねた資源の読み取り、そのコマンドが用意する製品の編集が要る。出典は [CI からのデプロイ](https://void.cloud/integrations/cloudflare#deploying-from-ci) である。
 
 ## 検討した代替手段
 

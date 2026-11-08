@@ -75,6 +75,10 @@ Void は、所有者の Cloudflare アカウントへアプリをデプロイす
 
 リポジトリのルートから `void deploy --platform cloudflare` で公開する。このコマンドは、アプリケーションのソースを `src/` から読む。Void のプラットフォームはインストールしない。Sandboxes は有効にしない。二つ目の Worker は足さない。ホスト名は `weblog.yamanoku.net` のままである。
 
+`main` への push は、GitHub Actions で同じコマンドを実行する。ワークフローは `.github/workflows/void-deploy.yml` である。ジョブは、そのコミットを取り出し、Node 24 で `npm ci` を実行し、`npx void deploy --platform cloudflare` を実行する。Node 24 は、`void` のエンジン範囲 `^24.22.0 || >=26.12.0` を満たす。後から来た `main` への push は、実行中のジョブを取り消す。出典は [デプロイ](https://void.cloud/guide/deployment) である。作業端末からの公開も、同じコマンドのままである。
+
+ジョブは、Actions のシークレット `CLOUDFLARE_API_TOKEN` を読む。[CI からのデプロイ](https://void.cloud/integrations/cloudflare#deploying-from-ci) は、このトークンに Workers Scripts の編集、束ねた資源の読み取り、Void が用意する製品の編集が要ると説明している。ワークフローは `CLOUDFLARE_ACCOUNT_ID` を、`void.lock.json` に記録したアカウントにする。複数のアカウントを見られるトークンでも、このアプリを公開する。ワークフローは `CLOUDFLARE_WORKERS_SUBDOMAIN` を `yamanoku` にする。これは `https://weblog.yamanoku.workers.dev` のアカウントサブドメインである。トークンの値はリポジトリに置かない。このアプリは `DATABASE_URL` を渡さない。Access のサービストークンは置かない。準備確認は workers.dev のホストを使う。Access が覆うのは `/edit` と `/edit/*` だけである。
+
 ## 検討した代替手段
 
 ### React、Vue、Solid

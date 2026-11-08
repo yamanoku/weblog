@@ -73,7 +73,7 @@ The domain does not import the Cloudflare SDK. The app does not rely on reading 
 
 ## Deployment notes
 
-None beyond the deploy command above. This document provisions nothing.
+A push to `main` runs `void deploy --platform cloudflare` in GitHub Actions. The job authenticates with the Actions secret `CLOUDFLARE_API_TOKEN`. The workflow pins `CLOUDFLARE_ACCOUNT_ID` to the account in `void.lock.json`. This document provisions no Cloudflare product. The token still needs Workers Scripts edit, read access to bound resources, and edit access to products that command provisions. [Deploying from CI](https://void.cloud/integrations/cloudflare#deploying-from-ci) is the source for those permissions.
 
 ## Alternatives considered
 

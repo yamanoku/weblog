@@ -1,0 +1,31 @@
+name: Deploy to Cloudflare
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: void-cloudflare-deploy-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          # void@1.5.0 requires Node ^24.22.0 or >=26.12.0.
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Matches void.lock.json resolved.account_id.
+          CLOUDFLARE_ACCOUNT_ID: "1b16f7266470fc5782fd6254ba8efec9"
+          # Account subdomain for https://weblog.yamanoku.workers.dev.
+          CLOUDFLARE_WORKERS_SUBDOMAIN: yamanoku
+        run: npx void deploy --platform cloudflare
