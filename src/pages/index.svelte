@@ -6,31 +6,46 @@
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
 </script>
 
-<h1>weblog.yamanoku.net</h1>
-
 {#if owner}
-  <h2>Post a note</h2>
-  {#if postedNote}
-    <p>Saved <a href={postedNote.canonicalUrl}>{postedNote.canonicalUrl}</a></p>
-  {/if}
+<div class="post-note">
   <Form form={noteForm}>
-    <label>
-      Body
-      <textarea name="noteBody" rows="4" bind:value={noteForm.data.noteBody}></textarea>
-    </label>
-    <button type="submit">Post</button>
+    <div>
+      <textarea name="noteBody" rows="4" placeholder="いまどうしてる？" bind:value={noteForm.data.noteBody}></textarea>
+    </div>
+    <button type="submit">投稿</button>
   </Form>
+</div>
 {/if}
 
-<ul>
-  {#each entries as entry (entry.id)}
-    <li>
-      <Link href={entry.href}>{entry.title}</Link>
-      {#if entry.kind === "article"}
-        {@html markdownToHtml(entry.body)}
-      {:else}
-        <p style="white-space: pre-wrap">{entry.body}</p>
-      {/if}
-    </li>
-  {/each}
-</ul>
+<h1>weblog.yamanoku.net</h1>
+
+
+{#each entries as entry (entry.id)}
+  <article>
+    <Link href={entry.href}>{entry.title}</Link>
+    {#if entry.kind === "article"}
+      {@html markdownToHtml(entry.body)}
+    {:else}
+      <p style="white-space: pre-wrap">{entry.body}</p>
+    {/if}
+    <Link href={`/e/${entry.id}`}>permalink</Link>
+    <time datetime={entry.publishedAt}>{entry.publishedAt}</time>
+  </article>
+{/each}
+
+<style scoped >
+  .post-note {
+    margin-block-start: var(--y-rhythm-2);
+  }
+  .post-note textarea {
+    width: 100%;
+    height: 100px;
+    resize: none;
+    padding: var(--y-rhythm-1);
+    border: 2px solid var(--y-black-base, #111);
+    border-radius: var(--y-rhythm-1);
+  }
+  .post-note button {
+    margin-block-start: var(--y-rhythm-1);
+  }
+</style>

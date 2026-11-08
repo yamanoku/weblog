@@ -28,4 +28,9 @@ export default defineConfig({
       },
     ],
   },
+  head: {
+    htmlAttrs: {
+      lang: "ja",
+    }
+  },
 });

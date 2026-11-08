@@ -14,7 +14,8 @@
   "dependencies": {
     "@void/svelte": "^1.5.0",
     "svelte": "^5.39.0",
-    "void": "^1.5.0"
+    "void": "^1.5.0",
+    "yama-normalize": "2.6.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "9.6.0",

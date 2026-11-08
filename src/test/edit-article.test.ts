@@ -269,6 +269,10 @@ test("public articles are listed for the home page and matched by the title path
     "/Spaced_title",
   );
   assert.equal(articles[0]?.body, markdown);
+  const titleIndex = readRoot("pages/pages.svelte");
+  assert.match(titleIndex, /href=\{"\/e\/" \+ entry\.id\}/);
+  assert.match(titleIndex, /rel="bookmark"/);
+  assert.match(titleIndex, /パーマリンク/);
 
   const home = readRoot("pages/index.server.ts");
   const title = readRoot("pages/[title].server.ts");

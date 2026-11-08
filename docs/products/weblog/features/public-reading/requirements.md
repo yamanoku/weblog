@@ -123,7 +123,7 @@ Scenario: When public titles exist, the index lists ten titles
 
 - Given: More than ten public entries have titles. One is a public page. One deliverable note has an empty title.
 - When: An unauthenticated client requests `GET /pages`.
-- Then: The response lists ten titles and no bodies. Order is updated time descending, then the immutable id descending. The public page is included. The empty-title note is omitted. The response includes the URL of the next page.
+- Then: The response lists ten titles and no bodies. Order is updated time descending, then the immutable id descending. The public page is included. The empty-title note is omitted. The response includes the URL of the next page. Each item also has a permalink to `/e/{id}` whose visible text is `パーマリンク`.
 
 Scenario: When a title has no public entry and has a public inbound edge, the host returns an empty page
 
@@ -258,7 +258,7 @@ The owner's API list of 50 entries is a different list. It is not this page size
 
 ##### Title index
 
-`GET /pages` lists titles of public entries of every kind. Order is updated time descending. When the updated time is equal, the immutable id descending breaks the tie. The list includes titles only. It includes public pages. It omits an entry whose title is empty. It is the entrance to the link graph. It is not the weblog feed. A bookmark title links to its external URL when that URL starts with `http://` or `https://`. Any other title links to the view path, or to the canonical URL when the entry has no view path.
+`GET /pages` lists titles of public entries of every kind. Order is updated time descending. When the updated time is equal, the immutable id descending breaks the tie. Each item shows the title and a permalink. It does not show the body. It includes public pages. It omits an entry whose title is empty. It is the entrance to the link graph. It is not the weblog feed. A bookmark title links to its external URL when that URL starts with `http://` or `https://`. Any other title links to the view path, or to the canonical URL when the entry has no view path. The permalink links to that entry's canonical path `/e/{id}`. Its visible text is `パーマリンク`.
 
 ##### Pages of ten
 

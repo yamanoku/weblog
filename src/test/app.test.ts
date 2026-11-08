@@ -20,7 +20,7 @@ function readRoot(path: string) {
   return readFileSync(join(rootDir, path), "utf8");
 }
 
-const required = ["svelte", "@void/svelte", "void"];
+const required = ["svelte", "@void/svelte", "void", "yama-normalize"];
 const rejected = ["@void/react", "@void/vue", "@void/solid", "@sveltejs/adapter-cloudflare"];
 
 type PackageManifest = {
@@ -68,6 +68,7 @@ test("the app manifest declares the Svelte Void packages", () => {
   for (const name of rejected) {
     assert.equal(names.includes(name), false, name);
   }
+  assert.match(readRoot("pages/layout.svelte"), /import ["']yama-normalize["']/);
 });
 
 test("Vite+ runs the app tasks and registers the Void Svelte plugins", () => {

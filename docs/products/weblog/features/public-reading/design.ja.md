@@ -238,7 +238,7 @@ default-src 'none'; img-src 'self'; media-src 'self'; base-uri 'none'; form-acti
 
 ### タイトル一覧
 
-`GET /pages` は、保存されたタイトルが空でない公開エントリを、四つの種類すべてから出す。順序は `updated_at` の降順、次に `id` の降順である。SELECT する列は id、title、updated_at、view_path である。リンク先を決めるため、kind と bookmark_url も選ぶ。本文は選ばない。外部 URL が `http://` または `https://` で始まる bookmark は、その URL へのアンカーである。それ以外の項目は、閲覧用パスへのアンカーである。閲覧用パスが無いエントリは、正規 URL へのアンカーである。文書タイトルは `ページ` である。空の一覧は 200 である。
+`GET /pages` は、保存されたタイトルが空でない公開エントリを、四つの種類すべてから出す。順序は `updated_at` の降順、次に `id` の降順である。SELECT する列は id、title、updated_at、view_path である。リンク先を決めるため、kind と bookmark_url も選ぶ。本文は選ばない。外部 URL が `http://` または `https://` で始まる bookmark は、その URL へのアンカーである。それ以外の項目は、閲覧用パスへのアンカーである。閲覧用パスが無いエントリは、正規 URL へのアンカーである。各項目は、正規 URL `/e/{id}` へのパーマリンクも持つ。表示文言は `パーマリンク` である。文書タイトルは `ページ` である。空の一覧は 200 である。
 
 ### タイトルパス
 

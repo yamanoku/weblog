@@ -33,16 +33,17 @@ This app's packages are:
   "dependencies": {
     "svelte": null,
     "@void/svelte": null,
-    "void": null
+    "void": null,
+    "yama-normalize": null
   }
 }
 ```
 
-The domain does not import `void`, Svelte, or `@void/svelte`. Page files do not import `void/db`.
+The domain does not import `void`, Svelte, or `@void/svelte`. Page files do not import `void/db`. The layout imports `yama-normalize`. That stylesheet is the default style for every page.
 
 ## Architecture and sequence diagrams
 
-No diagram. One package list is the decision. A picture would restate those three names.
+No diagram. One package list is the decision. A picture would restate those four names.
 
 ## Data model and ER diagrams
 

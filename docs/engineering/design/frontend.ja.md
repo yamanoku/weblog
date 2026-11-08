@@ -33,12 +33,13 @@
   "dependencies": {
     "svelte": null,
     "@void/svelte": null,
-    "void": null
+    "void": null,
+    "yama-normalize": null
   }
 }
 ```
 
-ドメインは `void` を import しない。ドメインは Svelte を import しない。ドメインは `@void/svelte` を import しない。ページのファイルは `void/db` を import しない。
+ドメインは `void` を import しない。ドメインは Svelte を import しない。ドメインは `@void/svelte` を import しない。ページのファイルは `void/db` を import しない。レイアウトは `yama-normalize` を読み込む。このスタイルシートは、全ページの既定の見た目である。
 
 ## アーキテクチャ・シーケンス図
 

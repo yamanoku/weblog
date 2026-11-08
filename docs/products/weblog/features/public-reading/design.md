@@ -234,7 +234,7 @@ A feed row is `visibility = 'public'`, `published_at` is not null, and `kind` is
 
 ### Title index
 
-`GET /pages` lists public entries of every kind whose stored title is not empty. Order is `updated_at` descending, then `id` descending. The response selects id, title, updated_at, and view_path. It also selects kind and bookmark_url so the anchor can use the site URL. It does not select the body. A bookmark whose external URL starts with `http://` or `https://` is an anchor to that URL. Every other item is an anchor to the view path, or to the canonical URL when the entry has no view path. The document title is `ページ`. An empty index is 200.
+`GET /pages` lists public entries of every kind whose stored title is not empty. Order is `updated_at` descending, then `id` descending. The response selects id, title, updated_at, and view_path. It also selects kind and bookmark_url so the anchor can use the site URL. It does not select the body. A bookmark whose external URL starts with `http://` or `https://` is an anchor to that URL. Every other item is an anchor to the view path, or to the canonical URL when the entry has no view path. Each item also has a permalink to the canonical path `/e/{id}`. The visible text is `パーマリンク`. The document title is `ページ`. An empty index is 200.
 
 ### Title path
 
