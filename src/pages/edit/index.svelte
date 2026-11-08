@@ -27,9 +27,6 @@
     Body
     <textarea name="noteBody" rows="4" bind:value={noteForm.data.noteBody}></textarea>
   </label>
-  {#if noteForm.errors.noteBody}
-    <p>{noteForm.errors.noteBody}</p>
-  {/if}
   <button type="submit">Post</button>
 </Form>
 

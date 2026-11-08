@@ -6,6 +6,13 @@ export function noteFromEditField(body: string): { body: string } | { error: "em
   return { body };
 }
 
+// The posted object is either JSON from the note form or a form body. A missing field is empty.
+export function noteBodyField(value: unknown): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  const body = (value as { noteBody?: unknown }).noteBody;
+  return typeof body === "string" ? body : "";
+}
+
 export function canonicalEntryUrl(id: string): string {
   return `https://weblog.yamanoku.net/e/${id}`;
 }

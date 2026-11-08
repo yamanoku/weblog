@@ -1,6 +1,6 @@
 import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
-import { postedNoteUrl } from "../../domain/edit-note.ts";
+import { noteBodyField, postedNoteUrl } from "../../domain/edit-note.ts";
 import {
   editArticleDatabase,
   listArticlesForEdit,
@@ -35,8 +35,12 @@ export const actions = {
     });
   }),
   note: defineHandler(async (c) => {
-    const posted = await c.req.parseBody();
-    const result = await submitNoteFromEdit(editArticleDatabase(), postedText(posted.noteBody));
+    const type = (c.req.header("content-type") ?? "").toLowerCase();
+    // parseBody reads form posts only. The note form sends JSON, which parseBody turns into {}.
+    const payload = type.includes("application/json")
+      ? await c.req.json().catch(() => null)
+      : await c.req.parseBody();
+    const result = await submitNoteFromEdit(editArticleDatabase(), noteBodyField(payload));
     if ("error" in result) {
       throw new ValidationError({ noteBody: result.error });
     }

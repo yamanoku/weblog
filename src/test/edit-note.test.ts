@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
-import { noteFromEditField, postedNoteUrl } from "../domain/edit-note.ts";
+import { noteBodyField, noteFromEditField, postedNoteUrl } from "../domain/edit-note.ts";
 import { listDeliverableEntries, readStoredEntry } from "../store/entries.ts";
 import { listArticlesForEdit } from "../store/edit-article.ts";
 import { submitNoteFromEdit } from "../store/edit-note.ts";
@@ -31,6 +31,10 @@ function applyShippedMigrations() {
 test("an empty note field is refused and whitespace is kept", () => {
   assert.deepEqual(noteFromEditField(""), { error: "empty_body" });
   assert.deepEqual(noteFromEditField("  "), { body: "  " });
+  assert.equal(noteBodyField({ noteBody: "morning" }), "morning");
+  assert.equal(noteBodyField({ noteBody: "  " }), "  ");
+  assert.equal(noteBodyField({}), "");
+  assert.equal(noteBodyField(null), "");
   assert.equal(postedNoteUrl(null), null);
   assert.equal(postedNoteUrl({ id: "x", kind: "article", visibility: "public" }), null);
   assert.equal(postedNoteUrl({ id: "x", kind: "note", visibility: "draft" }), null);
@@ -69,11 +73,13 @@ test("the edit screen posts the note field separately from the article form", ()
   assert.match(page, /useForm\(\s*"\/edit\?note"/);
   assert.match(page, /name="noteBody"/);
   assert.match(page, /postedNote\.canonicalUrl/);
-  assert.match(page, /noteForm\.errors\.noteBody/);
+  assert.equal(page.includes("noteForm.errors.noteBody"), false);
   const server = readFileSync(join(rootDir, "pages/edit/index.server.ts"), "utf8");
   assert.match(server, /actions\s*=\s*\{/);
   assert.match(server, /submitNoteFromEdit\(/);
-  assert.match(server, /postedText\(\s*posted\.noteBody\s*\)/);
+  assert.match(server, /application\/json/);
+  assert.match(server, /c\.req\.json\(\)/);
+  assert.match(server, /noteBodyField\(payload\)/);
   assert.match(server, /ValidationError\(\{\s*noteBody:\s*result\.error\s*\}\)/);
   assert.match(server, /redirect\(`\/edit\?posted=\$\{result\.id\}`\)/);
   assert.match(server, /postedNoteUrl\(/);
