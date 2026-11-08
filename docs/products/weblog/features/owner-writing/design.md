@@ -166,7 +166,9 @@ The shared operations are createEntry, updateEntry, deleteEntry, getEntryForOwne
 
 ### Edit screen
 
-GET `/edit` returns the create form and the list of stored articles. The list includes draft and public, and omits notes, bookmarks, and pages. Each item opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
+GET `/edit` returns the article create form, a separate note field, and the list of stored articles. The list includes draft and public, and omits notes, bookmarks, and pages. Each item opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
+
+The note field submits only the body, as `noteBody`, to POST `/edit?note`. That post stores kind note, an empty title, and visibility public. `publishedAt` is the commit time. `view_path` stays NULL. An empty `noteBody` stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. Success redirects with 302 to GET `/edit?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}`. The URL appears only when `{id}` is a stored public note. The article list does not include the note. POST `/edit` without `note` still creates a draft article and does not read `posted`.
 
 The shared write fields are kind, title, body, visibility, and bookmarkUrl. The article edit form submits title, body, and visibility. The HTML response shows the committed canonical URL, or the refusal code. A response that contains a token uses `Cache-Control: no-store`. GET responses do not show the token value.
 
@@ -280,6 +282,14 @@ The browser could post the form directly to `/entries`. Cloudflare does not say 
 ### INSERT one edge row at a time
 
 The code is simpler. A page with many links would exceed the Free plan's 50 queries per invocation. The selected write is one INSERT that uses `json_each`. A page that exceeds 100 KB is refused with 422 before the batch.
+
+### Add a kind select to the article form
+
+The owner would pick note on the article form. The decided screen is a separate field. A note post does not submit a title and does not pass through the draft article path.
+
+### Show the new note in the article list
+
+The owner would see the post again on `/edit`. The requirements keep notes out of that list. The success response carries the canonical URL.
 
 ### Import an ORM or D1 types from the domain
 

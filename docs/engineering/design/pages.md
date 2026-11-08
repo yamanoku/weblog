@@ -53,9 +53,10 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /pages` | HTML list of public titles. A later page uses the same cursor shape. |
 | `GET /{title}` | Public entry HTML, or the empty page when the requirements say so. |
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. |
-| `GET /edit` | Create form, and the owner's articles, including drafts. |
+| `GET /edit` | Article create form, a separate note field, and the owner's articles, including drafts. |
 | `GET /edit/{id}` | Edit form for that entry. |
-| `POST /edit` | Create. |
+| `POST /edit` | Create a draft article. |
+| `POST /edit?note` | Create a public note from the note field. |
 | `POST /edit/{id}` | Update. |
 | `POST /edit/tokens` | Issue or reissue the CLI token from the browser. |
 

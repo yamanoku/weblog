@@ -124,6 +124,30 @@ Scenario: The edit screen lists draft articles too
 - When: The owner opens GET `/edit`.
 - Then: Both articles appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item opens that article's edit screen. The note is not in this list. The unauthenticated home page and title index do not include the draft body.
 
+### Post a note from the edit screen
+
+As the owner, I want a field on the edit screen, separate from the article form, so that a body becomes a public note with no title and I can see its canonical URL. The article draft form and the article list stay as they are.
+
+**Acceptance criteria:**
+
+Scenario: When the note field has a body, the host stores a public note and shows the canonical URL
+
+- Given: The request is verified as the owner. GET `/edit` shows the article create form, a separate note field, and the article list.
+- When: The owner submits a body from the note field and does not submit a title.
+- Then: One entry is stored with kind note, an empty title, the submitted body, and visibility public. It has no view path. No article is created. The response lets the owner see that the save succeeded and shows the canonical URL. The article list does not include this note. An unauthenticated request for the canonical URL returns the body.
+
+Scenario: When the note field body is empty, the host stores nothing and shows the refusal
+
+- Given: The request is verified as the owner.
+- When: The owner submits an empty body from the note field.
+- Then: The host stores no entry. The response lets the owner distinguish that the refusal is the empty body. This is not an authentication failure. A body of only whitespace is not empty.
+
+Scenario: When the owner uses the article form, the host still creates a draft article
+
+- Given: The request is verified as the owner.
+- When: The owner submits a title and body from the article create form.
+- Then: One entry is stored with kind article and visibility draft. No note is created. This response does not show a note canonical URL.
+
 ### Change visibility
 
 As the owner, I want to switch between draft and public so that unfinished text leaves the public site and only published articles, notes, and bookmarks can become deliverable.
@@ -297,7 +321,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
 
-GET `/edit`, when the request is verified as the owner, returns the create form and a list of stored articles. The list includes draft and public. It does not include notes, bookmarks, or pages. Each item opens that article's edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return this list.
+GET `/edit`, when the request is verified as the owner, returns the article create form, a separate note field, and a list of stored articles. The list includes draft and public. It does not include notes, bookmarks, or pages. Each item opens that article's edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return this list. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing.
 
 ##### A store that is past the free allowance
 
