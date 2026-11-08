@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
 import { publicArticleFields } from "../domain/edit-article.ts";
-import { publicArticleHref, publicArticleMatchesPath } from "../domain/public-article.ts";
+import { publicArticleHref, publicEntryHref, publicArticleMatchesPath } from "../domain/public-article.ts";
 import {
   commitEntry,
   listDeliverableEntries,
@@ -237,6 +237,37 @@ test("public articles are listed for the home page and matched by the title path
   assert.equal(publicArticleMatchesPath("Spaced title", "Spaced_title"), true);
   assert.equal(publicArticleMatchesPath("Spaced title", "Spaced title"), false);
   assert.equal(publicArticleHref({ id: saved.id, title: "Spaced title" }), "/Spaced_title");
+  assert.equal(
+    publicEntryHref({
+      id: "bookmark-1",
+      title: "Clip",
+      kind: "bookmark",
+      bookmarkUrl: "https://example.com/clip",
+    }),
+    "https://example.com/clip",
+  );
+  assert.equal(
+    publicEntryHref({
+      id: "bookmark-2",
+      title: "Clip",
+      kind: "bookmark",
+      bookmarkUrl: "  http://example.com/clip  ",
+    }),
+    "http://example.com/clip",
+  );
+  assert.equal(
+    publicEntryHref({
+      id: "bookmark-3",
+      title: "Clip",
+      kind: "bookmark",
+      bookmarkUrl: "javascript:alert(1)",
+    }),
+    "/Clip",
+  );
+  assert.equal(
+    publicEntryHref({ id: saved.id, title: "Spaced title", kind: "article" }),
+    "/Spaced_title",
+  );
   assert.equal(articles[0]?.body, markdown);
 
   const home = readRoot("pages/index.server.ts");

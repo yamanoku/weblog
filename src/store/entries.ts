@@ -87,6 +87,7 @@ export type PublicEntryRow = {
   title: string;
   kind: string;
   body: string;
+  bookmarkUrl: string | null;
 };
 
 const deliverableKind = or(
@@ -109,12 +110,15 @@ export async function listDeliverableEntries(
     title: row.title,
     kind: row.kind,
     body: row.body,
+    bookmarkUrl: row.bookmarkUrl ?? null,
   }));
 }
 
 export type PublicTitleRow = {
   id: string;
   title: string;
+  kind: string;
+  bookmarkUrl: string | null;
 };
 
 // Public titles for the index. An empty title is omitted. Drafts stay out.
@@ -122,11 +126,21 @@ export async function listPublicTitles(
   database: BetterSQLite3Database,
 ): Promise<PublicTitleRow[]> {
   const rows = await database
-    .select({ id: entries.id, title: entries.title })
+    .select({
+      id: entries.id,
+      title: entries.title,
+      kind: entries.kind,
+      bookmarkUrl: entries.bookmarkUrl,
+    })
     .from(entries)
     .where(and(eq(entries.visibility, "public"), ne(entries.title, "")))
     .orderBy(desc(entries.updatedAt), desc(entries.id));
-  return rows;
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    kind: row.kind,
+    bookmarkUrl: row.bookmarkUrl ?? null,
+  }));
 }
 
 // One public row for a title path. A view path wins over a raw title.
@@ -150,5 +164,6 @@ export async function readPublicEntryByPath(
     title: saved.title,
     kind: saved.kind,
     body: saved.body,
+    bookmarkUrl: saved.bookmarkUrl ?? null,
   };
 }

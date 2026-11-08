@@ -77,6 +77,12 @@ Scenario: When a bookmark is public, the HTML includes its external URL
 - When: An unauthenticated client requests that entry.
 - Then: The HTML includes the external URL as an external link. The stored body is unchanged.
 
+Scenario: When a public bookmark is listed, its title opens the external URL
+
+- Given: A public bookmark has an external URL that starts with `http://` or `https://`. It also has a view path.
+- When: An unauthenticated client opens GET `/` or GET `/pages`.
+- Then: The title's link is that external URL. It is not the view path and not the canonical URL. A direct request for the canonical URL still returns that entry's HTML.
+
 ### Read the human-readable feeds
 
 As an unauthenticated reader, I want to read a feed of deliverable entries so that I can follow new articles, short posts, and bookmarks without taking the title index as the feed.
@@ -246,13 +252,13 @@ When no public entry has the title and no public inbound edge points at it, the 
 
 `GET /feed/articles.xml`, `GET /feed/notes.xml`, and `GET /feed/bookmarks.xml` are Atom feeds for that kind only. There is no per-kind JSON Feed.
 
-A feed includes only deliverable entries, ordered by `publishedAt` descending. When `publishedAt` is equal, the immutable id descending breaks the tie. A page is excluded. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. The link to the entry is the view path when one exists, and otherwise the canonical URL.
+A feed includes only deliverable entries, ordered by `publishedAt` descending. When `publishedAt` is equal, the immutable id descending breaks the tie. A page is excluded. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
 
 The owner's API list of 50 entries is a different list. It is not this page size.
 
 ##### Title index
 
-`GET /pages` lists titles of public entries of every kind. Order is updated time descending. When the updated time is equal, the immutable id descending breaks the tie. The list includes titles only. It includes public pages. It omits an entry whose title is empty. It is the entrance to the link graph. It is not the weblog feed.
+`GET /pages` lists titles of public entries of every kind. Order is updated time descending. When the updated time is equal, the immutable id descending breaks the tie. The list includes titles only. It includes public pages. It omits an entry whose title is empty. It is the entrance to the link graph. It is not the weblog feed. A bookmark title links to its external URL when that URL starts with `http://` or `https://`. Any other title links to the view path, or to the canonical URL when the entry has no view path.
 
 ##### Pages of ten
 

@@ -1,15 +1,20 @@
 import { publicEntries } from "../domain/catalog.ts";
-import { publicArticleHref } from "../domain/public-article.ts";
+import { publicEntryHref } from "../domain/public-article.ts";
 import { defineHandler } from "void";
 import { editArticleDatabase } from "../store/edit-article.ts";
 import { listPublicTitles } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
-function titleEntry(entry: { id: string; title: string }) {
+function titleEntry(entry: {
+  id: string;
+  title: string;
+  kind?: string;
+  bookmarkUrl?: string | null;
+}) {
   return {
     id: entry.id,
     title: entry.title,
-    href: publicArticleHref(entry),
+    href: publicEntryHref(entry),
   };
 }
 

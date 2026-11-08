@@ -1,19 +1,25 @@
 import { deliverableEntries } from "../domain/catalog.ts";
 import { postedNoteUrl } from "../domain/edit-note.ts";
-import { publicArticleHref } from "../domain/public-article.ts";
+import { publicEntryHref } from "../domain/public-article.ts";
 import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
 import { listDeliverableEntries, readStoredEntry } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
-function homeEntry(entry: { id: string; title: string; kind: string; body: string }) {
+function homeEntry(entry: {
+  id: string;
+  title: string;
+  kind: string;
+  body: string;
+  bookmarkUrl?: string | null;
+}) {
   return {
     id: entry.id,
     title: entry.title,
     kind: entry.kind,
     body: entry.body,
-    href: publicArticleHref(entry),
+    href: publicEntryHref(entry),
   };
 }
 
