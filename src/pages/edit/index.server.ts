@@ -1,7 +1,13 @@
 import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
+import { bookmarkDeleteId } from "../../domain/edit-bookmark.ts";
 import { noteBodyField, noteDeleteId } from "../../domain/edit-note.ts";
+import {
+  deleteBookmarkFromEdit,
+  listBookmarksForEdit,
+  submitBookmarkFromEdit,
+} from "../../store/edit-bookmark.ts";
 import {
   editArticleDatabase,
   listArticlesForEdit,
@@ -17,6 +23,7 @@ export const loader = defineHandler(async () => {
   return {
     articles: await listArticlesForEdit(editArticleDatabase()),
     notes: await listNotesForEdit(editArticleDatabase()),
+    bookmarks: await listBookmarksForEdit(editArticleDatabase()),
   };
 });
 
@@ -45,6 +52,22 @@ export const actions = {
     const target = noteDeleteId(posted);
     if ("error" in target) throw new HTTPException(404, { message: "not_found" });
     const result = await deleteNoteFromEdit(editArticleDatabase(), target.id);
+    if ("error" in result) throw new HTTPException(404, { message: "not_found" });
+  }),
+  bookmark: defineHandler(async (c) => {
+    const posted = await c.req.parseBody();
+    const result = await submitBookmarkFromEdit(editArticleDatabase(), {
+      title: postedText(posted.title),
+      body: postedText(posted.body),
+      bookmarkUrl: postedText(posted.bookmarkUrl),
+    });
+    if ("error" in result) throw new HTTPException(422, { message: result.error });
+  }),
+  deleteBookmark: defineHandler(async (c) => {
+    const posted = await c.req.parseBody();
+    const target = bookmarkDeleteId(posted);
+    if ("error" in target) throw new HTTPException(404, { message: "not_found" });
+    const result = await deleteBookmarkFromEdit(editArticleDatabase(), target.id);
     if ("error" in result) throw new HTTPException(404, { message: "not_found" });
   }),
 };

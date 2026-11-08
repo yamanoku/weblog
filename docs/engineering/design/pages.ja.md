@@ -53,12 +53,14 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /pages` | 公開タイトルの HTML 一覧。続きは、同じ形のカーソルを使う。 |
 | `GET /{タイトル}` | 公開エントリ。要件が空ページとするときは、空ページである。 |
 | `GET /e/{id}` | 正規 URL の HTML。下の Activity Streams の場合を除く。 |
-| `GET /edit` | 記事の作成フォームと、所有者の記事一覧と、それとは別の note 一覧。note 欄は無い。下書きを含む。note は記事の編集フォームへ進まない。 |
-| `GET /edit/{id}` | そのエントリの編集フォーム。 |
+| `GET /edit` | 記事、note、bookmark の編集画面。note 欄は無い。 |
+| `GET /edit/{id}` | その article または bookmark の編集フォーム。note の ID と page の ID は 404。 |
 | `POST /edit` | 下書きの article を作成する。 |
 | `POST /edit?note` | note 欄から公開の note を作成する。 |
 | `POST /edit?deleteNote` | 編集画面から note を一つ削除する。 |
-| `POST /edit/{id}` | 更新。 |
+| `POST /edit?bookmark` | 下書きの bookmark を作成する。 |
+| `POST /edit?deleteBookmark` | 編集画面から bookmark を一つ削除する。 |
+| `POST /edit/{id}` | その article または bookmark を更新する。 |
 | `POST /edit/tokens` | ブラウザからの CLI トークンの発行と再発行。 |
 
 公開の旧タイトルのパスは、所有者の書き込みと公開閲覧が定める移転に従う。移転先は、今の閲覧用パスである。閲覧用パスが無いときは、正規 URL である。draft は、その移転先にしない。

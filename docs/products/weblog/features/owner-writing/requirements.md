@@ -184,6 +184,66 @@ Scenario: When the note delete is sent an article ID, the article remains
 - When: The owner submits the note delete with that article's ID.
 - Then: The article remains. The response is not a successful note deletion.
 
+### Save a bookmark on the edit screen
+
+As the owner, I want the edit screen to create, list, update, and delete bookmarks so that an external URL and a comment are stored on this host apart from articles and notes.
+
+**Acceptance criteria:**
+
+Scenario: When the bookmark form has a title and an external URL, the host stores a draft bookmark
+
+- Given: The request is verified as the owner.
+- When: The owner submits a title, an external URL, and a body from the bookmark create form.
+- Then: One entry is stored with kind bookmark, visibility draft, the submitted title, the submitted body, and that external URL. The body does not gain the URL. No article and no note are created. The bookmark is not in the article list or the notes list. It is in the bookmark list.
+
+Scenario: When the bookmark form has an empty title, the host stores nothing
+
+- Given: The request is verified as the owner.
+- When: The owner submits kind bookmark from the bookmark create form with an empty title. A title of surrounding whitespace only is empty.
+- Then: The host stores no entry. The response lets the owner distinguish that the refusal is the missing title.
+
+Scenario: When the bookmark form has no external URL, the host stores nothing
+
+- Given: The request is verified as the owner.
+- When: The owner submits a title and a body from the bookmark create form and does not submit an external URL. A URL of surrounding whitespace only is missing.
+- Then: The host stores no entry. The response lets the owner distinguish that the refusal is the missing external URL.
+
+Scenario: The edit screen lists bookmarks apart from articles and notes
+
+- Given: The request is verified as the owner. One bookmark is draft and another is public. One article and one note exist.
+- When: The owner opens GET `/edit`.
+- Then: Both bookmarks appear, newest `updatedAt` first. The same timestamp is broken by descending immutable ID. Each item shows the title, the external URL, and the visibility, and opens that bookmark's edit screen. The article list and the notes list do not include the bookmarks.
+
+Scenario: When the owner updates a bookmark, the host replaces the title, body, visibility, and external URL
+
+- Given: The request is verified as the owner. One bookmark exists.
+- When: The owner opens GET `/edit/{id}` for that bookmark and submits a new title, body, visibility, and external URL.
+- Then: Those four fields become the submitted values. The kind stays bookmark. The body does not gain the URL. The immutable ID stays.
+
+Scenario: When a public bookmark update has an empty body, the previous bookmark remains
+
+- Given: The request is verified as the owner. One bookmark exists and has a body.
+- When: The owner submits visibility public and an empty body for that bookmark.
+- Then: The host does not store the update. The previous title, body, visibility, and external URL remain.
+
+Scenario: When the owner deletes an undelivered bookmark from the edit screen, the canonical URL is 404
+
+- Given: The request is verified as the owner. One bookmark exists and it has no delivered record. One article and one note exist.
+- When: The owner submits deletion for that bookmark.
+- Then: The bookmark disappears from the edit list. The unauthenticated canonical URL is 404 and does not return the deleted body. The article and the note remain.
+
+Scenario: When the owner deletes a delivered bookmark from the edit screen, the canonical URL is 410
+
+- Given: The request is verified as the owner. One bookmark exists and it has a delivered record.
+- When: The owner submits deletion for that bookmark.
+- Then: The bookmark disappears from the edit list. The unauthenticated canonical URL is 410 and does not return the deleted body. The delivered record remains.
+
+Scenario: When the bookmark delete is sent another kind's ID, that entry remains
+
+- Given: The request is verified as the owner. One article and one note exist.
+- When: The owner submits the bookmark delete with the article's ID, and again with the note's ID.
+- Then: Both entries remain. Neither response is a successful bookmark deletion.
+
 ### Change visibility
 
 As the owner, I want to switch between draft and public so that unfinished text leaves the public site and only published articles, notes, and bookmarks can become deliverable.
@@ -357,7 +417,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
 
-GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, and a separate list of stored notes. It does not show the note field. Both lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article.
+GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The order is newest `updatedAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry.
 
 ##### A store that is past the free allowance
 

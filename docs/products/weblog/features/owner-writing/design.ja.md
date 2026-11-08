@@ -166,15 +166,21 @@ erDiagram
 
 ### 編集画面
 
-GET `/edit` は、記事の作成フォームと、保存済み article の一覧と、それとは別の note の一覧を返す。note 欄は返さない。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は updatedAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォームを返す。編集できない ID は 404 である。POST `/edit` は article を draft で作成する。POST `/edit/{id}` は、その article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。POST `/edit/tokens` はトークンを発行するか、再発行する。
+GET `/edit` は、記事の作成フォームを返す。保存済み article の一覧も返す。note の一覧は別に返す。ブックマークの作成フォームも返す。保存済み bookmark の一覧は別に返す。note 欄は返さない。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は updatedAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォーム、またはその bookmark のフォームを返す。note の ID と page の ID は 404 である。POST `/edit` は article を draft で作成する。保存済みの種類が article のとき、POST `/edit/{id}` はその article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。bookmark の ID は、下の bookmark の更新に従う。POST `/edit/tokens` はトークンを発行するか、再発行する。
 
 note 欄は GET `/` の先頭、ナビゲーションの直下に置く。`/edit` と同じ JWT の規則で所有者と確認できたときだけ含める。Access の対象は `/edit` と `/edit/*` のままなので、GET `/` はログイン画面にしない。JWT が無い、または無効なとき、GET `/` は 200 のままで欄を出さない。Worker は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。配送対象の一覧は変えない。draft の本文は含めない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
 
-note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/?posted={id}` へ 302 で移す。同じ要求が所有者であり、`{id}` が保存済みの公開 note であるときだけ、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。確認できていない GET `/?posted={id}` は、URL も欄も出さない。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
+note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/?posted={id}` へ 302 で移す。同じ要求が所有者であり、`{id}` が保存済みの公開 note であるときだけ、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。確認できていない GET `/?posted={id}` は、URL を出さない。欄も出さない。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
 
-GET `/edit` の note 一覧は、draft と public の note を updatedAt の新しい順、同じ時刻なら id の降順で返す。各項目は本文と visibility を示し、GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。対象が保存済みの note であるときだけ、そのエントリと、その source の辺、過去タイトル、パス移転を消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。公開の GET `/e/{id}` は、行が無く tombstone があるとき 410 であり、削除前の本文を含まない。対象が note でない、または無いときは 404 であり、行を消さない。
+GET `/edit` の note 一覧は、draft と public の note を updatedAt の新しい順、同じ時刻なら id の降順で返す。各項目は本文と visibility を示し、GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。保存済みの note だけを消す。消すときは、その source の辺、過去タイトル、パス移転も消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。note でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
 
-共有の書き込み項目は、kind、title、body、visibility、bookmarkUrl である。記事の編集フォームが送るのは title、body、visibility である。応答の HTML には、確定した正規 URL か、拒否コードを出す。トークンを含む応答には `Cache-Control: no-store` を付ける。GET ではトークンの値を出さない。
+GET `/edit` は、上に書いたブックマークの作成フォームと bookmark の一覧も返す。bookmark の一覧は draft と public を含み、article、note、page を含めない。各項目はタイトル、外部 URL、visibility を示し、GET `/edit/{id}` へ進む。POST `/edit?bookmark` は bookmark を draft で作成する。フォームは `title`、`bookmarkUrl`、`body` を送る。保存する本文は、送ったテキストである。`bookmarkUrl` は本文へ入れない。`bookmark_url` は、送った URL の前後の空白を除いた文字列である。前後の空白を除いたタイトルが空のときは保存せず、422 `missing_title` を返す。`bookmarkUrl` が無い、またはその空白を除くと空のときは保存せず、422 `missing_bookmark_url` を返す。draft の本文は空でも保存する。作成は `publishedAt` を付けない。article は作らない。note は作らない。
+
+bookmark の GET `/edit/{id}` は、`title`、`bookmarkUrl`、`body`、`visibility` を送る。POST `/edit/{id}` は、その項目を置き換え、種類は bookmark のままにする。public で本文が空のときは保存せず、422 `empty_body` を返す。空のタイトルは 422 `missing_title` を返す。外部 URL が無いときは 422 `missing_bookmark_url` を返す。visibility が不正なときは 422 `invalid_visibility` を返す。bookmark が public になったとき、`publishedAt` を付ける。public のままなら、その時刻を維持する。draft へ保存すると、`publishedAt` を消す。閲覧用パスは、article の更新と同じ規則に従う。
+
+削除は `bookmarkId` を POST `/edit?deleteBookmark` へ送る。保存済みの bookmark だけを消す。消すときは、その source の辺、過去タイトル、パス移転も消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。bookmark でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
+
+共有の書き込み項目は、kind、title、body、visibility、bookmarkUrl である。記事の編集フォームが送るのは title、body、visibility である。ブックマークの作成フォームが送るのは title、bookmarkUrl、body である。ブックマークの編集フォームが送るのは title、bookmarkUrl、body、visibility である。応答の HTML には、確定した正規 URL か、拒否コードを出す。トークンを含む応答には `Cache-Control: no-store` を付ける。GET ではトークンの値を出さない。
 
 ### CLI と `/entries`
 
@@ -294,6 +300,10 @@ CLI もログイン画面を通る。Requirements は、CLI がブラウザの�
 ### 記事フォームに種類の選択を足す
 
 所有者は、記事フォームで note を選ぶ。決めた画面は別の欄である。note の投稿はタイトルを送らず、下書きの article の経路を通らない。
+
+### bookmark を、その場で公開する note として保存する
+
+所有者は、URL とコメントを一度投稿し、削除だけを持ち、編集画面を持たない。bookmark の要件はタイトルと外部 URL を必須にし、所有者は編集画面での作成、一覧、更新、削除を選んだ。選んだ画面は、draft での作成、別の一覧、GET `/edit/{id}`、その bookmark だけの削除である。
 
 ### 投稿した note を記事一覧に出す
 

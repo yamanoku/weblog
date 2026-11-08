@@ -166,7 +166,7 @@ The shared operations are createEntry, updateEntry, deleteEntry, getEntryForOwne
 
 ### Edit screen
 
-GET `/edit` returns the article create form, the list of stored articles, and a separate list of stored notes. It does not return the note field. The article list includes draft and public, and omits notes, bookmarks, and pages. Each article opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form for the owner. An ID that cannot be edited is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. POST `/edit/tokens` issues a token, or reissues one.
+GET `/edit` returns the article create form, the list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not return the note field. The article list includes draft and public, and omits notes, bookmarks, and pages. Each article opens GET `/edit/{id}`. The order is newest `updatedAt` first, then descending id. GET `/edit/{id}` returns that article's form, or that bookmark's form, for the owner. A note ID or a page ID is 404. POST `/edit` creates an article as draft. POST `/edit/{id}` updates that article's title, body, and visibility when the stored kind is article. Visibility is draft or public. A public save with an empty body does not store and returns 422 `empty_body`. The kind stays article. A bookmark ID follows the bookmark update below. POST `/edit/tokens` issues a token, or reissues one.
 
 The note field is the first block of GET `/`, directly under the navigation. It is included only when that request is verified as the owner by the same JWT rules as `/edit`. Access still covers only `/edit` and `/edit/*`, so GET `/` is not a login wall. A missing or invalid JWT leaves GET `/` at 200 and omits the field. The Worker reads `Cf-Access-Jwt-Assertion`, and reads the `CF_Authorization` cookie only when that header is absent. The deliverable list does not change, and the response does not include a draft body. When the field is included, the response uses `Cache-Control: private, no-store` and `Vary: Cookie`. On the local dev server, where Access is not in front of the process, the field is included.
 
@@ -174,7 +174,13 @@ The note field submits only the body, as `noteBody`, to POST `/edit?note`. That 
 
 The notes list on GET `/edit` returns draft and public notes, newest `updatedAt` first, then descending id. Each item shows the body and visibility and does not open GET `/edit/{id}`. Delete submits `noteId` to POST `/edit?deleteNote`. Only a stored note is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a note is 404 and deletes nothing.
 
-The shared write fields are kind, title, body, visibility, and bookmarkUrl. The article edit form submits title, body, and visibility. The HTML response shows the committed canonical URL, or the refusal code. A response that contains a token uses `Cache-Control: no-store`. GET responses do not show the token value.
+GET `/edit` also returns the bookmark create form and the bookmark list described above. The bookmark list includes draft and public, and omits articles, notes, and pages. Each item shows the title, the external URL, and the visibility, and opens GET `/edit/{id}`. POST `/edit?bookmark` creates a bookmark as draft. The form submits `title`, `bookmarkUrl`, and `body`. The stored body is the submitted text. The host does not insert `bookmarkUrl` into the body. `bookmark_url` is the submitted URL with whitespace removed from both ends. An empty title after removing whitespace from both ends stores nothing and returns 422 `missing_title`. A `bookmarkUrl` that is missing, or empty after that trim, stores nothing and returns 422 `missing_bookmark_url`. A draft may have an empty body. The create does not set `publishedAt` and does not create an article or a note.
+
+GET `/edit/{id}` for a bookmark submits `title`, `bookmarkUrl`, `body`, and `visibility`. POST `/edit/{id}` replaces those fields and keeps kind bookmark. A public save with an empty body does not store and returns 422 `empty_body`. An empty title returns 422 `missing_title`. A missing external URL returns 422 `missing_bookmark_url`. Invalid visibility returns 422 `invalid_visibility`. `publishedAt` is set when the bookmark becomes public and is kept while it stays public. A draft save clears `publishedAt`. The view path follows the same rule as an article update.
+
+Delete submits `bookmarkId` to POST `/edit?deleteBookmark`. Only a stored bookmark is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a bookmark is 404 and deletes nothing.
+
+The shared write fields are kind, title, body, visibility, and bookmarkUrl. The article edit form submits title, body, and visibility. The bookmark create form submits title, bookmarkUrl, and body. The bookmark edit form submits title, bookmarkUrl, body, and visibility. The HTML response shows the committed canonical URL, or the refusal code. A response that contains a token uses `Cache-Control: no-store`. GET responses do not show the token value.
 
 ### CLI and `/entries`
 
@@ -294,6 +300,10 @@ The owner would see notes in the same list as articles. Article items open an ed
 ### Add a kind select to the article form
 
 The owner would pick note on the article form. The decided screen is a separate field. A note post does not submit a title and does not pass through the draft article path.
+
+### Save a bookmark as an immediate public note
+
+The owner would post a URL and a comment once, with delete and no edit screen. The requirements for a bookmark require a title and an external URL, and the owner asked for create, list, update, and delete on the edit screen. The selected screen is a draft create, a separate list, GET `/edit/{id}`, and delete of that bookmark only.
 
 ### Show the new note in the article list
 

@@ -24,6 +24,7 @@ export type StoredEntry = {
   title: string;
   body: string;
   visibility: string;
+  bookmarkUrl: string | null;
   publishedAt: string | null;
 };
 
@@ -50,6 +51,7 @@ export async function readStoredEntry(
     title: saved.title,
     body: saved.body,
     visibility: saved.visibility,
+    bookmarkUrl: saved.bookmarkUrl ?? null,
     publishedAt: saved.publishedAt,
   };
 }

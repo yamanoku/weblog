@@ -53,12 +53,14 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /pages` | HTML list of public titles. A later page uses the same cursor shape. |
 | `GET /{title}` | Public entry HTML, or the empty page when the requirements say so. |
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. |
-| `GET /edit` | Article create form, the owner's articles, and a separate list of the owner's notes. No note field. Drafts are included. Notes do not open the article edit form. |
-| `GET /edit/{id}` | Edit form for that entry. |
+| `GET /edit` | Edit screen for articles, notes, and bookmarks. No note field. |
+| `GET /edit/{id}` | Edit form for that article or bookmark. A note ID or a page ID is 404. |
 | `POST /edit` | Create a draft article. |
 | `POST /edit?note` | Create a public note from the note field. |
 | `POST /edit?deleteNote` | Delete one note from the edit screen. |
-| `POST /edit/{id}` | Update. |
+| `POST /edit?bookmark` | Create a draft bookmark. |
+| `POST /edit?deleteBookmark` | Delete one bookmark from the edit screen. |
+| `POST /edit/{id}` | Update that article or bookmark. |
 | `POST /edit/tokens` | Issue or reissue the CLI token from the browser. |
 
 An old public title path redirects as owner writing and public reading require. The target is the current view path, or the canonical URL when the entry has no view path. A draft is not that target.
