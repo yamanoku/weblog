@@ -132,11 +132,9 @@ export async function listDeliverableEntries(
 export type PublicTitleRow = {
   id: string;
   title: string;
-  kind: string;
-  bookmarkUrl: string | null;
 };
 
-// Public titles for the index. An empty title is omitted. Drafts stay out.
+// Public articles for /pages. An empty title is omitted. Other kinds and drafts stay out.
 export async function listPublicTitles(
   database: BetterSQLite3Database,
 ): Promise<PublicTitleRow[]> {
@@ -144,17 +142,15 @@ export async function listPublicTitles(
     .select({
       id: entries.id,
       title: entries.title,
-      kind: entries.kind,
-      bookmarkUrl: entries.bookmarkUrl,
     })
     .from(entries)
-    .where(and(eq(entries.visibility, "public"), ne(entries.title, "")))
+    .where(
+      and(eq(entries.visibility, "public"), eq(entries.kind, "article"), ne(entries.title, "")),
+    )
     .orderBy(desc(entries.updatedAt), desc(entries.id));
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
-    kind: row.kind,
-    bookmarkUrl: row.bookmarkUrl ?? null,
   }));
 }
 

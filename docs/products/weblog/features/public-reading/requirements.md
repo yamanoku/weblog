@@ -116,7 +116,7 @@ Scenario: When a bookmark is public, the HTML includes its external URL
 Scenario: When a public bookmark is listed, its title opens the external URL
 
 - Given: A public bookmark has an external URL that starts with `http://` or `https://`. It also has a view path.
-- When: An unauthenticated client opens GET `/` or GET `/pages`.
+- When: An unauthenticated client opens GET `/`.
 - Then: The title's link is that external URL. It is not the view path and not the canonical URL. A direct request for the canonical URL still returns that entry's HTML.
 
 ### Read the human-readable feeds
@@ -155,11 +155,11 @@ As an unauthenticated reader, I want to walk titles and open a title that has no
 
 **Acceptance criteria:**
 
-Scenario: When public titles exist, the index lists ten titles
+Scenario: When public articles exist, the index lists ten titles
 
-- Given: More than ten public entries have titles. One is a public page. One deliverable note has an empty title.
+- Given: More than ten public articles have a title. A public page, a public note, and a public bookmark exist. One public article has an empty title.
 - When: An unauthenticated client requests `GET /pages`.
-- Then: The response lists ten titles and no bodies. Order is updated time descending, then the immutable id descending. The public page is included. The empty-title note is omitted. The response includes the URL of the next page. Each item also has a permalink to `/e/{id}` whose visible text is `パーマリンク`.
+- Then: The response lists ten titles and no bodies. Order is updated time descending, then the immutable id descending. Each listed entry is an article. The public page, the note, and the bookmark are omitted. The empty-title article is omitted. The response includes the URL of the next page. Each item also has a permalink to `/e/{id}` whose visible text is `パーマリンク`.
 
 Scenario: When a title has no public entry and has a public inbound edge, the host returns an empty page
 
@@ -270,7 +270,7 @@ When no public entry has the title and no public inbound edge points at it, the 
 
 ### List feeds and titles
 
-**Overview:** Human-readable feeds list deliverable entries. The title index lists public titles. Both pages contain ten items.
+**Overview:** Human-readable feeds list deliverable entries. The title index lists public articles. Both pages contain ten items.
 
 **Input:** One of the following paths. A later page uses the next-page URL from the previous response.
 
@@ -298,7 +298,7 @@ The owner's API list of 50 entries is a different list. It is not this page size
 
 ##### Title index
 
-`GET /pages` lists titles of public entries of every kind. Order is updated time descending. When the updated time is equal, the immutable id descending breaks the tie. Each item shows the title and a permalink. It does not show the body. It includes public pages. It omits an entry whose title is empty. It is the entrance to the link graph. It is not the weblog feed. A bookmark title links to its external URL when that URL starts with `http://` or `https://`. Any other title links to the view path, or to the canonical URL when the entry has no view path. The permalink links to that entry's canonical path `/e/{id}`. Its visible text is `パーマリンク`.
+`GET /pages` lists titles of public articles. Order is updated time descending. When the updated time is equal, the immutable id descending breaks the tie. Each item shows the title and a permalink. It does not show the body. A note, a bookmark, and a page are omitted. An article whose title is empty is omitted. It is not the weblog feed. The title links to the view path, or to the canonical URL when the entry has no view path. The permalink links to that entry's canonical path `/e/{id}`. Its visible text is `パーマリンク`.
 
 ##### Pages of ten
 

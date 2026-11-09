@@ -7,6 +7,7 @@ import {
   deliverableEntries,
   entryById,
   isReservedTitle,
+  publicArticles,
   publicEntries,
   publicEntryByTitle,
   reservedTitles,
@@ -116,6 +117,10 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   const titles = publicEntries().map((entry) => entry.title);
   assert.equal(titles.includes("index-only"), true);
   assert.equal(titles.includes("draft-thought"), false);
+  assert.deepEqual(
+    publicArticles().map((entry) => entry.title),
+    ["morning-note"],
+  );
   const sample = deliverable[0];
   if (!sample) throw new Error("deliverable catalog is empty");
   const found = publicEntryByTitle(sample.title);
@@ -153,7 +158,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.match(homeLoader, /deliverableEntries/);
   assert.match(homeLoader, /readsDevCatalog\(/);
   const pagesLoader = readRoot("pages/pages.server.ts");
-  assert.match(pagesLoader, /publicEntries/);
+  assert.match(pagesLoader, /publicArticles/);
   assert.match(pagesLoader, /listPublicTitles\(/);
   assert.equal(pagesLoader.includes("void/db"), false);
   const editForm = readRoot("pages/edit/index.svelte");

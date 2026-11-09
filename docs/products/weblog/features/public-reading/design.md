@@ -50,7 +50,7 @@ The read flow is as follows.
 
 A page that needs title resolution uses two `batch()` calls. The first reads the entry or the 11-row page. The second resolves titles and Gyazo ids, with `IN` lists chunked at 80 bound parameters. [Limits](https://developers.cloudflare.com/d1/platform/limits/) counts one `batch()` as one query toward the 50-query invocation limit. Statement length and the 100-parameter limit still apply inside the batch. An image request uses one SELECT and one R2 `get`. This feature does not issue one query per edge. This design does not claim that HTML rendering fits the free tier's CPU time per invocation. That time is unmeasured. A request that cannot finish inside the free tier fails for that request. The app does not move onto a paid plan.
 
-`vp dev` answers the public HTML pages from the in-memory domain catalog. Those loaders do not query D1. `/` lists the catalog's deliverable entries. `/pages` lists its public entries. `/{title}` resolves a public catalog title. `/e/{id}` returns the catalog entry for that id. A catalog note is one note and has no reply link. A reply saved during `vp dev` is written to local D1 and does not appear on that page. An article saved from the edit screen during `vp dev` is written to local D1 and does not appear on those pages.
+`vp dev` answers the public HTML pages from the in-memory domain catalog. Those loaders do not query D1. `/` lists the catalog's deliverable entries. `/pages` lists its public articles. `/{title}` resolves a public catalog title. `/e/{id}` returns the catalog entry for that id. A catalog note is one note and has no reply link. A reply saved during `vp dev` is written to local D1 and does not appear on that page. An article saved from the edit screen during `vp dev` is written to local D1 and does not appear on those pages.
 
 `vp preview` and the deployed Worker read those pages from D1 through the store adapter. They do not add catalog rows. An empty table stays an empty list. A draft row stays absent. Page files do not import `void/db`. The edit screens read D1 in both modes. The acceptance criteria describe the deployed Worker. The catalog is not a second store.
 
@@ -238,7 +238,7 @@ A feed row is `visibility = 'public'`, `published_at` is not null, `in_reply_to_
 
 ### Title index
 
-`GET /pages` lists public entries of every kind whose stored title is not empty. Order is `updated_at` descending, then `id` descending. The response selects id, title, updated_at, and view_path. It also selects kind and bookmark_url so the anchor can use the site URL. It does not select the body. A bookmark whose external URL starts with `http://` or `https://` is an anchor to that URL. Every other item is an anchor to the view path, or to the canonical URL when the entry has no view path. Each item also has a permalink to the canonical path `/e/{id}`. The visible text is `パーマリンク`. The document title is `ページ`. An empty index is 200.
+`GET /pages` lists public articles whose stored title is not empty. The condition is `visibility = 'public'` and `kind = 'article'`. Order is `updated_at` descending, then `id` descending. The selected columns are id and title. The response does not include the body. A note, a bookmark, and a page are absent. The title is an anchor to the view path, or to the canonical URL when the entry has no view path. Each item also has a permalink to the canonical path `/e/{id}`. The visible text is `パーマリンク`. The heading is `公開記事`. An empty index is 200.
 
 ### Title path
 

@@ -374,7 +374,7 @@ test("deployed public reads use D1 rows and skip drafts and pages", async () => 
   const titles = await listPublicTitles(database);
   assert.deepEqual(
     titles.map((entry) => entry.title),
-    ["Spaced title", "index-only", "short-post"],
+    ["Spaced title"],
   );
   const byPath = await readPublicEntryByPath(database, "Spaced_title");
   assert.equal(byPath?.id, "article-1");

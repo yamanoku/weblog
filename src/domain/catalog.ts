@@ -80,6 +80,10 @@ export function publicEntries(): CatalogEntry[] {
   return entries.filter((entry) => entry.visibility === "public");
 }
 
+export function publicArticles(): CatalogEntry[] {
+  return publicEntries().filter((entry) => entry.kind === "article");
+}
+
 export function publicEntryByTitle(title: string): CatalogEntry | null {
   return publicEntries().find((entry) => entry.title === title) ?? null;
 }
