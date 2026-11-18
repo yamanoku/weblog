@@ -79,6 +79,13 @@ export const tombstones = sqliteTable("tombstones", {
   deletedAt: text("deleted_at").notNull(),
 });
 
+export const noteImages = sqliteTable("note_images", {
+  entryId: text("entry_id").primaryKey(),
+  mediaType: text("media_type").notNull(),
+  byteLength: integer("byte_length").notNull(),
+  altText: text("alt_text").notNull(),
+});
+
 export const gyazoObjects = sqliteTable(
   "gyazo_objects",
   {

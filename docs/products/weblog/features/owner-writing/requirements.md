@@ -23,7 +23,8 @@ The parent product is [weblog.yamanoku.net](../../product.md).
 - The ActivityPub actor, Follow, signatures, and sending activities. This feature records the state needed to decide delivery. It does not send activities.
 - Putting a bookmark's external URL into the body of a delivered Note as a link. This feature stores that URL as a field separate from the body.
 - Bulk import from Cosense, retries, and merging a local edit with a newer source page. When import writes an entry, it passes this feature's validation and the same entry-and-edge update boundary. Import has no path that stores an entry directly.
-- Public image URLs, rendering of notation other than links, and the ORM.
+- Public image URLs, rendering of notation other than links, and the ORM. Attaching the one note image is in scope. The public URL and the bytes a reader receives are in [Public reading](../public-reading/requirements.md).
+- More than one image on a note, and an image on a reply, an article, or a bookmark.
 - More than one owner, signup, and merging fields from concurrent edits.
 
 ## User stories
@@ -145,7 +146,7 @@ Scenario: When the note field has a body, the host stores a public note and show
 Scenario: When the note field body is empty, the host stores nothing and shows the refusal
 
 - Given: The request is verified as the owner.
-- When: The owner submits an empty body from the note field.
+- When: The owner submits an empty body from the note field and does not attach an image.
 - Then: The host stores no entry. The response lets the owner distinguish that the refusal is the empty body. This is not an authentication failure. A body of only whitespace is not empty.
 
 Scenario: When the owner uses the article form, the host still creates a draft article
@@ -153,6 +154,90 @@ Scenario: When the owner uses the article form, the host still creates a draft a
 - Given: The request is verified as the owner.
 - When: The owner submits a title and body from the article create form.
 - Then: One entry is stored with kind article and visibility draft. No note is created. This response does not show a note canonical URL.
+
+### Attach one image to a note
+
+As the owner, I want to attach one image from the home note field, with a control or by pasting, and to write alternative text for it, so that the public note shows that image with the text I typed. A second acceptable image replaces the first before I submit and keeps the alternative text already typed. An image without alternative text is not stored. The reply field does not attach an image.
+
+**Acceptance criteria:**
+
+Scenario: When the owner chooses or pastes an image, the field shows it before submit
+
+- Given: The request is verified as the owner. The home page shows the note field.
+- When: The owner chooses one JPEG, PNG, GIF, or WebP file from the attach control, or pastes one image into the field.
+- Then: The field shows that image. The body text is unchanged. The host has not stored a note yet.
+
+Scenario: When another acceptable image is chosen or pasted, it replaces the first
+
+- Given: The note field already shows one image. The owner has not submitted.
+- When: The owner chooses or pastes another acceptable image.
+- Then: The field shows only the new image. Alternative text already typed stays in the field.
+
+Scenario: When the owner removes the image, the submit includes no image
+
+- Given: The note field shows one image and a body.
+- When: The owner removes the image and submits.
+- Then: The stored note has that body and no image.
+
+Scenario: When the owner submits a body and one image, the public note shows both
+
+- Given: The request is verified as the owner.
+- When: The owner submits a body, one acceptable image, and alternative text from the note field.
+- Then: One public note is stored. The body is the submitted text and does not gain an image URL or the alternative text. The title is empty. The home page and the canonical page show that body and one image under it. The image alt is that text. No article is created. [Public reading](../public-reading/requirements.md) returns the image bytes.
+
+Scenario: When the owner submits only an image, the host stores a public note
+
+- Given: The request is verified as the owner.
+- When: The owner submits an empty body, one acceptable image, and alternative text.
+- Then: One public note is stored with an empty body and that image. The public pages show the image with that text as its alt. This is not the empty-body refusal.
+
+Scenario: When an image has no alternative text, the host stores nothing
+
+- Given: The request is verified as the owner. The note field shows one acceptable image.
+- When: The owner submits that image with no alternative text, or with only whitespace.
+- Then: The host stores no entry and does not keep the image bytes. The owner can tell this refusal from the empty-body refusal.
+
+Scenario: When the alternative text is longer than 1500 Unicode scalar values, the host stores nothing
+
+- Given: The request is verified as the owner. The note field shows one acceptable image.
+- When: The owner submits alternative text longer than 1500 Unicode scalar values.
+- Then: The host stores no entry. Surrounding whitespace is not part of that count. The owner can tell this refusal from a missing alternative text.
+
+Scenario: When the file is not an accepted image or is larger than 8 MiB, the host stores nothing
+
+- Given: The request is verified as the owner. The field may already show an acceptable image.
+- When: The owner submits a file that is not JPEG, PNG, GIF, or WebP, or a file larger than 8 MiB.
+- Then: The host stores no entry. The owner can tell this refusal from the empty-body refusal. The file does not replace an image the field already shows.
+
+Scenario: When the request carries more than one image, the host stores nothing
+
+- Given: The request is verified as the owner.
+- When: The note field submits more than one image.
+- Then: The host stores no entry. The owner can tell that only one image is allowed.
+
+Scenario: When the image bytes cannot be stored, the host stores no note
+
+- Given: The owner submits one acceptable image.
+- When: The byte store refuses the write.
+- Then: The host stores no entry. The response is not a successful save and is not the empty-body refusal.
+
+Scenario: When a note with an image is deleted, the image is no longer public
+
+- Given: A public note has one image.
+- When: The owner deletes that note.
+- Then: A reader cannot retrieve those image bytes. The canonical URL follows the delete rules for a note.
+
+Scenario: The reply field does not attach an image
+
+- Given: The request is verified as the owner. A public note is open.
+- When: The owner reads the reply field and submits a reply body.
+- Then: The reply field has no image control. The stored reply has no image.
+
+Scenario: The edit screen shows a note image
+
+- Given: The request is verified as the owner. One note has an image and another does not.
+- When: The owner opens GET `/edit`.
+- Then: The note with an image shows that image and its alternative text. The other note does not. Neither item opens the article edit screen.
 
 ### See and delete saved notes on the edit screen
 
@@ -459,7 +544,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
 
-GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body and visibility and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body, the host stores kind note, an empty title, and visibility public. The response shows that the save succeeded and shows the canonical URL. An empty body stores nothing. Deleting a note removes that note only. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only.
+GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body, its visibility, and its image when it has one, and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The note field does not submit a title. When it has a body or one image, the host stores kind note, an empty title, and visibility public. The body stays the submitted text. The response shows that the save succeeded and shows the canonical URL. An empty body with no image stores nothing. One image is at most 8 MiB and is JPEG, PNG, GIF, or WebP. The owner writes alternative text for that image. Without that text, or when the text is only whitespace, the host stores nothing. The stored text is at most 1500 Unicode scalar values, after surrounding whitespace is removed. Public pages use that text as the image alt. Deleting a note removes that note only, and a reader can no longer retrieve its image bytes. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only.
 
 ##### A store that is past the free allowance
 
@@ -509,20 +594,26 @@ When the browser authentication service cannot verify the owner, a browser write
 - **Edge:** Source immutable ID, title written in the body, and target immutable ID. The edges are replaced in the same update that stores the source body. An edge remains when it has no target.
 - **CLI token hash:** Used to verify a token the owner issued. The token value is not retained. Reissue invalidates the previous hash.
 - **Delivered record:** Shows that the entry was delivered at least once. The ActivityPub feature records it. This feature does not remove that record when visibility or kind changes, or when an undelivered entry is deleted. After deletion of a delivered ID, the record remains so the URL can return 410.
+- **Note image:** At most one still image for a note posted from the home field, plus the alternative text for that image. Neither is part of the body text. A reply, an article, and a bookmark do not get one from this field. Deleting the note removes it from public read.
 
 ### Relationships
 
-An entry has one immutable ID. It has one current title, except a note with an empty title. A past title is a former current title of that entry. An edge belongs to one source entry and points at zero or one target through the title written in the body. A bookmark's external URL is a field separate from that entry's body. A note that replies to another note stores that note's id and the id of the note that started the thread. A note that is not a reply leaves both empty. Deleting one note does not change those two ids on another note. A CLI token hash is the owner's write credential and does not belong to an entry. A delivered record corresponds to one immutable ID.
+An entry has one immutable ID. It has one current title, except a note with an empty title. A past title is a former current title of that entry. An edge belongs to one source entry and points at zero or one target through the title written in the body. A bookmark's external URL is a field separate from that entry's body. A note that replies to another note stores that note's id and the id of the note that started the thread. A note that is not a reply leaves both empty. A note has zero or one image. When it has an image, it stores the alternative text for that image. The image belongs to that note's immutable ID. Deleting one note does not change those two ids on another note. A CLI token hash is the owner's write credential and does not belong to an entry. A delivered record corresponds to one immutable ID.
 
 ### Personal information
 
 Browser-authentication identity and the CLI token identify the owner, yamanoku. The purpose is to limit writes to the owner. The identity and the token value do not appear in public responses.
 
-The body, title, and bookmark URL may name the owner or another person. A public entry is readable without authentication. A draft body is readable only by the owner. This feature has no procedure for collecting a third party's consent other than the owner's choice of visibility.
+The body, title, bookmark URL, and note image may name or depict the owner or another person. A public entry, including its note image, is readable without authentication. A draft body is readable only by the owner. This feature has no procedure for collecting a third party's consent other than the owner's choice of visibility.
 
 The token hash is retained until reissue invalidates it. A deleted ID that was delivered remains, without the body, as a URL remote servers may still hold. There is no retention deadline.
 
 ## External service dependencies
+
+- **Cloudflare R2**
+  - **Related user stories:** Attach one image to a note
+  - **Reason for dependency:** The image bytes are not stored in the entry body. [Public reading](../public-reading/requirements.md) returns them.
+  - **Contractual and usage decisions:** Use R2 on the same account. This feature does not contract a new paid plan. Storage beyond the free allowance stays outside the zero-yen target, as the parent product states. The note image is not written into the bucket `gyazo-archives`.
 
 - **Cloudflare Access (Zero Trust Free plan)**
   - **Related user stories:** Create an entry, Issue a CLI token and write with it
@@ -538,6 +629,8 @@ Every write, delete, and token issuance verifies that the request is the owner's
 An unauthenticated response does not return a draft body. An unauthenticated response does not show whether a draft exists.
 
 The CLI token value and the secrets used to verify browser authentication do not appear in public responses or in the repository. The token hash is the form that may be stored.
+
+A note image is accepted only when its bytes are JPEG, PNG, GIF, or WebP, its size is at most 8 MiB, and it has alternative text of at most 1500 Unicode scalar values. The public image response is not an HTML page. The alternative text is world-readable with that public note.
 
 ## Open questions
 

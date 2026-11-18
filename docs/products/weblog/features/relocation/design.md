@@ -70,7 +70,8 @@ The private key crosses the move only in the owner's hands. A public checklist, 
 1. Restore the set from the requirements, including the actor private key, on the new execution place.
 2. Point HTTPS for `weblog.yamanoku.net` at that place. Do not abandon the hostname.
 3. Copy the bucket `gyazo-archives` with the host. Leaving the bucket behind does not finish the move.
-4. Keep bucket bytes when a source Gyazo URL becomes private or expires.
+4. Copy the R2 bucket bound as `STORAGE`. Its keys `notes/{entryId}` are the note images. Leaving that bucket behind does not finish the move.
+5. Keep bucket bytes when a source Gyazo URL becomes private or expires.
 
 Ordinary feature deploys do not run this checklist. There is no cron for relocation.
 

@@ -4,22 +4,29 @@ import { publicEntryHref } from "../domain/public-article.ts";
 import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
+import { noteImageViews } from "../store/edit-note.ts";
 import { listDeliverableEntries, readStoredEntry } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
-function homeEntry(entry: {
-  id: string;
-  title: string;
-  kind: string;
-  body: string;
-  bookmarkUrl?: string | null;
-}) {
+function homeEntry(
+  entry: {
+    id: string;
+    title: string;
+    kind: string;
+    body: string;
+    bookmarkUrl?: string | null;
+  },
+  imageHref: string | null = null,
+  imageAlt: string | null = null,
+) {
   return {
     id: entry.id,
     title: entry.title,
     kind: entry.kind,
     body: entry.body,
     href: publicEntryHref(entry),
+    imageHref,
+    imageAlt,
   };
 }
 
@@ -37,8 +44,20 @@ export const loader = defineHandler(async (c) => {
       : await readStoredEntry(editArticleDatabase(), postedId);
   const postedNote = postedNoteUrl(postedEntry);
   if (readsDevCatalog()) {
-    return { entries: deliverableEntries().map(homeEntry), owner, postedNote };
+    return { entries: deliverableEntries().map((entry) => homeEntry(entry)), owner, postedNote };
   }
-  const stored = await listDeliverableEntries(editArticleDatabase());
-  return { entries: stored.map(homeEntry), owner, postedNote };
+  const database = editArticleDatabase();
+  const stored = await listDeliverableEntries(database);
+  const images = await noteImageViews(
+    database,
+    stored.filter((entry) => entry.kind === "note").map((entry) => entry.id),
+  );
+  return {
+    entries: stored.map((entry) => {
+      const image = images.get(entry.id);
+      return homeEntry(entry, image?.href ?? null, image?.alt ?? null);
+    }),
+    owner,
+    postedNote,
+  };
 });

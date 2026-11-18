@@ -114,6 +114,7 @@ sequenceDiagram
 - `pages`
 - `users`
 - `gyazo`
+- `note-images`
 - `.well-known`
 
 衝突または予約で閲覧用パスをやめた旧キーは、そのエントリの正規 URL へ 301 で移す。移転先のエントリが公開で、閲覧用パスが残っていれば、そちらへ 301 で移す。
@@ -125,6 +126,7 @@ erDiagram
   entries ||--o{ path_redirects : "entry_id"
   entries ||--o| delivery_records : "entry_id"
   entries ||--o| tombstones : "entry_id"
+  entries ||--o| note_images : "entry_id"
 ```
 
 `delivery_records` と `tombstones` は、エントリ行を消したあとも残す。外部キーの削除連鎖では消さない。辺と過去タイトルは、削除の batch で明示的に消す。
@@ -139,6 +141,7 @@ erDiagram
 - `owner_token` は、常に一行である。hash と issued_at だけを持つ。
 - `delivery_records` は、entry_id を主キーとする。この機能は行を挿入しない。
 - `tombstones` は、entry_id と deleted_at を持つ。本文は持たない。
+- `note_images` は、entry_id、media_type、byte_length、alt_text を持つ。主キーは entry_id である。外部キーは無い。alt_text は代替テキストである。前後の空白は除いて保存する。バイト列はこの行に置かない。オブジェクトキーは `notes/{entryId}` で、R2 のバインディング `STORAGE` に置く。このバインディングはバケット `gyazo-archives` ではない。
 
 解決先を一つに決められないとき、target_id は NULL である。現在タイトルの重複は、その条件である。記録時刻まで同じ過去タイトルの重複も、その条件である。過去タイトルを一つに決められるときは、recorded_at が最も新しいエントリを選ぶ。所有者向けの target_id は、draft も含めて解決した結果である。未認証の応答は、public のエントリだけへ解決し直す。draft を指す target_id は、未認証の応答へ出さない。
 
@@ -170,9 +173,9 @@ GET `/edit` は、記事の作成フォームを返す。保存済み article �
 
 note 欄は GET `/` の先頭、ナビゲーションの直下に置く。`/edit` と同じ JWT の規則で所有者と確認できたときだけ含める。Access の対象は `/edit` と `/edit/*` のままなので、GET `/` はログイン画面にしない。JWT が無い、または無効なとき、GET `/` は 200 のままで欄を出さない。Worker は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。配送対象の一覧は変えない。draft の本文は含めない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
 
-note 欄は本文だけを `noteBody` として POST `/edit?note` へ送る。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。`publishedAt` は確定時刻である。`view_path` は NULL のままである。空の `noteBody` は保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。成功は GET `/?posted={id}` へ 302 で移す。同じ要求が所有者であり、`{id}` が保存済みの公開 note であるときだけ、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。確認できていない GET `/?posted={id}` は、URL を出さない。欄も出さない。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
+note 欄は本文を `noteBody` として、画像を多くて 1 枚、POST `/edit?note` へ送る。所有者は、ラベル `画像を添付` のファイル操作で選ぶか、欄へ画像を貼り付ける。画像を含まない貼り付けは、本文へ入る。受け付ける 2 枚目は、投稿前に 1 枚目と置き換わる。書いてある代替テキストは残る。画像を出しているあいだ、ラベル `代替テキスト` の入力を求める。この文は必須である。前後の空白は除く。空白だけは無いものとして扱う。Unicode スカラー値が 1500 を超える文は 422 `image_alt_length` で拒む。文が無いときは 422 `image_alt` で拒む。画像を外すと、画像は送らない。その文も保存しない。ホストが受け付けるのは、JPEG、PNG、GIF、WebP で、8 MiB 以下のバイト列だけである。受け付けないファイルは、既に出している画像を置き換えず、保存もしない。要求が画像を 2 枚以上含むときは保存しない。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。本文は送った文字のままで、画像があるときの空文字も含む。`publishedAt` は確定時刻である。`view_path` は NULL のままである。本文が空で画像も無いときは保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。画像のバイト列は、エントリ行を確定する前に R2 のバインディング `STORAGE` へ書く。その書き込みに失敗したときは、エントリを作らず、503 `store_unavailable` を返す。公開の画像 URL は `GET /note-images/{id}` であり、[公開閲覧](../public-reading/requirements.ja.md) が定める。成功は GET `/?posted={id}` へ 302 で移す。同じ要求が所有者であり、`{id}` が保存済みの公開 note であるときだけ、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。確認できていない GET `/?posted={id}` は、URL を出さない。欄も出さない。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
 
-GET `/edit` の note 一覧は、draft と public の note を createdAt の新しい順、同じ時刻なら id の降順で返す。返信も含める。各項目は本文と visibility を示し、GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。保存済みの note だけを消す。消すときは、その source の辺、過去タイトル、パス移転も消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。削除は、他の行の `in_reply_to_id` と `thread_root_id` を変えない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。note でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
+GET `/edit` の note 一覧は、draft と public の note を createdAt の新しい順、同じ時刻なら id の降順で返す。返信も含める。各項目は本文と visibility を示し、画像があるときはその画像も示す。GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。保存済みの note だけを消す。消すときは、その source の辺、過去タイトル、パス移転、`note_images` の行、キー `notes/{entryId}` のオブジェクトも消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。削除は、他の行の `in_reply_to_id` と `thread_root_id` を変えない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。note でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
 
 公開の note の GET `/e/{id}` は、note 欄と同じ JWT の規則で所有者と確認できたとき、並んでいる各 note に返信欄を出す。Access の対象は `/edit` と `/edit/*` のままである。JWT が無い、または無効なとき、ページは 200 のままで返信欄を出さない。本文の並びは変えない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
 
@@ -284,6 +287,18 @@ Access の対象は `/edit` と `/edit/*` だけにする。ホスト全体を A
 最初の CLI トークンは、所有者が `/edit` を開いてから発行する。発行前の CLI は書き込めない。
 
 ## 検討した代替手段
+
+### 画像の URL を本文へ入れる
+
+所有者が入力していない URL が本文に出る。画像だけの note は、そのための文字を作ることになる。本文は入力した文字のままにする。画像は別のオブジェクトにする。
+
+### バイト列を `gyazo-archives` へ書く
+
+そのバケットは、既存の Gyazo アーカイブである。note の投稿はそこへアップロードしない。note の画像は R2 のバインディング `STORAGE` を使う。
+
+### note に画像を 2 枚以上付ける
+
+所有者は、note の画像を 1 枚に限った。2 枚目を選ぶと、投稿前に 1 枚目と置き換わる。要求が画像を 2 枚以上含むときは保存しない。
 
 ### 返信をホームに一件ずつ出す
 

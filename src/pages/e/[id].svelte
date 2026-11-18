@@ -11,17 +11,20 @@
   {/if}
   {#each thread as note (note.id)}
     <article id="note-{note.id}">
-      {#if note.replyToId}
-        <p><a href="#note-{note.replyToId}">返信先</a></p>
-      {/if}
       <p style="white-space: pre-wrap">{note.body}</p>
+      {#if note.imageHref}
+        <img src={note.imageHref} alt={note.imageAlt ?? ""} />
+      {/if}
       <Link href={`/e/${note.id}`}>permalink</Link>
       {#if owner}
+      <details>
+        <summary>返信する</summary>
         <form method="post" action="/edit?reply">
           <input type="hidden" name="replyTo" value={note.id} />
-          <textarea name="noteBody" rows="4" placeholder="返信を書く"></textarea>
+          <textarea name="noteBody" rows="4"></textarea>
           <button type="submit">返信</button>
         </form>
+      </details>
       {/if}
     </article>
   {/each}
@@ -39,9 +42,6 @@
 {/if}
 
 <style scoped>
-  article form {
-    margin-block-start: var(--y-rhythm-1);
-  }
   textarea {
     width: 100%;
     height: 100px;
@@ -52,5 +52,9 @@
   }
   button {
     margin-block-start: var(--y-rhythm-1);
+  }
+  img {
+    max-width: 100%;
+    height: auto;
   }
 </style>

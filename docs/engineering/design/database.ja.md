@@ -33,7 +33,7 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 ## データモデル・ER 図
 
-`entries` は、辺と過去タイトルと移転の親である。`delivery_records` と `tombstones` は、エントリの行が消えたあとも残る。外部キーの削除連鎖では消さない。辺と過去タイトルは、削除の batch の明示的な文で消す。`followers` から活動やジョブへの外部キーは無い。`entries` から活動やジョブへの外部キーも無い。`gyazo_objects` から `entries` への外部キーは無い。画像 ID は、本文のテキストから取る。
+`entries` は、辺と過去タイトルと移転の親である。`delivery_records` と `tombstones` は、エントリの行が消えたあとも残る。外部キーの削除連鎖では消さない。辺と過去タイトルは、削除の batch の明示的な文で消す。`followers` から活動やジョブへの外部キーは無い。`entries` から活動やジョブへの外部キーも無い。`gyazo_objects` から `entries` への外部キーは無い。画像 ID は、本文のテキストから取る。`note_images` から `entries` への外部キーも無い。note の削除は、明示的な文でその行を消す。
 
 ### `entries`
 
@@ -68,6 +68,10 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 ### `tombstones`
 
 列は `entry_id` と `deleted_at` である。本文の列は無い。配送済みのエントリを削除するときだけ入れる。
+
+### `note_images`
+
+列は `entry_id`、`media_type`、`byte_length`、`alt_text` である。主キーは `entry_id` である。外部キーは無い。`alt_text` は代替テキストである。前後の空白は除いて保存する。画像のバイト列はこの行に置かない。バイト列は R2 のバインディング `STORAGE` にあり、キーは `notes/{entryId}` である。このバインディングはバケット `gyazo-archives` ではない。`media_type` は `image/jpeg`、`image/png`、`image/gif`、`image/webp` のいずれかである。note を削除すると、この行を消し、そのあとオブジェクトを消す。
 
 ### `gyazo_objects`
 
@@ -106,7 +110,7 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 ## データの取り扱い設計
 
-`entries` に保存する本文は、プレーンテキストである。HTML は保存しない。`tombstones` は本文を写さない。`delivery_records` と `tombstones` は、エントリの行が消えたあとも残る。`gyazo_objects` は、所有者のコマンドが手元の一覧から入れる。閲覧者は書かない。
+`entries` に保存する本文は、プレーンテキストである。HTML は保存しない。`tombstones` は本文を写さない。`delivery_records` と `tombstones` は、エントリの行が消えたあとも残る。`note_images` は、note の画像 1 枚について型とバイト長と代替テキストを保存する。閲覧者はその行を書かない。`gyazo_objects` は、所有者のコマンドが手元の一覧から入れる。閲覧者は書かない。
 
 ## 認証認可に関する特記事項
 
@@ -128,7 +132,7 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 ### 画像からエントリへの外部キー
 
-画像 ID は、本文の中のテキストである。外部キーは、行に無い関係を作る。`gyazo_objects` は分けたままである。
+画像 ID は、本文の中のテキストである。外部キーは、行に無い関係を作る。`gyazo_objects` は分けたままである。`note_images.entry_id` は note を名指しする。削除は、その行を名前で既に消す。このテーブルにも外部キーは付けない。
 
 ### 配送の行を削除連鎖で消す
 

@@ -7,8 +7,9 @@ export default defineConfig({
   worker: {
     compatibility_date: "2026-02-24",
   },
-  // One Workers Free app. The only store is this D1 binding.
-  // KV, Queues, R2, cron, Durable Objects, and a second database stay out.
+  // One Workers Free app. The entry store is this D1 binding.
+  // Note images use the inferred R2 binding STORAGE. That bucket is not gyazo-archives.
+  // KV, Queues, cron, Durable Objects, and a second database stay out.
   cloudflare: {
     name: "weblog",
     // These match the live Worker. Void will not republish while they are absent.
@@ -31,6 +32,6 @@ export default defineConfig({
   head: {
     htmlAttrs: {
       lang: "ja",
-    }
+    },
   },
 });

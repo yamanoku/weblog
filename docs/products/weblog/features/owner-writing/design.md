@@ -114,6 +114,7 @@ These comparison keys are used by the API, the edit screen, Gyazo images, and th
 - `pages`
 - `users`
 - `gyazo`
+- `note-images`
 - `.well-known`
 
 An old key dropped because of a collision or a reserved name redirects with 301 to that entry's canonical URL. If the destination entry is public and still has a view path, the redirect target is that view path.
@@ -125,6 +126,7 @@ erDiagram
   entries ||--o{ path_redirects : "entry_id"
   entries ||--o| delivery_records : "entry_id"
   entries ||--o| tombstones : "entry_id"
+  entries ||--o| note_images : "entry_id"
 ```
 
 `delivery_records` and `tombstones` remain after the entry row is gone. Foreign-key delete cascades do not remove them. Edges and past titles are deleted by explicit statements in the delete batch.
@@ -139,6 +141,7 @@ The tables are as follows.
 - `owner_token` is always one row. It holds only hash and issued_at.
 - `delivery_records` has entry_id as its primary key. This feature does not insert rows.
 - `tombstones` holds entry_id and deleted_at. It has no body.
+- `note_images` holds entry_id, media_type, byte_length, and alt_text. entry_id is the primary key. There is no foreign key. alt_text is the alternative text, with surrounding whitespace removed. The bytes are not in this row. The object key is `notes/{entryId}` in the R2 binding `STORAGE`. That binding is not the bucket `gyazo-archives`.
 
 When more than one target matches, target_id is NULL. That happens when two or more public entries share the current title, or when only past titles match and more than one share the same recorded time. When past titles pick out one entry, the one with the latest recorded_at is chosen. The target_id stored for the owner is the result of resolution that includes drafts. An unauthenticated response resolves again using only public entries. A target_id that points at a draft is not shown in an unauthenticated response.
 
@@ -170,9 +173,9 @@ GET `/edit` returns the article create form, the list of stored articles, a sepa
 
 The note field is the first block of GET `/`, directly under the navigation. It is included only when that request is verified as the owner by the same JWT rules as `/edit`. Access still covers only `/edit` and `/edit/*`, so GET `/` is not a login wall. A missing or invalid JWT leaves GET `/` at 200 and omits the field. The Worker reads `Cf-Access-Jwt-Assertion`, and reads the `CF_Authorization` cookie only when that header is absent. The deliverable list does not change, and the response does not include a draft body. When the field is included, the response uses `Cache-Control: private, no-store` and `Vary: Cookie`. On the local dev server, where Access is not in front of the process, the field is included.
 
-The note field submits only the body, as `noteBody`, to POST `/edit?note`. That post stores kind note, an empty title, and visibility public. `publishedAt` is the commit time. `view_path` stays NULL. An empty `noteBody` stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. Success redirects with 302 to GET `/?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}` only when the same request is verified as the owner and `{id}` is a stored public note. An unverified GET `/?posted={id}` omits the URL and the field. The article list does not include the note. The notes list does. POST `/edit` without `note` still creates a draft article and does not read `posted`.
+The note field submits the body, as `noteBody`, and at most one image to POST `/edit?note`. The owner chooses the image with a file control labeled `画像を添付`, or pastes an image into the field. Text pasted without an image stays in the body. A second acceptable image replaces the first before submit and keeps the alternative text already typed. When an image is shown, the field asks for that text with a control labeled `代替テキスト`. The text is required. Surrounding whitespace is removed. A value of only whitespace is missing. More than 1500 Unicode scalar values is refused as `image_alt_length`. A missing value is 422 `image_alt`. Removing the image submits no image and does not store that text. The host accepts the bytes only when they are JPEG, PNG, GIF, or WebP and at most 8 MiB. An unacceptable file does not replace an image already shown and stores nothing. More than one image in the request stores nothing. The post stores kind note, an empty title, and visibility public. The body stays the submitted text, including the empty string when an image is present. `publishedAt` is the commit time. `view_path` stays NULL. An empty body with no image stores nothing and returns 422 `empty_body`. A body of only whitespace is stored. The image bytes go to the R2 binding `STORAGE` before the entry row is committed. If that write fails, the host stores no entry and returns 503 `store_unavailable`. The public image URL is `GET /note-images/{id}`, defined in [Public reading](../public-reading/requirements.md). Success redirects with 302 to GET `/?posted={id}`. That response shows that the save succeeded and shows the canonical URL `https://weblog.yamanoku.net/e/{id}` only when the same request is verified as the owner and `{id}` is a stored public note. An unverified GET `/?posted={id}` omits the URL and the field. The article list does not include the note. The notes list does. POST `/edit` without `note` still creates a draft article and does not read `posted`.
 
-The notes list on GET `/edit` returns draft and public notes, newest `createdAt` first, then descending id. A reply is included. Each item shows the body and visibility and does not open GET `/edit/{id}`. Delete submits `noteId` to POST `/edit?deleteNote`. Only a stored note is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. The delete does not change `in_reply_to_id` or `thread_root_id` on any other row. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a note is 404 and deletes nothing.
+The notes list on GET `/edit` returns draft and public notes, newest `createdAt` first, then descending id. A reply is included. Each item shows the body, the visibility, and the image when the note has one. It does not open GET `/edit/{id}`. Delete submits `noteId` to POST `/edit?deleteNote`. Only a stored note is removed, along with that source's edges, past titles, path redirects, the `note_images` row, and the object at `notes/{entryId}`. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. The delete does not change `in_reply_to_id` or `thread_root_id` on any other row. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a note is 404 and deletes nothing.
 
 Each public note on GET `/e/{id}` includes a reply field when that request is verified as the owner by the same JWT rules as the note field. Access still covers only `/edit` and `/edit/*`. A missing or invalid JWT leaves the page at 200 and omits every reply field. The thread of bodies does not change. When a field is included, the response uses `Cache-Control: private, no-store` and `Vary: Cookie`. On the local dev server, where Access is not in front of the process, the field is included.
 
@@ -284,6 +287,18 @@ Access covers only `/edit` and `/edit/*`. Putting the whole host behind Access w
 The owner issues the first CLI token after opening `/edit`. Until then, the CLI cannot write.
 
 ## Alternatives considered
+
+### Put the image URL into the body
+
+The owner would see a URL they did not type, and an image-only note would need invented text. The body stays the typed text. The image is a separate object.
+
+### Write the bytes into `gyazo-archives`
+
+That bucket is the existing Gyazo archive. A note post does not upload into it. The note image uses the R2 binding `STORAGE`.
+
+### Allow more than one image on a note
+
+The owner limited a note to one image. A second choice replaces the first before submit. A request that carries more than one image stores nothing.
 
 ### List each reply on the home page
 

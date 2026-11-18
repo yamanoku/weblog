@@ -128,7 +128,7 @@ The owner can take out the following items. Being able to restore them is an acc
 
 ### Relationships
 
-One restore set contains the entries, their edges, the current followers, the delivered activity IDs, and the one actor private key. The bucket `gyazo-archives` moves with the host. Its bytes are not a field of the entry body.
+One restore set contains the entries, their edges, the current followers, the delivered activity IDs, and the one actor private key. The bucket `gyazo-archives` moves with the host. Its bytes are not a field of the entry body. Note image bytes live in the R2 bucket bound as `STORAGE`, under the keys `notes/{entryId}`. A move copies that bucket with the host. Those bytes are not a field of the entry body.
 
 ### Personal information
 
@@ -140,6 +140,11 @@ A follower actor URL identifies a remote actor. Those URLs are already world-rea
   - **Related user stories:** Move the host
   - **Reason for dependency:** The hostname must resolve to the execution place that holds the restored set.
   - **Contractual and usage decisions:** The provider may change. The hostname stays. Fees and the per-zone cap are in [the product](../../product.md). This feature does not contract a paid plan.
+
+- **R2 binding `STORAGE`**
+  - **Related user stories:** Move the host
+  - **Reason for dependency:** Note image bytes live in this bucket. [Public reading](../public-reading/requirements.md) reads them at `/note-images/{id}`.
+  - **Contractual and usage decisions:** A host move copies this bucket. The bucket is not `gyazo-archives`. Storage beyond the free allowance stays outside the zero-yen target, as the parent product states.
 
 - **Bucket `gyazo-archives`**
   - **Related user stories:** Move the host

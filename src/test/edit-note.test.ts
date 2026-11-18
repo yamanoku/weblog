@@ -9,21 +9,39 @@ import {
   noteBodyField,
   noteDeleteId,
   noteFromEditField,
+  noteFromHomeField,
   orderedNoteThread,
   postedNoteUrl,
   replyToField,
 } from "../domain/edit-note.ts";
-import { deliveryRecords, edges, entries, tombstones } from "../db/schema.ts";
+import {
+  acceptNoteImage,
+  noteActivityAttachment,
+  noteImageAlt,
+  noteImageAltLimit,
+  noteImageByteLimit,
+  noteImageFromField,
+  noteImageIsPublic,
+} from "../domain/note-image.ts";
+import { deliveryRecords, edges, entries, noteImages, tombstones } from "../db/schema.ts";
 import { eq } from "void/db";
-import { commitEntry, hasTombstone, listDeliverableEntries, readStoredEntry } from "../store/entries.ts";
+import {
+  commitEntry,
+  hasTombstone,
+  listDeliverableEntries,
+  readStoredEntry,
+} from "../store/entries.ts";
 import { listArticlesForEdit } from "../store/edit-article.ts";
 import {
   deleteNoteFromEdit,
   listNotesForEdit,
   listPublicNoteThread,
+  readNoteImage,
   submitNoteFromEdit,
   submitReplyFromEdit,
+  type NoteImageObjects,
 } from "../store/edit-note.ts";
+import type { NoteImageBytes } from "../domain/note-image.ts";
 
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 
@@ -117,7 +135,9 @@ test("the edit screen lists notes and deletes only that note", async () => {
     createdAt: now,
     updatedAt: now,
   });
-  await database.insert(edges).values({ sourceId: "note-new", writtenTitle: "Luma", targetId: null });
+  await database
+    .insert(edges)
+    .values({ sourceId: "note-new", writtenTitle: "Luma", targetId: null });
   const listed = await listNotesForEdit(database);
   assert.deepEqual(
     listed.map((note) => note.id),
@@ -140,14 +160,20 @@ test("the edit screen lists notes and deletes only that note", async () => {
   assert.deepEqual(delivered, { ok: true });
   assert.equal(await readStoredEntry(database, "note-new"), null);
   assert.equal(await hasTombstone(database, "note-new"), true);
-  const record = await database.select().from(deliveryRecords).where(eq(deliveryRecords.entryId, "note-new"));
+  const record = await database
+    .select()
+    .from(deliveryRecords)
+    .where(eq(deliveryRecords.entryId, "note-new"));
   assert.equal(record.length, 1);
   const edge = await database.select().from(edges).where(eq(edges.sourceId, "note-new"));
   assert.equal(edge.length, 0);
   const stone = await database.select().from(tombstones).where(eq(tombstones.entryId, "note-new"));
   assert.equal(stone[0]?.deletedAt, "2026-11-08T02:00:00.000Z");
   assert.equal((await listNotesForEdit(database)).length, 0);
-  assert.equal((await database.select().from(entries).where(eq(entries.id, "article-1"))).length, 1);
+  assert.equal(
+    (await database.select().from(entries).where(eq(entries.id, "article-1"))).length,
+    1,
+  );
   sqlite.close();
 });
 
@@ -157,7 +183,13 @@ test("the home page shows the note field to the owner and the edit screen keeps 
   assert.match(home, /いまどうしてる？/);
   assert.match(home, /useForm\(\s*"\/edit\?note"/);
   assert.match(home, /name="noteBody"/);
-  assert.equal(home.includes("noteForm.errors.noteBody"), false);
+  assert.match(home, /name="noteImage"/);
+  assert.match(home, /name="noteImageAlt"/);
+  assert.match(home, /代替テキスト/);
+  assert.match(home, /画像を添付/);
+  assert.match(home, /onpaste/);
+  assert.match(home, /noteForm\.errors\.noteBody/);
+  assert.match(home, /本文か画像を入れてください/);
   const homeServer = readFileSync(join(rootDir, "pages/index.server.ts"), "utf8");
   assert.match(homeServer, /verifiedOwner\(/);
   assert.match(homeServer, /readsDevCatalog\(\)/);
@@ -176,6 +208,9 @@ test("the home page shows the note field to the owner and the edit screen keeps 
   assert.match(server, /application\/json/);
   assert.match(server, /c\.req\.json\(\)/);
   assert.match(server, /noteBodyField\(payload\)/);
+  assert.match(server, /noteImageFromField\(/);
+  assert.match(server, /noteImageAlt\(/);
+  assert.match(server, /store_unavailable/);
   assert.match(server, /listNotesForEdit\(/);
   assert.match(server, /deleteNoteFromEdit\(/);
   assert.match(server, /deleteNote:/);
@@ -215,8 +250,12 @@ test("a reply stays on the note thread and off the home list", async () => {
     createdAt: "2026-11-08T00:00:00.000Z",
     updatedAt: "2026-11-08T00:00:00.000Z",
   });
-  assert.deepEqual(await submitReplyFromEdit(database, "nope", "article-1"), { error: "not_found" });
-  assert.deepEqual(await submitReplyFromEdit(database, "nope", "draft-note"), { error: "not_found" });
+  assert.deepEqual(await submitReplyFromEdit(database, "nope", "article-1"), {
+    error: "not_found",
+  });
+  assert.deepEqual(await submitReplyFromEdit(database, "nope", "draft-note"), {
+    error: "not_found",
+  });
   const empty = await submitReplyFromEdit(database, "", root.id);
   assert.deepEqual(empty, { error: "empty_body", id: root.id });
 
@@ -251,7 +290,10 @@ test("a reply stays on the note thread and off the home list", async () => {
   const rootGone = await deleteNoteFromEdit(database, root.id);
   assert.deepEqual(rootGone, { ok: true });
   const onlyReply = await listPublicNoteThread(database, second.id);
-  assert.deepEqual(onlyReply.map((note) => note.body), ["to reply"]);
+  assert.deepEqual(
+    onlyReply.map((note) => note.body),
+    ["to reply"],
+  );
   assert.equal(onlyReply[0]?.replyToId, null);
   sqlite.close();
 });
@@ -271,9 +313,12 @@ test("the note page shows the thread and a reply field for the owner", () => {
   assert.equal(replyToField({}), "");
   const page = readFileSync(join(rootDir, "pages/e/[id].svelte"), "utf8");
   assert.match(page, /thread as note/);
+  assert.match(page, /note\.imageHref/);
+  assert.match(page, /note\.imageAlt/);
+  assert.equal(page.includes("画像を添付"), false);
   assert.match(page, /action="\/edit\?reply"/);
   assert.match(page, /name="replyTo"/);
-  assert.match(page, /返信先/);
+  assert.match(page, /返信する/);
   assert.match(page, /本文が空です/);
   assert.match(page, /markdownToHtml\(entry\.body\)/);
   const loader = readFileSync(join(rootDir, "pages/e/[id].server.ts"), "utf8");
@@ -281,4 +326,98 @@ test("the note page shows the thread and a reply field for the owner", () => {
   assert.match(loader, /verifiedOwner\(/);
   assert.match(loader, /private, no-store/);
   assert.equal(loader.includes("void/db"), false);
+});
+
+function memoryImages() {
+  const saved = new Map<string, NoteImageBytes>();
+  const objects: NoteImageObjects = {
+    async put(id, image) {
+      saved.set(id, image);
+    },
+    async delete(id) {
+      saved.delete(id);
+    },
+  };
+  return { saved, objects };
+}
+
+const png = Uint8Array.from(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
+
+test("a home note keeps one image and an empty body is allowed with it", async () => {
+  assert.deepEqual(noteFromHomeField("", false), { error: "empty_body" });
+  assert.deepEqual(noteFromHomeField("", true), { body: "" });
+  assert.deepEqual(await noteImageFromField(["a", "b"]), { error: "image_count" });
+  assert.deepEqual(acceptNoteImage(Uint8Array.from([1, 2, 3])), { error: "image_type" });
+  const huge = new Uint8Array(noteImageByteLimit + 1);
+  huge[0] = 0xff;
+  huge[1] = 0xd8;
+  huge[2] = 0xff;
+  assert.deepEqual(acceptNoteImage(huge), { error: "image_too_large" });
+  assert.deepEqual(noteImageAlt("  ", true), { error: "image_alt" });
+  assert.deepEqual(noteImageAlt("  one pixel  ", true), { alt: "one pixel" });
+  assert.deepEqual(noteImageAlt("one pixel", false), { alt: null });
+  assert.deepEqual(noteImageAlt("x".repeat(noteImageAltLimit + 1), true), {
+    error: "image_alt_length",
+  });
+
+  const accepted = acceptNoteImage(png);
+  assert.ok(!("error" in accepted));
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  const images = memoryImages();
+  const missingAlt = await submitNoteFromEdit(database, "", accepted.image, images.objects);
+  assert.deepEqual(missingAlt, { error: "image_alt" });
+  assert.equal((await database.select().from(entries)).length, 0);
+  const saved = await submitNoteFromEdit(database, "", accepted.image, images.objects, "one pixel");
+  assert.ok(!("error" in saved));
+  const entry = await readStoredEntry(database, saved.id);
+  assert.equal(entry?.body, "");
+  assert.equal(entry?.kind, "note");
+  const row = await readNoteImage(database, saved.id);
+  assert.equal(row?.mediaType, "image/png");
+  assert.equal(images.saved.get(saved.id)?.mediaType, "image/png");
+  assert.equal(noteImageIsPublic(entry, row?.mediaType ?? null), true);
+  assert.equal(
+    (await database.select().from(noteImages).where(eq(noteImages.entryId, saved.id)))[0]?.altText,
+    "one pixel",
+  );
+  assert.deepEqual(noteActivityAttachment(saved.id, "image/png", "one pixel"), {
+    type: "Image",
+    mediaType: "image/png",
+    url: `https://weblog.yamanoku.net/note-images/${saved.id}`,
+    name: "one pixel",
+  });
+  const listed = await listNotesForEdit(database);
+  assert.equal(listed[0]?.imageHref, `/note-images/${saved.id}`);
+  assert.equal(listed[0]?.imageAlt, "one pixel");
+  const thread = await listPublicNoteThread(database, saved.id);
+  assert.equal(thread[0]?.imageHref, `/note-images/${saved.id}`);
+  assert.equal(thread[0]?.imageAlt, "one pixel");
+
+  const before = await database.select().from(entries);
+  const refused = memoryImages();
+  refused.objects.put = async () => {
+    throw new Error("full");
+  };
+  const failed = await submitNoteFromEdit(
+    database,
+    "text",
+    accepted.image,
+    refused.objects,
+    "one pixel",
+  );
+  assert.deepEqual(failed, { error: "image_store" });
+  assert.equal((await database.select().from(entries)).length, before.length);
+  assert.equal((await database.select().from(noteImages)).length, 1);
+
+  await deleteNoteFromEdit(database, saved.id, "2026-11-18T00:00:00.000Z", images.objects);
+  assert.equal(await readNoteImage(database, saved.id), null);
+  assert.equal(images.saved.has(saved.id), false);
+  assert.equal(noteImageIsPublic(await readStoredEntry(database, saved.id), "image/png"), false);
+  sqlite.close();
 });

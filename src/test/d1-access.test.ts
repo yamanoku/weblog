@@ -60,7 +60,9 @@ function applyShippedMigrations() {
 }
 
 function tableSql(sqlite: SqliteDatabase, name: string) {
-  const row = sqlite.prepare<[string], { sql: string }>("SELECT sql FROM sqlite_master WHERE name = ?").get(name);
+  const row = sqlite
+    .prepare<[string], { sql: string }>("SELECT sql FROM sqlite_master WHERE name = ?")
+    .get(name);
   assert.equal(typeof row?.sql, "string", name);
   if (!row) throw new Error(name);
   return row.sql;
@@ -138,6 +140,7 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
     "import_walk",
     "import_write_tally",
     "kv_write_tally",
+    "note_images",
     "owner_token",
     "past_titles",
     "path_redirects",
@@ -198,6 +201,11 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
   );
   assert.deepEqual(primaryKey(sqlite, "tombstones"), []);
   assert.deepEqual(primaryKey(sqlite, "gyazo_objects"), ["image_id", "extension"]);
+  assert.deepEqual(primaryKey(sqlite, "note_images"), ["entry_id"]);
+  assert.deepEqual(
+    columns(sqlite, "note_images").map((column) => column.name),
+    ["entry_id", "media_type", "byte_length", "alt_text"],
+  );
   assert.match(tableSql(sqlite, "activities_outbox"), /published_at" desc/i);
   assert.match(tableSql(sqlite, "activities_outbox"), /"id" desc/i);
   assert.deepEqual(primaryKey(sqlite, "delivery_jobs"), ["activity_id"]);
@@ -346,7 +354,10 @@ test("edit access verifies with the certificate whose kid matches", async () => 
     typ: "JWT",
     kid: "previous",
   });
-  assert.equal((await decideEditAccess({ header: previousToken, ...settings(publicKey) })).ok, true);
+  assert.equal(
+    (await decideEditAccess({ header: previousToken, ...settings(publicKey) })).ok,
+    true,
+  );
   const labeledWithTheOtherKey = await signJwt(current.privateKey, claims, {
     alg: "RS256",
     typ: "JWT",
@@ -361,7 +372,10 @@ test("edit access verifies with the certificate whose kid matches", async () => 
     typ: "JWT",
     kid: "missing",
   });
-  assert.equal((await decideEditAccess({ header: unknownKid, ...settings(publicKey) })).status, 401);
+  assert.equal(
+    (await decideEditAccess({ header: unknownKid, ...settings(publicKey) })).status,
+    401,
+  );
   const noKid = await signJwt(current.privateKey, claims);
   assert.equal((await decideEditAccess({ header: noKid, ...settings(publicKey) })).status, 401);
 });

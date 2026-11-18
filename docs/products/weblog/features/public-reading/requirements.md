@@ -119,6 +119,30 @@ Scenario: When a public bookmark is listed, its title opens the external URL
 - When: An unauthenticated client opens GET `/`.
 - Then: The title's link is that external URL. It is not the view path and not the canonical URL. A direct request for the canonical URL still returns that entry's HTML.
 
+### Read a note image
+
+As an unauthenticated reader, I want the one image on a public note so that I can see it with that note. The image is not a Gyazo archive object. Owner writing decides when a note has that image.
+
+**Acceptance criteria:**
+
+Scenario: When a public note has an image, the page shows it under the body
+
+- Given: One public note has a body and one image. Another public note has a body and no image.
+- When: An unauthenticated client opens GET `/` and the canonical URL of each note, and does not ask for Activity Streams.
+- Then: The note with an image includes its body and one image under that body. The image refers to this host at `/note-images/{id}` for that note. The image alt is the alternative text stored with that note. The note without an image includes no such image. The stored body does not contain that URL or that text.
+
+Scenario: When the image URL is requested, the host returns the bytes
+
+- Given: That note is public and the bytes are stored.
+- When: An unauthenticated client requests `GET /note-images/{id}`.
+- Then: The response is those bytes. The content type is `image/jpeg`, `image/png`, `image/gif`, or `image/webp`. The host does not list a bucket.
+
+Scenario: When the note is missing or not public, the image URL returns no bytes
+
+- Given: The id is missing, is not a public note, or that note has no image.
+- When: An unauthenticated client requests that image URL.
+- Then: The response is 404 and includes no image bytes.
+
 ### Read the human-readable feeds
 
 As an unauthenticated reader, I want to read a feed of deliverable entries so that I can follow new articles, short posts, and bookmarks without taking the title index as the feed.

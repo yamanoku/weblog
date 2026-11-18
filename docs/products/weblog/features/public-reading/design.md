@@ -56,7 +56,7 @@ A page that needs title resolution uses two `batch()` calls. The first reads the
 
 ## Architecture and sequence diagrams
 
-The reader talks only to the Worker. The Worker calls the domain. The domain calls a store port and, for an image, an object port. The store port's first adapter is D1, binding `DB`. The object port's adapter is R2, binding `GYAZO_BUCKET`, bucket `gyazo-archives`. During `vp dev`, the public HTML loaders stop at the catalog and do not call D1. The diagram is the deployed read.
+The reader talks only to the Worker. The Worker calls the domain. The domain calls a store port and, for a Gyazo image, an object port. The store port's first adapter is D1, binding `DB`. The Gyazo object port's adapter is R2, binding `GYAZO_BUCKET`, bucket `gyazo-archives`. A note image is read from the R2 binding `STORAGE` at the key `notes/{id}`. During `vp dev`, the public HTML loaders stop at the catalog and do not call D1. The diagram is the deployed read.
 
 ```mermaid
 sequenceDiagram
@@ -160,10 +160,13 @@ The Worker matches these paths before a title. The comparison keys `feed.xml` an
 - `GET /feed/bookmarks.xml`
 - `GET /pages`
 - `GET /gyazo/{imageId}.{extension}`
+- `GET /note-images/{id}`
 - `GET /e/{id}`
 - The owner prefixes `edit`, `entries`, `tokens`, `users`, and `.well-known`
 
 `GET /gyazo` with no image id is not the image route. It does not list the bucket. A title whose key is `gyazo` has no view path, so the request continues as a title path.
+
+`GET /note-images/{id}` returns the one image stored for that public note. The id is the note's immutable id. A missing note, a note that is not public, and a note with no image are 404 and return no bytes. The content type is the stored type: `image/jpeg`, `image/png`, `image/gif`, or `image/webp`. The host does not list the bucket. The bytes are read from the R2 binding `STORAGE` at the key `notes/{id}`. They are not read from `gyazo-archives`. On a public note, the HTML shows that image under the body when the note has one. The image source is `/note-images/{id}`. The alt text is the alternative text stored with the note. The stored body is not changed. A note with no image has no such image.
 
 A title URL is one path segment. The segment is percent-decoded to the comparison key. The comparison key is the one owner writing defines: the normalized title with each space replaced by `_`.
 
@@ -282,7 +285,7 @@ D1 errors, including a free-allowance refusal and a result that exceeds the cap,
 
 D1 is the store adapter, binding `DB`. The adapter queries through `db` from `void/db`. [D1](https://void.cloud/guide/database/d1) says those queries use a D1 session for each Void request, and that replicas can lag between requests. The domain does not know `D1Database` and does not import `void/db`. The source for the query budget and the 50 MB cap is [Limits](https://developers.cloudflare.com/d1/platform/limits/). The source for daily free-tier refusal, leaving stored rows in place, is the [D1 changelog of 2026-09-01](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/).
 
-R2 is the object adapter, binding `GYAZO_BUCKET`, bucket `gyazo-archives`. The domain receives bytes and a content type from the port. It does not know `R2Bucket`. `get` is defined in the [Workers API reference](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/). This feature does not upload and does not list the bucket. Storage beyond 10 GB a month for the existing archive stays outside the zero-yen target.
+R2 is the object adapter for the existing archive, binding `GYAZO_BUCKET`, bucket `gyazo-archives`. The domain receives bytes and a content type from the port. It does not know `R2Bucket`. `get` is defined in the [Workers API reference](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/). This feature does not upload and does not list the bucket. Storage beyond 10 GB a month for the existing archive stays outside the zero-yen target. A note image is a second read, from the R2 binding `STORAGE` at the key `notes/{id}`. This feature does not upload that object and does not list that bucket. The content type of `GET /note-images/{id}` is the type stored with the note.
 
 The public routes are not behind Cloudflare Access. Access remains on `/edit` and `/edit/*` only.
 

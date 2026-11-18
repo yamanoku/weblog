@@ -29,7 +29,7 @@
 
 HTML のページでない経路は `src/routes/` に置く。フィード、画像のバイト列、Activity Streams、所有者向けの JSON API がそれである。ローダはドメインを呼び、props を返す。action は、CLI と同じ書き込み処理を呼ぶ。ドメインは Svelte を import しない。ドメインは `void/db` を import しない。ページのファイルは `void/db` を import しない。
 
-Worker は、タイトルの経路より前に固定の経路を一致させる。タイトルはパス要素一つである。所有者の書き込みは、次の比較キーを予約する。タイトルは、その URL を取らない。キーは `e`、`edit`、`entries`、`tokens`、`feed`、`feed.xml`、`feed.json`、`pages`、`users`、`gyazo`、`.well-known` である。
+Worker は、タイトルの経路より前に固定の経路を一致させる。タイトルはパス要素一つである。所有者の書き込みは、次の比較キーを予約する。タイトルは、その URL を取らない。キーは `e`、`edit`、`entries`、`tokens`、`feed`、`feed.xml`、`feed.json`、`pages`、`users`、`gyazo`、`note-images`、`.well-known` である。
 
 ## アーキテクチャ・シーケンス図
 
@@ -56,7 +56,7 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /edit` | 記事、note、bookmark の編集画面。note 欄は無い。 |
 | `GET /edit/{id}` | その article または bookmark の編集フォーム。note の ID と page の ID は 404。 |
 | `POST /edit` | 下書きの article を作成する。 |
-| `POST /edit?note` | note 欄から公開の note を作成する。 |
+| `POST /edit?note` | note 欄から公開の note を作成する。欄は本文と、画像を多くて 1 枚送る。 |
 | `POST /edit?deleteNote` | 編集画面から note を一つ削除する。 |
 | `POST /edit?bookmark` | 下書きの bookmark を作成する。 |
 | `POST /edit?deleteBookmark` | 編集画面から bookmark を一つ削除する。 |
@@ -77,6 +77,7 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /feed/notes.xml` | ノートの Atom。 |
 | `GET /feed/bookmarks.xml` | ブックマークの Atom。 |
 | `GET /gyazo/{imageId}.{拡張子}` | 画像のバイト列。画像 ID の無い `GET /gyazo` は、この経路ではない。 |
+| `GET /note-images/{id}` | その公開 note に保存した画像 1 枚。id は note の ID である。 |
 | `GET /e/{id}` | Accept が Activity Streams を求め、HTML も `*/*` も受け付けないときの活動オブジェクト。 |
 | `GET /.well-known/webfinger` | このアカウントの解決。 |
 | `GET /users/yamanoku` | アクター文書。 |

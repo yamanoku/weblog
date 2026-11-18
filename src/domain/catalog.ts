@@ -20,6 +20,7 @@ export const reservedTitles = [
   "pages",
   "users",
   "gyazo",
+  "note-images",
   ".well-known",
 ];
 

@@ -42,6 +42,9 @@
     {#each notes as note (note.id)}
       <li>
         <p style="white-space: pre-wrap">{note.body}</p>
+        {#if note.imageHref}
+          <img src={note.imageHref} alt={note.imageAlt ?? ""} />
+        {/if}
         {note.visibility}
         <form method="post" action="?deleteNote">
           <input type="hidden" name="noteId" value={note.id} />

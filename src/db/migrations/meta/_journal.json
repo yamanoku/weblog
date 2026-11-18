@@ -15,6 +15,20 @@
       "when": 1794100800000,
       "tag": "20261108120000_note_reply",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794950400000,
+      "tag": "20261118120000_note_image",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794954000000,
+      "tag": "20261118130000_note_image_alt",
+      "breakpoints": true
     }
   ]
 }

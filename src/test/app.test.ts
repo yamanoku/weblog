@@ -37,7 +37,12 @@ function readJson(path: string): PackageManifest {
 }
 
 function declaredNames(manifest: PackageManifest) {
-  const sections = ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"] as const;
+  const sections = [
+    "dependencies",
+    "devDependencies",
+    "optionalDependencies",
+    "peerDependencies",
+  ] as const;
   return sections.flatMap((section) => Object.keys(manifest[section] ?? {}));
 }
 
@@ -91,7 +96,8 @@ test("app source does not export ssr = false", () => {
     try {
       files.push(...walk(dir.pathname));
     } catch (error: unknown) {
-      const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+      const code =
+        typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
       if (code !== "ENOENT") throw error;
     }
   }
@@ -141,6 +147,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     "pages",
     "users",
     "gyazo",
+    "note-images",
     ".well-known",
   ]);
   for (const key of reservedTitles) {

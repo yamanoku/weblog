@@ -29,7 +29,7 @@ The deliverable is one map for the paths the requirements already name. This des
 
 A path whose response is not an HTML page stays under `src/routes/`. Feeds, image bytes, Activity Streams, and the owner JSON API are those paths. A loader calls the domain and returns props. An action calls the same write operation as the CLI. The domain does not import Svelte or `void/db`. Page files do not import `void/db`.
 
-The Worker matches a fixed path before a title path. A title is one path segment. Owner writing reserves these comparison keys, so a title does not take their URL: `e`, `edit`, `entries`, `tokens`, `feed`, `feed.xml`, `feed.json`, `pages`, `users`, `gyazo`, and `.well-known`.
+The Worker matches a fixed path before a title path. A title is one path segment. Owner writing reserves these comparison keys, so a title does not take their URL: `e`, `edit`, `entries`, `tokens`, `feed`, `feed.xml`, `feed.json`, `pages`, `users`, `gyazo`, `note-images`, and `.well-known`.
 
 ## Architecture and sequence diagrams
 
@@ -56,7 +56,7 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /edit` | Edit screen for articles, notes, and bookmarks. No note field. |
 | `GET /edit/{id}` | Edit form for that article or bookmark. A note ID or a page ID is 404. |
 | `POST /edit` | Create a draft article. |
-| `POST /edit?note` | Create a public note from the note field. |
+| `POST /edit?note` | Create a public note from the note field. The field sends the body and at most one image. |
 | `POST /edit?deleteNote` | Delete one note from the edit screen. |
 | `POST /edit?bookmark` | Create a draft bookmark. |
 | `POST /edit?deleteBookmark` | Delete one bookmark from the edit screen. |
@@ -77,6 +77,7 @@ These handlers live under `routes/`. They are outside the browser move between S
 | `GET /feed/notes.xml` | Atom for notes. |
 | `GET /feed/bookmarks.xml` | Atom for bookmarks. |
 | `GET /gyazo/{imageId}.{extension}` | Image bytes. `GET /gyazo` with no image id is not this route. |
+| `GET /note-images/{id}` | The one image stored for that public note. The id is the note id. |
 | `GET /e/{id}` | The Activity Streams object when Accept asks for Activity Streams and accepts neither HTML nor `*/*`. |
 | `GET /.well-known/webfinger` | Resolve this account. |
 | `GET /users/yamanoku` | The actor document. |

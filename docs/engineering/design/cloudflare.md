@@ -37,6 +37,8 @@ Queues binding `DELIVERY_QUEUE` carries delivery jobs.
 
 The existing R2 bucket `gyazo-archives` is read and is not copied. Storage past 10 GB a month stays outside the zero-yen target. The bucket stays in use.
 
+Note images use the R2 binding `STORAGE`. That binding is not the bucket `gyazo-archives`. A note post writes one object there, at the key `notes/{entryId}`. Storage beyond the free allowance stays outside the zero-yen target. This app does not contract a new paid plan for that binding.
+
 Cloudflare Access on the Zero Trust Free plan covers `/edit` and `/edit/*` only. Paid Access add-ons stay off.
 
 A custom domain attaches to a zone on the Free plan. The DNS provider can still be replaced. The hostname's HTTPS still resolves to this app.
@@ -61,7 +63,7 @@ The used services are the ones in the implementation approach. Quotas stay in th
 
 ## Data handling
 
-D1 holds the store. KV holds only the short-lived remote key. The queue carries job identifiers. R2 holds existing image bytes. The actor private key is a Worker secret, not a new product.
+D1 holds the store. KV holds only the short-lived remote key. The queue carries job identifiers. The R2 bucket `gyazo-archives` holds the existing archive. The R2 binding `STORAGE` holds new note-image objects. The actor private key is a Worker secret, not a new product.
 
 ## Authentication and authorization notes
 

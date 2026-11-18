@@ -60,7 +60,7 @@ Free プランの D1 は、Worker の 1 回の実行でクエリ 50 までであ
 
 ## アーキテクチャ・シーケンス図
 
-読者は Worker だけと話す。Worker はドメインを呼ぶ。ドメインは保存ポートを呼ぶ。画像のときはオブジェクトポートも呼ぶ。保存ポートの最初のアダプタは D1 で、バインディング名は `DB` である。オブジェクトポートのアダプタは R2 で、バインディング名は `GYAZO_BUCKET`、バケット名は `gyazo-archives` である。`vp dev` の公開 HTML のローダは、カタログで止まり、D1 を呼ばない。図はデプロイ後の読み取りである。
+読者は Worker だけと話す。Worker はドメインを呼ぶ。ドメインは保存ポートを呼ぶ。Gyazo の画像のときはオブジェクトポートも呼ぶ。保存ポートの最初のアダプタは D1 で、バインディング名は `DB` である。Gyazo のオブジェクトポートのアダプタは R2 で、バインディング名は `GYAZO_BUCKET`、バケット名は `gyazo-archives` である。note の画像は、R2 のバインディング `STORAGE` のキー `notes/{id}` から読む。`vp dev` の公開 HTML のローダは、カタログで止まり、D1 を呼ばない。図はデプロイ後の読み取りである。
 
 ```mermaid
 sequenceDiagram
@@ -164,10 +164,13 @@ Worker は、タイトルより前に次のパスを一致させる。比較キ�
 - `GET /feed/bookmarks.xml`
 - `GET /pages`
 - `GET /gyazo/{imageId}.{extension}`
+- `GET /note-images/{id}`
 - `GET /e/{id}`
 - 所有者の接頭辞 `edit`、`entries`、`tokens`、`users`、`.well-known`
 
 画像 id の無い `GET /gyazo` は、画像経路ではない。バケットの一覧は返さない。比較キーが `gyazo` のタイトルに閲覧用パスは無い。要求はタイトルパスとして続く。
+
+`GET /note-images/{id}` は、その公開 note に保存した画像を 1 枚返す。id は note の不変 ID である。note が無い、公開の note ではない、画像が無い、この三つは 404 であり、バイト列を返さない。コンテンツ型は、保存した型である。`image/jpeg`、`image/png`、`image/gif`、`image/webp` のいずれかである。ホストはバケットを一覧しない。バイト列は R2 のバインディング `STORAGE` のキー `notes/{id}` から読む。`gyazo-archives` からは読まない。公開の note は、画像があるとき本文の下にその画像を出す。画像の参照先は `/note-images/{id}` である。代替文字は、その note と一緒に保存した代替テキストである。保存された本文は変えない。画像の無い note は、その画像を出さない。
 
 タイトル URL は、パスセグメント一つである。セグメントを百分率復号し、比較キーにする。比較キーは所有者の書き込みが定める。正規化後のタイトルの空白を `_` に変えた文字列である。
 
@@ -296,7 +299,7 @@ D1 のエラーは 503 `store_unavailable` にする。無料枠による拒否�
 
 D1 は保存のアダプタで、バインディング名は `DB` である。アダプタは `void/db` の `db` で問い合わせる。D1 のページは、この問い合わせがリクエストごとに D1 のセッションを使うと説明している。リクエストをまたぐと、レプリカの内容は遅れることがある。出典は [D1](https://void.cloud/guide/database/d1) である。ドメインは `D1Database` を知らない。ドメインは `void/db` を import しない。クエリ予算と 50 MB 上限の根拠は [Limits](https://developers.cloudflare.com/d1/platform/limits/) である。無料枠の 1 日の拒否と、保存済み行が残る根拠は [2026-09-01 の D1 変更記録](https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/) である。
 
-R2 はオブジェクトのアダプタで、バインディング名は `GYAZO_BUCKET`、バケット名は `gyazo-archives` である。ドメインは、ポートからバイト列とコンテンツ型を受け取る。`R2Bucket` は知らない。`get` の定義は [Workers API の参照](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/) にある。この機能はアップロードしない。バケットの一覧も取らない。既存アーカイブの月間 10 GB を超える保管は、ゼロ円の対象外のままである。
+既存アーカイブのオブジェクトアダプタは R2 である。バインディング名は `GYAZO_BUCKET`、バケット名は `gyazo-archives` である。ドメインは、ポートからバイト列とコンテンツ型を受け取る。`R2Bucket` は知らない。`get` の定義は [Workers API の参照](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/) にある。この機能はアップロードしない。バケットの一覧も取らない。既存アーカイブの月間 10 GB を超える保管は、ゼロ円の対象外のままである。note の画像は、別の読み取りである。R2 のバインディング `STORAGE` のキー `notes/{id}` から読む。この機能は、そのオブジェクトをアップロードしない。そのバケットの一覧も取らない。`GET /note-images/{id}` のコンテンツ型は、note と一緒に保存した型である。
 
 公開経路は Cloudflare Access の背後に置かない。Access は `/edit` と `/edit/*` だけに残す。
 

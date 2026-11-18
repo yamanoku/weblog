@@ -17,7 +17,7 @@
   </div>
   <nav class="site-header-nav">
     <Link href="/">トップ</Link>
-    <Link href="/pages">公開記事一覧</Link>
+    <Link href="/pages">公開記事</Link>
     <Link href="/edit">編集</Link>
   </nav>
 </header>

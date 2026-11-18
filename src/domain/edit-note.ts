@@ -6,6 +6,15 @@ export function noteFromEditField(body: string): { body: string } | { error: "em
   return { body };
 }
 
+// The home note field may store an empty body when one image is attached.
+export function noteFromHomeField(
+  body: string,
+  hasImage: boolean,
+): { body: string } | { error: "empty_body" } {
+  if (body === "" && !hasImage) return { error: "empty_body" };
+  return { body };
+}
+
 // The posted object is either JSON from the note form or a form body. A missing field is empty.
 export function noteBodyField(value: unknown): string {
   if (!value || typeof value !== "object" || Array.isArray(value)) return "";

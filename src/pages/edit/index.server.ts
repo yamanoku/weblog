@@ -3,6 +3,8 @@ import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
 import { bookmarkDeleteId } from "../../domain/edit-bookmark.ts";
 import { noteBodyField, noteDeleteId, replyToField } from "../../domain/edit-note.ts";
+import { noteImageAlt, noteImageFromField } from "../../domain/note-image.ts";
+import { noteImageObjects } from "../../store/note-image-object.ts";
 import {
   deleteBookmarkFromEdit,
   listBookmarksForEdit,
@@ -46,8 +48,29 @@ export const actions = {
     const payload = type.includes("application/json")
       ? await c.req.json().catch(() => null)
       : await c.req.parseBody();
-    const result = await submitNoteFromEdit(editArticleDatabase(), noteBodyField(payload));
+    const image = await noteImageFromField(
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? (payload as { noteImage?: unknown }).noteImage
+        : undefined,
+    );
+    if ("error" in image) throw new ValidationError({ noteBody: image.error });
+    const posted = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+    const alt = noteImageAlt(
+      (posted as { noteImageAlt?: unknown }).noteImageAlt,
+      image.image !== null,
+    );
+    if ("error" in alt) throw new ValidationError({ noteImageAlt: alt.error });
+    const result = await submitNoteFromEdit(
+      editArticleDatabase(),
+      noteBodyField(payload),
+      image.image,
+      image.image ? noteImageObjects : null,
+      alt.alt,
+    );
     if ("error" in result) {
+      if (result.error === "image_store") {
+        throw new HTTPException(503, { message: "store_unavailable" });
+      }
       throw new ValidationError({ noteBody: result.error });
     }
     return c.redirect(`/?posted=${result.id}`);
@@ -72,7 +95,12 @@ export const actions = {
     const posted = await c.req.parseBody();
     const target = noteDeleteId(posted);
     if ("error" in target) throw new HTTPException(404, { message: "not_found" });
-    const result = await deleteNoteFromEdit(editArticleDatabase(), target.id);
+    const result = await deleteNoteFromEdit(
+      editArticleDatabase(),
+      target.id,
+      undefined,
+      noteImageObjects,
+    );
     if ("error" in result) throw new HTTPException(404, { message: "not_found" });
   }),
   bookmark: defineHandler(async (c) => {

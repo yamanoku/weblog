@@ -222,6 +222,8 @@ The href is the absolute view path when the one public target has one. It is the
 
 A bookmark appends one anchor after the body when the stored external URL is `http` or `https`. The anchor text is that URL. Any other non-empty value is escaped text. The stored body is not changed.
 
+A note that has one image adds `attachment` with one item. The type is `Image`. `mediaType` is the stored type. `url` is `https://weblog.yamanoku.net/note-images/{id}`. `name` is the alternative text stored with the note. `content` does not embed the image. A note with no image omits `attachment`. An article and a bookmark do not gain this attachment. [Mastodon's ActivityPub document](https://docs.joinmastodon.org/spec/activitypub/) shows a Note attachment of type Image with `mediaType` and `url`.
+
 ### Queue and cron
 
 The queue binding is `DELIVERY_QUEUE`. The cron on this Worker is `0 * * * *`. Version 1 registers that one trigger. The account limit is 5. The cron loads up to 20 pending jobs, oldest `published_at` first, and enqueues each activity ID when the tally can cover three operations. It does not sign and does not POST. A cron invocation that the platform stops for CPU leaves the jobs pending. The next hour tries again.
