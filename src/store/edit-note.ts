@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, desc, eq, inArray, or } from "void/db";
+import { and, asc, desc, eq, inArray, or } from "void/db";
 import {
   deliveryRecords,
   edges,
@@ -16,6 +16,7 @@ import {
   type NoteThreadView,
 } from "../domain/edit-note.ts";
 import { noteImageAltLimit, noteImagePath, type NoteImageBytes } from "../domain/note-image.ts";
+import { deleteEntryImages } from "./entry-images.ts";
 import { commitEntry, readStoredEntry } from "./entries.ts";
 
 export type NoteImageObjects = {
@@ -43,12 +44,17 @@ export async function noteImageViews(
 ): Promise<Map<string, StoredNoteImage>> {
   if (ids.length === 0) return new Map();
   const rows = await database
-    .select({ entryId: noteImages.entryId, altText: noteImages.altText })
+    .select({ id: noteImages.id, entryId: noteImages.entryId, altText: noteImages.altText })
     .from(noteImages)
-    .where(inArray(noteImages.entryId, ids));
-  return new Map(
-    rows.map((row) => [row.entryId, { href: noteImagePath(row.entryId), alt: row.altText }]),
-  );
+    .where(inArray(noteImages.entryId, ids))
+    .orderBy(asc(noteImages.position), asc(noteImages.id));
+  const views = new Map<string, StoredNoteImage>();
+  for (const row of rows) {
+    if (!views.has(row.entryId)) {
+      views.set(row.entryId, { href: noteImagePath(row.id), alt: row.altText });
+    }
+  }
+  return views;
 }
 
 // Lists stored notes for the owner edit screen. Drafts and public notes both appear.
@@ -88,9 +94,8 @@ export async function deleteNoteFromEdit(
   await database.delete(edges).where(eq(edges.sourceId, id));
   await database.delete(pastTitles).where(eq(pastTitles.entryId, id));
   await database.delete(pathRedirects).where(eq(pathRedirects.entryId, id));
-  await database.delete(noteImages).where(eq(noteImages.entryId, id));
+  await deleteEntryImages(database, id, objects);
   await database.delete(entries).where(and(eq(entries.id, id), eq(entries.kind, "note")));
-  if (objects) await objects.delete(id);
   if (delivered.length > 0) {
     await database.insert(tombstones).values({ entryId: id, deletedAt });
   }
@@ -211,7 +216,9 @@ export async function submitNoteFromEdit(
     });
     if (image) {
       await database.insert(noteImages).values({
+        id,
         entryId: id,
+        position: 0,
         mediaType: image.mediaType,
         byteLength: image.bytes.byteLength,
         altText: imageAlt ?? "",
@@ -227,9 +234,9 @@ export async function submitNoteFromEdit(
 export async function readNoteImage(
   database: BetterSQLite3Database,
   id: string,
-): Promise<{ mediaType: string } | null> {
-  const found = await database.select().from(noteImages).where(eq(noteImages.entryId, id));
+): Promise<{ entryId: string; mediaType: string } | null> {
+  const found = await database.select().from(noteImages).where(eq(noteImages.id, id));
   const row = found[0];
   if (!row) return null;
-  return { mediaType: row.mediaType };
+  return { entryId: row.entryId, mediaType: row.mediaType };
 }

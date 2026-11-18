@@ -5,7 +5,13 @@ import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
+import { asc, eq } from "void/db";
+import { noteImages } from "../db/schema.ts";
 import { publicArticleFields } from "../domain/edit-article.ts";
+import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.ts";
+import { acceptNoteImage, encodeNoteImage, noteActivityAttachment, noteImageIsPublic } from "../domain/note-image.ts";
+import { entryImageViews, type EntryImageObjects } from "../store/entry-images.ts";
+import type { NoteImageBytes } from "../domain/note-image.ts";
 import { publicArticleHref, publicEntryHref, publicArticleMatchesPath } from "../domain/public-article.ts";
 import {
   commitEntry,
@@ -82,11 +88,12 @@ test("the edit create submit stores markdown as an article body", async () => {
 
 test("the create form posts the markdown body to the article submit", () => {
   const page = readRoot("pages/edit/index.svelte");
-  const form = page.match(/<form\b([^>]*)>([\s\S]*?)<\/form>/);
+  const form = page.match(/<Form\b([^>]*)>([\s\S]*?)<\/Form>/);
   assert.ok(form);
   const attrs = form[1] ?? "";
   const inner = form[2] ?? "";
-  assert.match(attrs, /\bmethod\s*=\s*["']post["']/);
+  assert.match(page, /useForm\("\/edit"/);
+  assert.equal(attrs.includes("bookmark"), false);
   const textarea = inner.match(/<textarea\b[^>]*>/);
   assert.ok(textarea);
   assert.match(textarea[0], /\bname\s*=\s*["']body["']/);
@@ -291,10 +298,10 @@ test("public articles are listed for the home page and matched by the title path
 
 test("the article edit form posts visibility", () => {
   const page = readRoot("pages/edit/[id].svelte");
-  const form = page.match(/<form\b([^>]*)>([\s\S]*?)<\/form>/);
+  const form = page.match(/<Form\b([^>]*)>([\s\S]*?)<\/Form>/);
   assert.ok(form);
   const inner = form[2] ?? "";
-  assert.match(form[1] ?? "", /\bmethod\s*=\s*["']post["']/);
+  assert.match(page, /useForm\(`\/edit\/\$\{entry\.id\}`/);
   const visibility = inner.match(/<select\b[^>]*>/);
   assert.ok(visibility);
   assert.match(visibility[0], /\bname\s*=\s*["']visibility["']/);
@@ -379,5 +386,104 @@ test("deployed public reads use D1 rows and skip drafts and pages", async () => 
   const byPath = await readPublicEntryByPath(database, "Spaced_title");
   assert.equal(byPath?.id, "article-1");
   assert.equal(await readPublicEntryByPath(database, "draft-thought"), null);
+  sqlite.close();
+});
+
+const png = Uint8Array.from(
+  Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64",
+  ),
+);
+const firstImage = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1";
+const secondImage = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2";
+
+function memoryImages() {
+  const saved = new Map<string, NoteImageBytes>();
+  const objects: EntryImageObjects = {
+    async put(id, image) {
+      saved.set(id, image);
+    },
+    async delete(id) {
+      saved.delete(id);
+    },
+  };
+  return { saved, objects };
+}
+
+test("an article stores many images, allows an empty alt, and can place one in the body", async () => {
+  const parsed = await entryImagesFromField([
+    { id: firstImage, alt: "  ", data: encodeNoteImage(png) },
+    { id: secondImage, alt: " second ", data: encodeNoteImage(png) },
+  ]);
+  assert.deepEqual("images" in parsed ? parsed.images.map((image) => image.alt) : parsed, ["", "second"]);
+  assert.equal(entryImageMarkdown("a]b", firstImage), `![a b](/note-images/${firstImage})`);
+  assert.deepEqual(await entryImagesFromField([{ id: firstImage, alt: "x".repeat(1501), data: encodeNoteImage(png) }]), {
+    error: "image_alt_length",
+  });
+  const accepted = acceptNoteImage(png);
+  assert.ok(!("error" in accepted));
+
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  const images = memoryImages();
+  const saved = await submitArticleFromEdit(
+    database,
+    { title: "With images", body: "text" },
+    "images" in parsed ? parsed.images : [],
+    images.objects,
+  );
+  assert.equal("error" in saved, false);
+  if ("error" in saved) return;
+  const rows = await database
+    .select()
+    .from(noteImages)
+    .where(eq(noteImages.entryId, saved.id))
+    .orderBy(asc(noteImages.position));
+  assert.deepEqual(
+    rows.map((row) => row.altText),
+    ["", "second"],
+  );
+  assert.equal(images.saved.size, 2);
+  assert.equal(noteImageIsPublic({ kind: "article", visibility: "draft" }, "image/png"), false);
+  const views = await entryImageViews(database, [saved.id]);
+  assert.equal(views.get(saved.id)?.[0]?.href, `/note-images/${firstImage}`);
+  assert.equal(views.get(saved.id)?.[0]?.alt, "");
+  assert.deepEqual(noteActivityAttachment(secondImage, "image/png", "second"), {
+    type: "Image",
+    mediaType: "image/png",
+    url: `https://weblog.yamanoku.net/note-images/${secondImage}`,
+    name: "second",
+  });
+
+  const published = await updateArticleFromEdit(
+    database,
+    saved.id,
+    {
+      title: "With images",
+      body: entryImageMarkdown("second", secondImage),
+      visibility: "public",
+    },
+    "2026-11-18T00:00:00.000Z",
+  );
+  assert.equal("entry" in published, true);
+  if (!("entry" in published)) return;
+  assert.equal(noteImageIsPublic({ kind: "article", visibility: "public" }, "image/png"), true);
+  assert.match(published.entry.body, /!\[second\]/);
+
+  const kept = await updateArticleFromEdit(
+    database,
+    saved.id,
+    { title: "With images", body: published.entry.body, visibility: "public" },
+    "2026-11-18T01:00:00.000Z",
+    "images" in parsed ? [parsed.images[1]!] : [],
+    images.objects,
+  );
+  assert.equal("entry" in kept, true);
+  assert.equal(images.saved.has(firstImage), false);
+  assert.equal(images.saved.has(secondImage), true);
+  const left = await database.select().from(noteImages).where(eq(noteImages.entryId, saved.id));
+  assert.equal(left.length, 1);
+  assert.equal(left[0]?.id, secondImage);
   sqlite.close();
 });

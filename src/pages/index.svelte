@@ -197,13 +197,16 @@
 {#each entries as entry (entry.id)}
   <article>
     <Link href={entry.href}>{entry.title}</Link>
-    {#if entry.kind === "article"}
-      {@html markdownToHtml(entry.body)}
-    {:else}
+    {#if entry.kind === "note"}
       <p style="white-space: pre-wrap">{entry.body}</p>
-    {/if}
-    {#if entry.kind === "note" && entry.imageHref}
-      <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
+      {#if entry.imageHref}
+        <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
+      {/if}
+    {:else}
+      {@html markdownToHtml(entry.body)}
+      {#each entry.images ?? [] as image (image.href)}
+        <img src={image.href} alt={image.alt} />
+      {/each}
     {/if}
     <Link href={`/e/${entry.id}`}>permalink</Link>
     <time datetime={entry.publishedAt}>{entry.publishedAt}</time>

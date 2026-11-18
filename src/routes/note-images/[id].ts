@@ -7,8 +7,8 @@ import { noteImageObjects } from "../../store/note-image-object.ts";
 
 export const GET = defineHandler(async (c) => {
   const id = c.req.param("id") ?? "";
-  const entry = id === "" ? null : await readStoredEntry(editArticleDatabase(), id);
-  const row = entry ? await readNoteImage(editArticleDatabase(), id) : null;
+  const row = id === "" ? null : await readNoteImage(editArticleDatabase(), id);
+  const entry = row ? await readStoredEntry(editArticleDatabase(), row.entryId) : null;
   if (!noteImageIsPublic(entry, row?.mediaType ?? null)) {
     return c.notFound();
   }

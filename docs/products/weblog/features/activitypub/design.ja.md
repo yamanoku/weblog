@@ -237,7 +237,7 @@ href は、その公開対象に閲覧用パスがあるときは、その絶対
 
 bookmark は、保存された外部 URL が `http` または `https` のとき、本文のあとにアンカーを一つ足す。アンカーの文字は、その URL である。それ以外の空でない値は、エスケープした文字である。保存された本文は変えない。
 
-画像を 1 枚持つ note は、`attachment` に項目を一つ足す。型は `Image` である。`mediaType` は保存した型である。`url` は `https://weblog.yamanoku.net/note-images/{id}` である。`name` は、その note と一緒に保存した代替テキストである。`content` はその画像を埋め込まない。画像の無い note は `attachment` を省く。article と bookmark は、この添付を持たない。出典は [Mastodon の ActivityPub](https://docs.joinmastodon.org/spec/activitypub/) である。そのページは、Note の添付を型 Image とし、`mediaType` と `url` を示す。
+画像を 1 枚持つ note は、`attachment` に項目を一つ足す。型は `Image` である。`mediaType` は保存した型である。`url` は `https://weblog.yamanoku.net/note-images/{id}` である。`name` は、その note と一緒に保存した代替テキストである。`content` はその画像を埋め込まない。画像の無い note は `attachment` を省く。article と bookmark は、保存した画像ごとに Image を一つ、保存した順で足す。`name` は保存した代替テキストであり、空で保存したときは空である。`content` はその一覧を埋め込まない。画像の無いエントリは `attachment` を省く。出典は [Mastodon の ActivityPub](https://docs.joinmastodon.org/spec/activitypub/) である。そのページは、Note の添付を型 Image とし、`mediaType` と `url` を示す。
 
 ### キューと cron
 

@@ -55,12 +55,13 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. |
 | `GET /edit` | Edit screen for articles, notes, and bookmarks. No note field. |
 | `GET /edit/{id}` | Edit form for that article or bookmark. A note ID or a page ID is 404. |
-| `POST /edit` | Create a draft article. |
+| `POST /edit` | Create a draft article. The form may send many images. |
 | `POST /edit?note` | Create a public note from the note field. The field sends the body and at most one image. |
+| `POST /edit?bookmark` | Create a draft bookmark. The form may send many images. |
+| `POST /edit/{id}` | Update that article or bookmark, including its images. |
+| `GET /edit/images/{id}` | Image bytes for the verified owner, including a draft. |
 | `POST /edit?deleteNote` | Delete one note from the edit screen. |
-| `POST /edit?bookmark` | Create a draft bookmark. |
 | `POST /edit?deleteBookmark` | Delete one bookmark from the edit screen. |
-| `POST /edit/{id}` | Update that article or bookmark. |
 | `POST /edit/tokens` | Issue or reissue the CLI token from the browser. |
 
 An old public title path redirects as owner writing and public reading require. The target is the current view path, or the canonical URL when the entry has no view path. A draft is not that target.
@@ -77,7 +78,7 @@ These handlers live under `routes/`. They are outside the browser move between S
 | `GET /feed/notes.xml` | Atom for notes. |
 | `GET /feed/bookmarks.xml` | Atom for bookmarks. |
 | `GET /gyazo/{imageId}.{extension}` | Image bytes. `GET /gyazo` with no image id is not this route. |
-| `GET /note-images/{id}` | The one image stored for that public note. The id is the note id. |
+| `GET /note-images/{id}` | One stored image for a public note, article, or bookmark. The id is the image id. For a note, that id is the note id. |
 | `GET /e/{id}` | The Activity Streams object when Accept asks for Activity Streams and accepts neither HTML nor `*/*`. |
 | `GET /.well-known/webfinger` | Resolve this account. |
 | `GET /users/yamanoku` | The actor document. |

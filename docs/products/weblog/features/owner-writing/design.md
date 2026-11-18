@@ -126,7 +126,7 @@ erDiagram
   entries ||--o{ path_redirects : "entry_id"
   entries ||--o| delivery_records : "entry_id"
   entries ||--o| tombstones : "entry_id"
-  entries ||--o| note_images : "entry_id"
+  entries ||--o{ note_images : "entry_id"
 ```
 
 `delivery_records` and `tombstones` remain after the entry row is gone. Foreign-key delete cascades do not remove them. Edges and past titles are deleted by explicit statements in the delete batch.
@@ -141,7 +141,7 @@ The tables are as follows.
 - `owner_token` is always one row. It holds only hash and issued_at.
 - `delivery_records` has entry_id as its primary key. This feature does not insert rows.
 - `tombstones` holds entry_id and deleted_at. It has no body.
-- `note_images` holds entry_id, media_type, byte_length, and alt_text. entry_id is the primary key. There is no foreign key. alt_text is the alternative text, with surrounding whitespace removed. The bytes are not in this row. The object key is `notes/{entryId}` in the R2 binding `STORAGE`. That binding is not the bucket `gyazo-archives`.
+- `note_images` holds id, entry_id, position, media_type, byte_length, and alt_text. id is the primary key. entry_id is not unique. position is the order on that entry. There is no foreign key. The index `note_images_entry` is entry_id then position. alt_text is the alternative text, with surrounding whitespace removed, and it may be empty for an article or a bookmark. A note image still requires that text. The bytes are not in this row. The object key is `notes/{id}` in the R2 binding `STORAGE`. For a note, id is the entry id, so an existing object stays at `notes/{entryId}`. That binding is not the bucket `gyazo-archives`.
 
 When more than one target matches, target_id is NULL. That happens when two or more public entries share the current title, or when only past titles match and more than one share the same recorded time. When past titles pick out one entry, the one with the latest recorded_at is chosen. The target_id stored for the owner is the result of resolution that includes drafts. An unauthenticated response resolves again using only public entries. A target_id that points at a draft is not shown in an unauthenticated response.
 
@@ -183,9 +183,11 @@ The reply field submits `noteBody` and `replyTo` to POST `/edit?reply`. `replyTo
 
 GET `/edit` also returns the bookmark create form and the bookmark list described above. The bookmark list includes draft and public, and omits articles, notes, and pages. Each item shows the title, the external URL, and the visibility, and opens GET `/edit/{id}`. The order is newest `createdAt` first, then descending id. POST `/edit?bookmark` creates a bookmark as draft. The form submits `title`, `bookmarkUrl`, and `body`. The stored body is the submitted text. The host does not insert `bookmarkUrl` into the body. `bookmark_url` is the submitted URL with whitespace removed from both ends. An empty title after removing whitespace from both ends stores nothing and returns 422 `missing_title`. A `bookmarkUrl` that is missing, or empty after that trim, stores nothing and returns 422 `missing_bookmark_url`. A draft may have an empty body. The create does not set `publishedAt` and does not create an article or a note.
 
+The article form, the bookmark form, and GET `/edit/{id}` send `entryImages` in order. Each item has an id and alt. A new image also has base64 bytes. The id is a lowercase UUID chosen in the browser, so the owner can place `/note-images/{id}` before the response. The bytes are accepted only as JPEG, PNG, GIF, or WebP, at most 8 MiB, sniffed from the bytes. Empty alt is stored as an empty string. More than 1500 Unicode scalar values is 422 `image_alt_length` and leaves the previous entry. A file that fails the byte check is 422 `image_type` or `image_too_large` and is not added to images already shown. The control labeled `本文に入れる` inserts `![alt](/note-images/{id})` at the cursor. `]` and line breaks in that inserted alt become spaces. Removing an image drops it from `entryImages` and does not rewrite the body. The submitted list replaces that entry's images. An id that already belongs to another entry stores nothing. A store failure is 503 `store_unavailable` and does not leave the new entry. GET `/edit/images/{id}` returns the bytes to the verified owner, including a draft, with `Cache-Control: private, no-store`. The public URL stays `GET /note-images/{id}` and returns bytes only when the entry is public. The CLI does not send `entryImages`.
+
 GET `/edit/{id}` for a bookmark submits `title`, `bookmarkUrl`, `body`, and `visibility`. POST `/edit/{id}` replaces those fields and keeps kind bookmark. A public save with an empty body stores the empty string. An empty title returns 422 `missing_title`. A missing external URL returns 422 `missing_bookmark_url`. Invalid visibility returns 422 `invalid_visibility`. `publishedAt` is set when the bookmark becomes public and is kept while it stays public. A draft save clears `publishedAt`. The view path follows the same rule as an article update.
 
-Delete submits `bookmarkId` to POST `/edit?deleteBookmark`. Only a stored bookmark is removed, along with that source's edges, past titles, and path redirects. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a bookmark is 404 and deletes nothing.
+Delete submits `bookmarkId` to POST `/edit?deleteBookmark`. Only a stored bookmark is removed, along with that source's edges, past titles, path redirects, the `note_images` rows, and each object at `notes/{id}`. `delivery_records` stays. When a record exists, the delete inserts that id and `deleted_at` into `tombstones`. When no record exists, it writes no tombstone. Public GET `/e/{id}` is 410 when the row is gone and a tombstone exists, and the response omits the deleted body. An id that is missing or is not a bookmark is 404 and deletes nothing.
 
 The shared write fields are kind, title, body, visibility, and bookmarkUrl. The article edit form submits title, body, and visibility. The bookmark create form submits title, bookmarkUrl, and body. The bookmark edit form submits title, bookmarkUrl, body, and visibility. The HTML response shows the committed canonical URL, or the refusal code. A response that contains a token uses `Cache-Control: no-store`. GET responses do not show the token value.
 
@@ -298,7 +300,7 @@ That bucket is the existing Gyazo archive. A note post does not upload into it. 
 
 ### Allow more than one image on a note
 
-The owner limited a note to one image. A second choice replaces the first before submit. A request that carries more than one image stores nothing.
+The owner limited a note to one image. A second choice replaces the first before submit. A request that carries more than one image stores nothing. An article and a bookmark are not under that limit. Their images stay in `note_images` because the public URL and the object key are already that table. A second table would split one read.
 
 ### List each reply on the home page
 

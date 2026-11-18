@@ -1,6 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { and, db, desc, eq, isNotNull } from "void/db";
-import { entries } from "../db/schema.ts";
 import {
   articleFromEditForm,
   articleUpdateFromEditForm,
@@ -9,7 +8,10 @@ import {
 } from "../domain/edit-article.ts";
 import { articlePathTitle } from "../domain/public-article.ts";
 import { isReservedTitle } from "../domain/catalog.ts";
+import type { EntryImageDraft } from "../domain/entry-image.ts";
+import { deleteEntryImages, replaceEntryImages, type EntryImageObjects } from "./entry-images.ts";
 import { commitEntry, readStoredEntry, type StoredEntry } from "./entries.ts";
+import { entries } from "../db/schema.ts";
 
 export type OwnerArticle = {
   id: string;
@@ -25,9 +27,11 @@ export type PublicArticle = {
   publishedAt: string;
 };
 
+export type ArticleImageError = "image_type" | "image_alt_length" | "image_store";
+
 export type ArticleEditResult =
   | { entry: StoredEntry }
-  | { error: "not_found" | "invalid_visibility" | "empty_body" };
+  | { error: "not_found" | "invalid_visibility" | "empty_body" | ArticleImageError };
 
 // commitEntry speaks drizzle's sqlite API. Requests use D1; tests pass better-sqlite3.
 export function editArticleDatabase(): BetterSQLite3Database {
@@ -38,10 +42,12 @@ export function editArticleDatabase(): BetterSQLite3Database {
 export async function submitArticleFromEdit(
   database: BetterSQLite3Database,
   form: EditArticleForm,
-): Promise<StoredEntry> {
+  images: EntryImageDraft[] | null = null,
+  objects: EntryImageObjects | null = null,
+): Promise<StoredEntry | { error: ArticleImageError }> {
   const article = articleFromEditForm(form);
   const now = new Date().toISOString();
-  return commitEntry(database, {
+  const saved = await commitEntry(database, {
     id: crypto.randomUUID(),
     kind: article.kind,
     title: article.title,
@@ -50,7 +56,22 @@ export async function submitArticleFromEdit(
     createdAt: now,
     updatedAt: now,
   });
+  if (!images) return saved;
+  const written = await replaceEntryImages(database, saved.id, images, objects ?? failingObjects);
+  if ("error" in written) {
+    await deleteEntryImages(database, saved.id, objects);
+    await database.delete(entries).where(eq(entries.id, saved.id));
+    return written;
+  }
+  return saved;
 }
+
+const failingObjects: EntryImageObjects = {
+  async put() {
+    throw new Error("image store is missing");
+  },
+  async delete() {},
+};
 
 // Lists stored articles for the owner edit screen. Drafts and public articles both appear.
 export async function listArticlesForEdit(
@@ -75,12 +96,18 @@ export async function updateArticleFromEdit(
   id: string,
   form: ArticleEditForm,
   now = new Date().toISOString(),
+  images: EntryImageDraft[] | null = null,
+  objects: EntryImageObjects | null = null,
 ): Promise<ArticleEditResult> {
   const found = await database.select().from(entries).where(eq(entries.id, id));
   const current = found[0];
   if (!current || current.kind !== "article") return { error: "not_found" };
   const update = articleUpdateFromEditForm(form);
   if ("error" in update) return update;
+  if (images) {
+    const written = await replaceEntryImages(database, id, images, objects ?? failingObjects);
+    if ("error" in written) return written;
+  }
   const publishedAt =
     update.visibility === "public"
       ? current.visibility === "public" && current.publishedAt

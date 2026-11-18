@@ -4,6 +4,7 @@ import { publicEntryHref } from "../domain/public-article.ts";
 import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
+import { entryImageViews } from "../store/entry-images.ts";
 import { noteImageViews } from "../store/edit-note.ts";
 import { listDeliverableEntries, readStoredEntry } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
@@ -18,6 +19,7 @@ function homeEntry(
   },
   imageHref: string | null = null,
   imageAlt: string | null = null,
+  images: { href: string; alt: string }[] = [],
 ) {
   return {
     id: entry.id,
@@ -27,6 +29,7 @@ function homeEntry(
     href: publicEntryHref(entry),
     imageHref,
     imageAlt,
+    images,
   };
 }
 
@@ -52,10 +55,16 @@ export const loader = defineHandler(async (c) => {
     database,
     stored.filter((entry) => entry.kind === "note").map((entry) => entry.id),
   );
+  const galleries = await entryImageViews(
+    database,
+    stored
+      .filter((entry) => entry.kind === "article" || entry.kind === "bookmark")
+      .map((entry) => entry.id),
+  );
   return {
     entries: stored.map((entry) => {
       const image = images.get(entry.id);
-      return homeEntry(entry, image?.href ?? null, image?.alt ?? null);
+      return homeEntry(entry, image?.href ?? null, image?.alt ?? null, galleries.get(entry.id) ?? []);
     }),
     owner,
     postedNote,

@@ -222,7 +222,7 @@ The href is the absolute view path when the one public target has one. It is the
 
 A bookmark appends one anchor after the body when the stored external URL is `http` or `https`. The anchor text is that URL. Any other non-empty value is escaped text. The stored body is not changed.
 
-A note that has one image adds `attachment` with one item. The type is `Image`. `mediaType` is the stored type. `url` is `https://weblog.yamanoku.net/note-images/{id}`. `name` is the alternative text stored with the note. `content` does not embed the image. A note with no image omits `attachment`. An article and a bookmark do not gain this attachment. [Mastodon's ActivityPub document](https://docs.joinmastodon.org/spec/activitypub/) shows a Note attachment of type Image with `mediaType` and `url`.
+A note that has one image adds `attachment` with one item. The type is `Image`. `mediaType` is the stored type. `url` is `https://weblog.yamanoku.net/note-images/{id}`. `name` is the alternative text stored with the note. `content` does not embed the image. A note with no image omits `attachment`. An article or a bookmark adds one Image for each stored image, in stored order. `name` is the stored alternative text and is empty when none was saved. `content` does not embed that gallery. An entry with no image omits `attachment`. [Mastodon's ActivityPub document](https://docs.joinmastodon.org/spec/activitypub/) shows a Note attachment of type Image with `mediaType` and `url`.
 
 ### Queue and cron
 

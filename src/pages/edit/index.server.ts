@@ -3,6 +3,7 @@ import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
 import { bookmarkDeleteId } from "../../domain/edit-bookmark.ts";
 import { noteBodyField, noteDeleteId, replyToField } from "../../domain/edit-note.ts";
+import { entryImagesFromField } from "../../domain/entry-image.ts";
 import { noteImageAlt, noteImageFromField } from "../../domain/note-image.ts";
 import { noteImageObjects } from "../../store/note-image-object.ts";
 import {
@@ -26,6 +27,30 @@ function postedText(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+async function postedRecord(c: {
+  req: {
+    header: (name: string) => string | undefined;
+    json: () => Promise<unknown>;
+    parseBody: () => Promise<Record<string, unknown>>;
+  };
+}): Promise<{ posted: Record<string, unknown>; json: boolean }> {
+  const type = (c.req.header("content-type") ?? "").toLowerCase();
+  if (type.includes("application/json")) {
+    const payload = await c.req.json().catch(() => null);
+    const posted =
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? (payload as Record<string, unknown>)
+        : {};
+    return { posted, json: true };
+  }
+  return { posted: await c.req.parseBody(), json: false };
+}
+
+function imageFailure(error: string): never {
+  if (error === "image_store") throw new HTTPException(503, { message: "store_unavailable" });
+  throw new ValidationError({ entryImages: error });
+}
+
 export const loader = defineHandler(async () => {
   return {
     articles: await listArticlesForEdit(editArticleDatabase()),
@@ -36,11 +61,19 @@ export const loader = defineHandler(async () => {
 
 export const actions = {
   default: defineHandler(async (c) => {
-    const posted = await c.req.parseBody();
-    await submitArticleFromEdit(editArticleDatabase(), {
-      title: postedText(posted.title),
-      body: postedText(posted.body),
-    });
+    const { posted, json } = await postedRecord(c);
+    const images = json ? await entryImagesFromField(posted.entryImages) : null;
+    if (images && "error" in images) imageFailure(images.error);
+    const result = await submitArticleFromEdit(
+      editArticleDatabase(),
+      {
+        title: postedText(posted.title),
+        body: postedText(posted.body),
+      },
+      images && "images" in images ? images.images : null,
+      noteImageObjects,
+    );
+    if ("error" in result) imageFailure(result.error);
   }),
   note: defineHandler(async (c) => {
     const type = (c.req.header("content-type") ?? "").toLowerCase();
@@ -104,19 +137,36 @@ export const actions = {
     if ("error" in result) throw new HTTPException(404, { message: "not_found" });
   }),
   bookmark: defineHandler(async (c) => {
-    const posted = await c.req.parseBody();
-    const result = await submitBookmarkFromEdit(editArticleDatabase(), {
-      title: postedText(posted.title),
-      body: postedText(posted.body),
-      bookmarkUrl: postedText(posted.bookmarkUrl),
-    });
-    if ("error" in result) throw new HTTPException(422, { message: result.error });
+    const { posted, json } = await postedRecord(c);
+    const images = json ? await entryImagesFromField(posted.entryImages) : null;
+    if (images && "error" in images) imageFailure(images.error);
+    const result = await submitBookmarkFromEdit(
+      editArticleDatabase(),
+      {
+        title: postedText(posted.title),
+        body: postedText(posted.body),
+        bookmarkUrl: postedText(posted.bookmarkUrl),
+      },
+      images && "images" in images ? images.images : null,
+      noteImageObjects,
+    );
+    if ("error" in result) {
+      if (result.error === "image_store" || result.error === "image_type" || result.error === "image_alt_length") {
+        imageFailure(result.error);
+      }
+      throw new HTTPException(422, { message: result.error });
+    }
   }),
   deleteBookmark: defineHandler(async (c) => {
     const posted = await c.req.parseBody();
     const target = bookmarkDeleteId(posted);
     if ("error" in target) throw new HTTPException(404, { message: "not_found" });
-    const result = await deleteBookmarkFromEdit(editArticleDatabase(), target.id);
+    const result = await deleteBookmarkFromEdit(
+      editArticleDatabase(),
+      target.id,
+      new Date().toISOString(),
+      noteImageObjects,
+    );
     if ("error" in result) throw new HTTPException(404, { message: "not_found" });
   }),
 };

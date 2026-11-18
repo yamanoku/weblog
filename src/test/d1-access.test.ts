@@ -201,11 +201,12 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
   );
   assert.deepEqual(primaryKey(sqlite, "tombstones"), []);
   assert.deepEqual(primaryKey(sqlite, "gyazo_objects"), ["image_id", "extension"]);
-  assert.deepEqual(primaryKey(sqlite, "note_images"), ["entry_id"]);
+  assert.deepEqual(primaryKey(sqlite, "note_images"), ["id"]);
   assert.deepEqual(
     columns(sqlite, "note_images").map((column) => column.name),
-    ["entry_id", "media_type", "byte_length", "alt_text"],
+    ["id", "entry_id", "position", "media_type", "byte_length", "alt_text"],
   );
+  assert.match(tableSql(sqlite, "note_images_entry"), /entry_id/);
   assert.match(tableSql(sqlite, "activities_outbox"), /published_at" desc/i);
   assert.match(tableSql(sqlite, "activities_outbox"), /"id" desc/i);
   assert.deepEqual(primaryKey(sqlite, "delivery_jobs"), ["activity_id"]);

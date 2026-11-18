@@ -6,7 +6,10 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
 import { eq } from "void/db";
-import { deliveryRecords, edges, entries, tombstones } from "../db/schema.ts";
+import { deliveryRecords, edges, entries, noteImages, tombstones } from "../db/schema.ts";
+import { acceptNoteImage, encodeNoteImage } from "../domain/note-image.ts";
+import type { EntryImageObjects } from "../store/entry-images.ts";
+import type { NoteImageBytes } from "../domain/note-image.ts";
 import { bookmarkDeleteId, bookmarkFromEditForm } from "../domain/edit-bookmark.ts";
 import { commitEntry, hasTombstone, readStoredEntry } from "../store/entries.ts";
 import { listArticlesForEdit } from "../store/edit-article.ts";
@@ -275,7 +278,7 @@ test("deleting a bookmark removes only that bookmark", async () => {
 
 test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   const page = readFileSync(join(rootDir, "pages/edit/index.svelte"), "utf8");
-  assert.match(page, /action="\?bookmark"/);
+  assert.match(page, /\/edit\?bookmark/);
   assert.match(page, /name="bookmarkUrl"/);
   assert.match(page, /Save bookmark/);
   assert.match(page, /<h2>Bookmarks<\/h2>/);
@@ -291,11 +294,57 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.equal(server.includes("void/db"), false);
 
   const edit = readFileSync(join(rootDir, "pages/edit/[id].svelte"), "utf8");
+  const field = readFileSync(join(rootDir, "ui/entry-images-field.svelte"), "utf8");
+  assert.match(page, /EntryImages/);
+  assert.match(field, /画像を添付/);
+  assert.match(field, /本文に入れる/);
+  assert.match(field, /multiple/);
   assert.match(edit, /entry\.kind === "bookmark"/);
   assert.match(edit, /name="bookmarkUrl"/);
+  assert.match(edit, /EntryImages/);
   assert.equal(edit.includes("{@html"), false);
   const editServer = readFileSync(join(rootDir, "pages/edit/[id].server.ts"), "utf8");
   assert.match(editServer, /updateBookmarkFromEdit\(/);
   assert.match(editServer, /updateArticleFromEdit\(/);
   assert.equal(editServer.includes("void/db"), false);
+});
+
+test("a bookmark stores an image with an empty alt and delete removes it", async () => {
+  const png = Uint8Array.from(
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  );
+  const accepted = acceptNoteImage(png);
+  assert.ok(!("error" in accepted));
+  const imageId = "cccccccc-cccc-4ccc-8ccc-ccccccccccc3";
+  const savedMap = new Map<string, NoteImageBytes>();
+  const objects: EntryImageObjects = {
+    async put(id, image) {
+      savedMap.set(id, image);
+    },
+    async delete(id) {
+      savedMap.delete(id);
+    },
+  };
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  const saved = await submitBookmarkFromEdit(
+    database,
+    { title: "Clip", body: "![x](/note-images/" + imageId + ")", bookmarkUrl: "https://example.com/a" },
+    [{ id: imageId, alt: "", image: accepted.image }],
+    objects,
+  );
+  assert.equal("error" in saved, false);
+  if ("error" in saved) return;
+  const row = await database.select().from(noteImages).where(eq(noteImages.entryId, saved.id));
+  assert.equal(row[0]?.altText, "");
+  assert.equal(savedMap.has(imageId), true);
+  assert.deepEqual(await deleteBookmarkFromEdit(database, saved.id, "2026-11-18T00:00:00.000Z", objects), {
+    ok: true,
+  });
+  assert.equal((await database.select().from(noteImages)).length, 0);
+  assert.equal(savedMap.has(imageId), false);
+  sqlite.close();
 });

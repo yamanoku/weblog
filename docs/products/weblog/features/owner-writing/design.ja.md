@@ -126,7 +126,7 @@ erDiagram
   entries ||--o{ path_redirects : "entry_id"
   entries ||--o| delivery_records : "entry_id"
   entries ||--o| tombstones : "entry_id"
-  entries ||--o| note_images : "entry_id"
+  entries ||--o{ note_images : "entry_id"
 ```
 
 `delivery_records` と `tombstones` は、エントリ行を消したあとも残す。外部キーの削除連鎖では消さない。辺と過去タイトルは、削除の batch で明示的に消す。
@@ -141,7 +141,7 @@ erDiagram
 - `owner_token` は、常に一行である。hash と issued_at だけを持つ。
 - `delivery_records` は、entry_id を主キーとする。この機能は行を挿入しない。
 - `tombstones` は、entry_id と deleted_at を持つ。本文は持たない。
-- `note_images` は、entry_id、media_type、byte_length、alt_text を持つ。主キーは entry_id である。外部キーは無い。alt_text は代替テキストである。前後の空白は除いて保存する。バイト列はこの行に置かない。オブジェクトキーは `notes/{entryId}` で、R2 のバインディング `STORAGE` に置く。このバインディングはバケット `gyazo-archives` ではない。
+- `note_images` は、id、entry_id、position、media_type、byte_length、alt_text を持つ。主キーは id である。entry_id は一意ではない。position は、そのエントリの中の順である。外部キーは無い。索引 `note_images_entry` は entry_id、次に position である。alt_text は代替テキストである。前後の空白は除いて保存する。article と bookmark では空でもよい。note の画像は、これまでどおり文を必須にする。バイト列はこの行に置かない。オブジェクトキーは `notes/{id}` で、R2 のバインディング `STORAGE` に置く。note では id がエントリ ID なので、既存のオブジェクトは `notes/{entryId}` のままである。このバインディングはバケット `gyazo-archives` ではない。
 
 解決先を一つに決められないとき、target_id は NULL である。現在タイトルの重複は、その条件である。記録時刻まで同じ過去タイトルの重複も、その条件である。過去タイトルを一つに決められるときは、recorded_at が最も新しいエントリを選ぶ。所有者向けの target_id は、draft も含めて解決した結果である。未認証の応答は、public のエントリだけへ解決し直す。draft を指す target_id は、未認証の応答へ出さない。
 
@@ -185,7 +185,9 @@ GET `/edit` は、上に書いたブックマークの作成フォームと book
 
 bookmark の GET `/edit/{id}` は、`title`、`bookmarkUrl`、`body`、`visibility` を送る。POST `/edit/{id}` は、その項目を置き換え、種類は bookmark のままにする。public で本文が空のときは、空文字を保存する。空のタイトルは 422 `missing_title` を返す。外部 URL が無いときは 422 `missing_bookmark_url` を返す。visibility が不正なときは 422 `invalid_visibility` を返す。bookmark が public になったとき、`publishedAt` を付ける。public のままなら、その時刻を維持する。draft へ保存すると、`publishedAt` を消す。閲覧用パスは、article の更新と同じ規則に従う。
 
-削除は `bookmarkId` を POST `/edit?deleteBookmark` へ送る。保存済みの bookmark だけを消す。消すときは、その source の辺、過去タイトル、パス移転も消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。bookmark でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
+article のフォーム、bookmark のフォーム、GET `/edit/{id}` は、`entryImages` を順に送る。各項目は id と alt を持つ。新しい画像は base64 のバイト列も持つ。id はブラウザが選ぶ小文字の UUID である。応答の前に、所有者は `/note-images/{id}` を本文へ置ける。バイト列は、先頭のバイトから JPEG、PNG、GIF、WebP と分かり、8 MiB 以下のときだけ受け付ける。空の alt は空文字で保存する。Unicode スカラー値が 1500 を超えると 422 `image_alt_length` で、直前のエントリは残す。バイト列の検査に落ちたファイルは 422 `image_type` または `image_too_large` で、既に出している画像へは足さない。ラベル `本文に入れる` は、カーソル位置へ `![alt](/note-images/{id})` を入れる。その alt の `]` と改行は空白にする。画像を外すと `entryImages` から落とす。本文は書き換えない。送った一覧が、そのエントリの画像を置き換える。別のエントリが既に持つ id は保存しない。保管に失敗したときは 503 `store_unavailable` で、新しいエントリは残さない。GET `/edit/images/{id}` は、確認できた所有者へバイト列を返す。下書きも含む。`Cache-Control` は `private, no-store` である。公開 URL は `GET /note-images/{id}` のままで、エントリが public のときだけバイト列を返す。CLI は `entryImages` を送らない。
+
+削除は `bookmarkId` を POST `/edit?deleteBookmark` へ送る。保存済みの bookmark だけを消す。消すときは、その source の辺、過去タイトル、パス移転、`note_images` の行、キー `notes/{id}` の各オブジェクトも消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。bookmark でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
 
 共有の書き込み項目は、kind、title、body、visibility、bookmarkUrl である。記事の編集フォームが送るのは title、body、visibility である。ブックマークの作成フォームが送るのは title、bookmarkUrl、body である。ブックマークの編集フォームが送るのは title、bookmarkUrl、body、visibility である。応答の HTML には、確定した正規 URL か、拒否コードを出す。トークンを含む応答には `Cache-Control: no-store` を付ける。GET ではトークンの値を出さない。
 
@@ -298,7 +300,7 @@ Access の対象は `/edit` と `/edit/*` だけにする。ホスト全体を A
 
 ### note に画像を 2 枚以上付ける
 
-所有者は、note の画像を 1 枚に限った。2 枚目を選ぶと、投稿前に 1 枚目と置き換わる。要求が画像を 2 枚以上含むときは保存しない。
+所有者は、note の画像を 1 枚に限った。2 枚目を選ぶと、投稿前に 1 枚目と置き換わる。要求が画像を 2 枚以上含むときは保存しない。article と bookmark は、この上限の外である。画像は `note_images` に置く。公開 URL とオブジェクトキーが、既にこのテーブルだからである。テーブルを分けると、一つの読み取りが割れる。
 
 ### 返信をホームに一件ずつ出す
 

@@ -154,7 +154,7 @@ export function noteImageIsPublic(
   mediaType: string | null,
 ): mediaType is NoteImageMediaType {
   return (
-    entry?.kind === "note" &&
+    (entry?.kind === "note" || entry?.kind === "article" || entry?.kind === "bookmark") &&
     entry.visibility === "public" &&
     noteImageMediaTypes.some((type) => type === mediaType)
   );

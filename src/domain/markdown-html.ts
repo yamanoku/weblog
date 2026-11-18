@@ -43,6 +43,21 @@ function renderInline(source: string): string {
         continue;
       }
     }
+    if (source.startsWith("![", index)) {
+      const labelEnd = source.indexOf("]", index + 2);
+      if (labelEnd !== -1 && source[labelEnd + 1] === "(") {
+        const urlEnd = source.indexOf(")", labelEnd + 2);
+        if (urlEnd !== -1) {
+          const url = safeUrl(source.slice(labelEnd + 2, urlEnd));
+          if (url) {
+            const alt = source.slice(index + 2, labelEnd);
+            html += `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`;
+            index = urlEnd + 1;
+            continue;
+          }
+        }
+      }
+    }
     if (source[index] === "[") {
       const labelEnd = source.indexOf("]", index + 1);
       if (labelEnd !== -1 && source[labelEnd + 1] === "(") {

@@ -3,6 +3,7 @@ import { defineHandler } from "void";
 import { entryById } from "../../domain/catalog.ts";
 import { verifiedOwner } from "../../middleware/01.access.ts";
 import { editArticleDatabase } from "../../store/edit-article.ts";
+import { entryImageViews } from "../../store/entry-images.ts";
 import { listPublicNoteThread } from "../../store/edit-note.ts";
 import { hasTombstone, readStoredEntry } from "../../store/entries.ts";
 import { readsDevCatalog } from "../../store/read-source.ts";
@@ -39,8 +40,15 @@ export const loader = defineHandler(async (c) => {
     };
   }
   if (stored?.visibility === "public") {
+    const galleries = await entryImageViews(editArticleDatabase(), [id]);
     return {
-      entry: { id, title: stored.title, kind: stored.kind, body: stored.body },
+      entry: {
+        id,
+        title: stored.title,
+        kind: stored.kind,
+        body: stored.body,
+        images: galleries.get(id) ?? [],
+      },
       thread: null,
       owner: false,
       refused: null,

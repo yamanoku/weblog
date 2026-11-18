@@ -101,7 +101,7 @@ Scenario: 配送対象の note に画像がある場合、Note は画像の添�
 
 - Given: 所有者が、トップページの欄から画像を 1 枚付けた公開の note を保存する。そのエントリは配送対象になる。
 - When: ホストが Create を宛先へ向ける。
-- Then: Note の `attachment` は項目を一つ持つ。型は Image である。mediaType は保存した画像の型である。url は、その note の公開画像 URL である。name は、その note と一緒に保存した代替テキストである。`content` は保存された本文から作る HTML であり、画像を埋め込まない。画像の無い note は `attachment` を持たない。article の Create は、この添付を足さない。公開画像 URL は [公開閲覧](../public-reading/requirements.ja.md) が名付ける。
+- Then: Note の `attachment` は項目を一つ持つ。型は Image である。mediaType は保存した画像の型である。url は、その note の公開画像 URL である。name は、その note と一緒に保存した代替テキストである。`content` は保存された本文から作る HTML であり、画像を埋め込まない。画像の無い note は `attachment` を持たない。画像を持つ article と bookmark は、保存した画像ごとに Image を一つ、保存した順で足す。name は保存した代替テキストであり、空で保存したときは空である。`content` はその一覧を埋め込まない。公開画像 URL は [公開閲覧](../public-reading/requirements.ja.md) が名付ける。
 
 Scenario: まだ誰もフォローしていない場合、Create は公開のままである
 
@@ -288,7 +288,7 @@ Scenario: 無料のキュー枠が戻った場合、保存したジョブを送�
 
 オブジェクト ID は正規 URL である。タイトルが変わっても、この ID は変わらない。オブジェクト ID に、タイトル文字列は使わない。タイトル文字列にすると、リネームでリモートの参照が切れる。article の型は Article である。Note としては重ねて送らない。note と bookmark の型は Note である。Mastodon 系のクライアントは、Article を Note より弱く表示する場合がある。初版はこの差を受け入れる。表示が不足するかは、公開後に実クライアントで確認する。確認の前に、Note へ変えることは決めていない。
 
-オブジェクトの `content` は、保存されたプレーンテキストから作る HTML である。その HTML のページリンクはアンカーである。保存された本文は書き換えない。画像を 1 枚持つ note は、`attachment` に Image を一つ足す。その url は公開画像 URL である。その name は、その note と一緒に保存した代替テキストである。`content` はその画像を埋め込まない。画像の無い note は `attachment` を省く。article と bookmark は、この添付を持たない。bookmark の Note は、保存された外部 URL へのリンクも含む。bookmark の受信側のリンクプレビューは、その URL に任せる。Article の `summary` は、プレーンテキストの先頭 100 文字である。それより短い本文は、全文を使う。summary に省略記号は付けない。Note には、この summary を付けない。`published` は、エントリの publishedAt である。`attributedTo` はアクター ID である。
+オブジェクトの `content` は、保存されたプレーンテキストから作る HTML である。その HTML のページリンクはアンカーである。保存された本文は書き換えない。画像を 1 枚持つ note は、`attachment` に Image を一つ足す。その url は公開画像 URL である。その name は、その note と一緒に保存した代替テキストである。`content` はその画像を埋め込まない。画像の無い note は `attachment` を省く。article と bookmark は、保存した画像ごとに Image を一つ、保存した順で足す。name は保存した代替テキストであり、空で保存したときは空である。`content` はその一覧を埋め込まない。画像の無いエントリは `attachment` を省く。bookmark の Note は、保存された外部 URL へのリンクも含む。bookmark の受信側のリンクプレビューは、その URL に任せる。Article の `summary` は、プレーンテキストの先頭 100 文字である。それより短い本文は、全文を使う。summary に省略記号は付けない。Note には、この summary を付けない。`published` は、エントリの publishedAt である。`attributedTo` はアクター ID である。
 
 本文が変わり、配送対象のままなら、同じオブジェクト ID の Update を一つ作る。タイトルだけの変更は Update を作らない。bookmark の URL だけの変更も Update を作らない。
 

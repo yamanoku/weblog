@@ -33,7 +33,7 @@ No diagram. The sections below are the schema. A picture would repeat the same n
 
 ## Data model and ER diagrams
 
-`entries` is the parent of edges, past titles, and redirects. `delivery_records` and `tombstones` remain after the entry row is gone. Foreign-key delete cascades do not remove them. Edges and past titles are removed by explicit statements in the delete batch. No foreign key runs from `followers` or `entries` into activities or jobs. `gyazo_objects` has no foreign key to `entries`. The image id is parsed from body text. `note_images` has no foreign key to `entries`. Deleting a note removes that row by an explicit statement.
+`entries` is the parent of edges, past titles, and redirects. `delivery_records` and `tombstones` remain after the entry row is gone. Foreign-key delete cascades do not remove them. Edges and past titles are removed by explicit statements in the delete batch. No foreign key runs from `followers` or `entries` into activities or jobs. `gyazo_objects` has no foreign key to `entries`. The image id is parsed from body text. `note_images` has no foreign key to `entries`. Deleting an entry removes those rows by an explicit statement.
 
 ### `entries`
 
@@ -71,7 +71,7 @@ Columns are `entry_id` and `deleted_at`. The row has no body. It is inserted onl
 
 ### `note_images`
 
-Columns are `entry_id`, `media_type`, `byte_length`, and `alt_text`. `entry_id` is the primary key. There is no foreign key. `alt_text` is the alternative text, with surrounding whitespace removed. The image bytes are not in this row. They live in the R2 binding `STORAGE` at the key `notes/{entryId}`. That binding is not the bucket `gyazo-archives`. `media_type` is `image/jpeg`, `image/png`, `image/gif`, or `image/webp`. Deleting the note removes this row, then removes that object.
+Columns are `id`, `entry_id`, `position`, `media_type`, `byte_length`, and `alt_text`. `id` is the primary key. `entry_id` is not unique. `position` is the order on that entry. There is no foreign key. The index `note_images_entry` is `entry_id` then `position`. `alt_text` is the alternative text, with surrounding whitespace removed. It may be empty for an article or a bookmark. A note still requires it. The image bytes are not in this row. They live in the R2 binding `STORAGE` at the key `notes/{id}`. For a note, `id` is the entry id, so an existing object stays at `notes/{entryId}`. That binding is not the bucket `gyazo-archives`. `media_type` is `image/jpeg`, `image/png`, `image/gif`, or `image/webp`. Deleting the entry removes these rows, then removes those objects.
 
 ### `gyazo_objects`
 
@@ -110,7 +110,7 @@ The database is the one D1 binding. This document adds no other database product
 
 ## Data handling
 
-The body stored in `entries` is plain text. HTML is not stored. `tombstones` does not copy the body. `delivery_records` and `tombstones` stay after the entry row is gone. `note_images` stores the type, the byte length, and the alternative text of one note image. A reader does not write that row. `gyazo_objects` is loaded by an owner command from a local listing. A reader does not write it.
+The body stored in `entries` is plain text. HTML is not stored. `tombstones` does not copy the body. `delivery_records` and `tombstones` stay after the entry row is gone. `note_images` stores the type, the byte length, the position, and the alternative text of each entry image. A note has at most one. An article or a bookmark has zero or more. A reader does not write that row. `gyazo_objects` is loaded by an owner command from a local listing. A reader does not write it.
 
 ## Authentication and authorization notes
 
@@ -132,7 +132,7 @@ Delivery and images would leave the entry batch. One commit could not keep the e
 
 ### A foreign key from images to entries
 
-The image id is text inside the body. A foreign key would invent a relationship the rows do not have. `gyazo_objects` stays separate. `note_images.entry_id` names the note, and the delete already removes that row by name. That table stays without a foreign key too.
+The image id is text inside the body. A foreign key would invent a relationship the rows do not have. `gyazo_objects` stays separate. `note_images.entry_id` names the entry, and the delete already removes those rows by name. That table stays without a foreign key too.
 
 ### Cascading deletes into delivery rows
 

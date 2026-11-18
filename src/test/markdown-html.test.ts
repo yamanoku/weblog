@@ -38,6 +38,10 @@ test("article markdown becomes html and raw html stays text", () => {
   assert.match(hostile, /&lt;script&gt;/);
   assert.equal(hostile.includes("javascript:"), true);
   assert.equal(hostile.includes('href="javascript:'), false);
+
+  const image = markdownToHtml("![pixel](/note-images/abc)\n\n![](javascript:alert(1))");
+  assert.match(image, /<img src="\/note-images\/abc" alt="pixel">/);
+  assert.equal(image.includes('src="javascript:'), false);
 });
 
 test("public article pages render markdown and the edit form keeps the source", () => {

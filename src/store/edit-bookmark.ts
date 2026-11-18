@@ -16,6 +16,8 @@ import {
   type BookmarkEditForm,
 } from "../domain/edit-bookmark.ts";
 import { articlePathTitle } from "../domain/public-article.ts";
+import type { EntryImageDraft } from "../domain/entry-image.ts";
+import { deleteEntryImages, replaceEntryImages, type EntryImageObjects } from "./entry-images.ts";
 import { readStoredEntry, type StoredEntry } from "./entries.ts";
 
 export type OwnerBookmark = {
@@ -26,11 +28,25 @@ export type OwnerBookmark = {
   updatedAt: string;
 };
 
+export type BookmarkImageError = "image_type" | "image_alt_length" | "image_store";
+
 export type BookmarkEditResult =
   | { entry: StoredEntry }
   | {
-      error: "not_found" | "missing_title" | "missing_bookmark_url" | "invalid_visibility";
+      error:
+        | "not_found"
+        | "missing_title"
+        | "missing_bookmark_url"
+        | "invalid_visibility"
+        | BookmarkImageError;
     };
+
+const failingObjects: EntryImageObjects = {
+  async put() {
+    throw new Error("image store is missing");
+  },
+  async delete() {},
+};
 
 export async function listBookmarksForEdit(
   database: BetterSQLite3Database,
@@ -57,7 +73,9 @@ export async function listBookmarksForEdit(
 export async function submitBookmarkFromEdit(
   database: BetterSQLite3Database,
   form: BookmarkCreateForm,
-): Promise<{ id: string } | { error: "missing_title" | "missing_bookmark_url" }> {
+  images: EntryImageDraft[] | null = null,
+  objects: EntryImageObjects | null = null,
+): Promise<{ id: string } | { error: "missing_title" | "missing_bookmark_url" | BookmarkImageError }> {
   const bookmark = bookmarkFromEditForm(form);
   if ("error" in bookmark) return bookmark;
   const now = new Date().toISOString();
@@ -74,6 +92,13 @@ export async function submitBookmarkFromEdit(
     updatedAt: now,
     viewPath: null,
   });
+  if (!images) return { id };
+  const written = await replaceEntryImages(database, id, images, objects ?? failingObjects);
+  if ("error" in written) {
+    await deleteEntryImages(database, id, objects);
+    await database.delete(entries).where(eq(entries.id, id));
+    return written;
+  }
   return { id };
 }
 
@@ -82,12 +107,18 @@ export async function updateBookmarkFromEdit(
   id: string,
   form: BookmarkEditForm,
   now = new Date().toISOString(),
+  images: EntryImageDraft[] | null = null,
+  objects: EntryImageObjects | null = null,
 ): Promise<BookmarkEditResult> {
   const found = await database.select().from(entries).where(eq(entries.id, id));
   const current = found[0];
   if (!current || current.kind !== "bookmark") return { error: "not_found" };
   const update = bookmarkUpdateFromEditForm(form);
   if ("error" in update) return update;
+  if (images) {
+    const written = await replaceEntryImages(database, id, images, objects ?? failingObjects);
+    if ("error" in written) return written;
+  }
   const publishedAt =
     update.visibility === "public"
       ? current.visibility === "public" && current.publishedAt
@@ -116,6 +147,7 @@ export async function deleteBookmarkFromEdit(
   database: BetterSQLite3Database,
   id: string,
   deletedAt = new Date().toISOString(),
+  objects: EntryImageObjects | null = null,
 ): Promise<{ ok: true } | { error: "not_found" }> {
   const current = await readStoredEntry(database, id);
   if (!current || current.kind !== "bookmark") return { error: "not_found" };
@@ -126,6 +158,7 @@ export async function deleteBookmarkFromEdit(
   await database.delete(edges).where(eq(edges.sourceId, id));
   await database.delete(pastTitles).where(eq(pastTitles.entryId, id));
   await database.delete(pathRedirects).where(eq(pathRedirects.entryId, id));
+  await deleteEntryImages(database, id, objects);
   await database.delete(entries).where(and(eq(entries.id, id), eq(entries.kind, "bookmark")));
   if (delivered.length > 0) {
     await database.insert(tombstones).values({ entryId: id, deletedAt });

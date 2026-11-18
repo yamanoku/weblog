@@ -79,12 +79,18 @@ export const tombstones = sqliteTable("tombstones", {
   deletedAt: text("deleted_at").notNull(),
 });
 
-export const noteImages = sqliteTable("note_images", {
-  entryId: text("entry_id").primaryKey(),
-  mediaType: text("media_type").notNull(),
-  byteLength: integer("byte_length").notNull(),
-  altText: text("alt_text").notNull(),
-});
+export const noteImages = sqliteTable(
+  "note_images",
+  {
+    id: text("id").primaryKey(),
+    entryId: text("entry_id").notNull(),
+    position: integer("position").notNull(),
+    mediaType: text("media_type").notNull(),
+    byteLength: integer("byte_length").notNull(),
+    altText: text("alt_text").notNull(),
+  },
+  (table) => [index("note_images_entry").on(table.entryId, table.position)],
+);
 
 export const gyazoObjects = sqliteTable(
   "gyazo_objects",

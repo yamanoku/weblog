@@ -128,7 +128,7 @@ The owner can take out the following items. Being able to restore them is an acc
 
 ### Relationships
 
-One restore set contains the entries, their edges, the current followers, the delivered activity IDs, and the one actor private key. The bucket `gyazo-archives` moves with the host. Its bytes are not a field of the entry body. Note image bytes live in the R2 bucket bound as `STORAGE`, under the keys `notes/{entryId}`. A move copies that bucket with the host. Those bytes are not a field of the entry body.
+One restore set contains the entries, their edges, the current followers, the delivered activity IDs, and the one actor private key. The bucket `gyazo-archives` moves with the host. Its bytes are not a field of the entry body. Image bytes for a note, an article, or a bookmark live in the R2 bucket bound as `STORAGE`, under the keys `notes/{id}`. For a note, that id is the entry id. A move copies that bucket with the host. Those bytes are not a field of the entry body.
 
 ### Personal information
 
