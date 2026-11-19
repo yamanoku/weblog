@@ -1,5 +1,6 @@
 /.sdev/
 node_modules/
+.playwright-mcp/
 .void/
 .cloudflare/
 dist/
