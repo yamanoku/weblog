@@ -1,9 +1,11 @@
 <script lang="ts">
   import { Form, Link, useForm } from "@void/svelte";
   import { markdownToHtml } from "../domain/markdown-html.ts";
+  import { groupByPublishedDay } from "../domain/published-day.ts";
   import { acceptNoteImage, encodeNoteImage, noteImageAltLimit } from "../domain/note-image.ts";
 
   let { entries, owner = false, postedNote = null } = $props();
+  const dayGroups = $derived(groupByPublishedDay(entries));
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
   let attachedBase64 = "";
   let previewUrl = $state("");
@@ -194,28 +196,41 @@
 <h1>weblog.yamanoku.net</h1>
 
 
-{#each entries as entry (entry.id)}
-  <article>
-    <Link href={entry.href}>{entry.title}</Link>
-    {#if entry.kind === "note"}
-      <p style="white-space: pre-wrap">{entry.body}</p>
-      {#if entry.imageHref}
-        <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
-      {/if}
-    {:else}
-      {@html markdownToHtml(entry.body)}
-      {#if entry.kind === "bookmark"}
-        {#each entry.images ?? [] as image (image.href)}
-          <img src={image.href} alt={image.alt} />
-        {/each}
-      {/if}
+{#each dayGroups as group (group.date || group.entries[0].id)}
+  <section>
+    {#if group.date}
+      <h2><time datetime={group.date}>{group.label}</time></h2>
     {/if}
-    <Link href={`/e/${entry.id}`}>permalink</Link>
-    <time datetime={entry.publishedAt}>{entry.publishedAt}</time>
-  </article>
+    {#each group.entries as entry (entry.id)}
+      <article>
+        <Link href={entry.href}>{entry.title}</Link>
+        {#if entry.kind === "note"}
+          <p style="white-space: pre-wrap">{entry.body}</p>
+          {#if entry.imageHref}
+            <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
+          {/if}
+        {:else}
+          {@html markdownToHtml(entry.body)}
+          {#if entry.kind === "bookmark"}
+            {#each entry.images ?? [] as image (image.href)}
+              <img src={image.href} alt={image.alt} />
+            {/each}
+          {/if}
+        {/if}
+        <Link href={`/e/${entry.id}`}>permalink</Link>
+      </article>
+    {/each}
+  </section>
 {/each}
 
 <style scoped >
+  section {
+    margin-block-start: var(--y-rhythm-3);
+  }
+  h2 {
+    font-size: 1.125rem;
+    margin-block: 0 var(--y-rhythm-1);
+  }
   .post-note {
     margin-block-start: var(--y-rhythm-2);
   }

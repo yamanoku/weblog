@@ -96,6 +96,7 @@ export type PublicEntryRow = {
   kind: string;
   body: string;
   bookmarkUrl: string | null;
+  publishedAt: string | null;
 };
 
 const deliverableKind = or(
@@ -126,6 +127,7 @@ export async function listDeliverableEntries(
     kind: row.kind,
     body: row.body,
     bookmarkUrl: row.bookmarkUrl ?? null,
+    publishedAt: row.publishedAt,
   }));
 }
 
@@ -176,5 +178,6 @@ export async function readPublicEntryByPath(
     kind: saved.kind,
     body: saved.body,
     bookmarkUrl: saved.bookmarkUrl ?? null,
+    publishedAt: saved.publishedAt,
   };
 }

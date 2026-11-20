@@ -16,6 +16,7 @@ function homeEntry(
     kind: string;
     body: string;
     bookmarkUrl?: string | null;
+    publishedAt?: string | null;
   },
   imageHref: string | null = null,
   imageAlt: string | null = null,
@@ -30,6 +31,7 @@ function homeEntry(
     imageHref,
     imageAlt,
     images,
+    publishedAt: entry.publishedAt ?? null,
   };
 }
 

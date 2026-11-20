@@ -7,6 +7,7 @@ export type CatalogEntry = {
   body: string;
   visibility: string;
   deliverable: boolean;
+  publishedAt: string | null;
 };
 
 export const reservedTitles = [
@@ -34,6 +35,7 @@ const entries: CatalogEntry[] = [
     body: "The plain text of the morning note.",
     visibility: "public",
     deliverable: true,
+    publishedAt: "2026-11-20T01:00:00.000Z",
   },
   {
     id: "entry-short-post",
@@ -42,6 +44,7 @@ const entries: CatalogEntry[] = [
     body: "A short public note.",
     visibility: "public",
     deliverable: true,
+    publishedAt: "2026-11-20T00:30:00.000Z",
   },
   {
     id: "entry-saved-page",
@@ -50,6 +53,7 @@ const entries: CatalogEntry[] = [
     body: "A bookmark the owner kept.",
     visibility: "public",
     deliverable: true,
+    publishedAt: "2026-11-19T01:00:00.000Z",
   },
   {
     id: "entry-index-only",
@@ -58,6 +62,7 @@ const entries: CatalogEntry[] = [
     body: "A public page that is not deliverable.",
     visibility: "public",
     deliverable: false,
+    publishedAt: null,
   },
   {
     id: "entry-draft-thought",
@@ -66,6 +71,7 @@ const entries: CatalogEntry[] = [
     body: "A draft that stays off the public pages.",
     visibility: "draft",
     deliverable: false,
+    publishedAt: null,
   },
 ];
 
