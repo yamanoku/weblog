@@ -33,9 +33,11 @@
     <h1>{entry.title}</h1>
     {#if entry.kind === "article" || entry.kind === "bookmark"}
       {@html markdownToHtml(entry.body)}
-      {#each entry.images ?? [] as image (image.href)}
-        <img src={image.href} alt={image.alt} />
-      {/each}
+      {#if entry.kind === "bookmark"}
+        {#each entry.images ?? [] as image (image.href)}
+          <img src={image.href} alt={image.alt} />
+        {/each}
+      {/if}
     {:else}
       <p>{entry.body}</p>
     {/if}

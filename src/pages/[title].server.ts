@@ -16,6 +16,9 @@ export const loader = defineHandler(async (c) => {
   }
   const entry = await readPublicEntryByPath(editArticleDatabase(), title);
   if (!entry) return { entry: null };
-  const galleries = await entryImageViews(editArticleDatabase(), [entry.id]);
-  return { entry: { ...entry, images: galleries.get(entry.id) ?? [] } };
+  const images =
+    entry.kind === "bookmark"
+      ? ((await entryImageViews(editArticleDatabase(), [entry.id])).get(entry.id) ?? [])
+      : [];
+  return { entry: { ...entry, images } };
 });

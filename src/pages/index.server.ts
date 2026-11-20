@@ -58,7 +58,7 @@ export const loader = defineHandler(async (c) => {
   const galleries = await entryImageViews(
     database,
     stored
-      .filter((entry) => entry.kind === "article" || entry.kind === "bookmark")
+      .filter((entry) => entry.kind === "bookmark")
       .map((entry) => entry.id),
   );
   return {

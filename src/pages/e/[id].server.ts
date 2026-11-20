@@ -40,14 +40,17 @@ export const loader = defineHandler(async (c) => {
     };
   }
   if (stored?.visibility === "public") {
-    const galleries = await entryImageViews(editArticleDatabase(), [id]);
+    const images =
+      stored.kind === "bookmark"
+        ? ((await entryImageViews(editArticleDatabase(), [id])).get(id) ?? [])
+        : [];
     return {
       entry: {
         id,
         title: stored.title,
         kind: stored.kind,
         body: stored.body,
-        images: galleries.get(id) ?? [],
+        images,
       },
       thread: null,
       owner: false,

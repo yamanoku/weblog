@@ -49,6 +49,10 @@ test("public article pages render markdown and the edit form keeps the source", 
     const page = readFileSync(join(rootDir, path), "utf8");
     assert.match(page, /markdownToHtml\(entry\.body\)/);
     assert.match(page, /\{@html/);
+    assert.match(
+      page,
+      /\{#if entry\.kind === "bookmark"\}\s*\{#each entry\.images \?\? \[\] as image \(image\.href\)\}/,
+    );
   }
   const edit = readFileSync(join(rootDir, "pages/edit/[id].svelte"), "utf8");
   assert.equal(edit.includes("{@html"), false);

@@ -204,9 +204,11 @@
       {/if}
     {:else}
       {@html markdownToHtml(entry.body)}
-      {#each entry.images ?? [] as image (image.href)}
-        <img src={image.href} alt={image.alt} />
-      {/each}
+      {#if entry.kind === "bookmark"}
+        {#each entry.images ?? [] as image (image.href)}
+          <img src={image.href} alt={image.alt} />
+        {/each}
+      {/if}
     {/if}
     <Link href={`/e/${entry.id}`}>permalink</Link>
     <time datetime={entry.publishedAt}>{entry.publishedAt}</time>
