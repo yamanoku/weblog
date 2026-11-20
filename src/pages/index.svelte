@@ -193,7 +193,9 @@
 </div>
 {/if}
 
-<h1>weblog.yamanoku.net</h1>
+<h1>
+  <span class="subdomain">weblog.</span><span class="domain">yamanoku.net</span>
+</h1>
 
 
 {#each dayGroups as group (group.date || group.entries[0].id)}
@@ -224,6 +226,13 @@
 {/each}
 
 <style scoped >
+  h1 {
+    display: inline-flex;
+    flex-wrap: wrap;
+    span {
+      word-wrap: anywhere;
+    }
+  }
   section {
     margin-block-start: var(--y-rhythm-3);
   }
