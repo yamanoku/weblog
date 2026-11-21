@@ -172,11 +172,27 @@ A title URL is one path segment. The segment is percent-decoded to the compariso
 
 ### Next page
 
-`GET /` and every feed use the same query shape. The first page has no query. A later page sets `before` and `before_id` on that same path.
+`GET /` and the feeds do not share a query. The home list uses a page number. A feed uses `before` and `before_id`.
+
+#### Home list
+
+The first page of `GET /` has no query. `page=1` lists the same ten entries. A later page sets `page` to the 1-based page number, so the second page is `/?page=2`. Each page holds ten deliverable entries. The last page may be shorter. The offset is `(page - 1) * 10`. Order stays `updated_at` descending, then `id` descending. The response counts the deliverable rows, then reads that page with `LIMIT` and `OFFSET`.
+
+`page` is omitted, empty, or a decimal integer of at least 1 with no leading zero and no sign. Any other value is 400 `invalid_page`. The body is `text/plain; charset=utf-8` and `Cache-Control` is `no-store`. A 400 is not an empty list.
+
+When no deliverable entry exists, page 1 is 200 and the list is empty. A page number greater than the number of pages is 404. Zero entries make one empty page, so `/?page=2` is 404.
+
+When more than one page exists, the HTML includes a `nav` whose accessible name is `ページ`. One page omits that nav. `前へ` is present when a previous page exists, with `rel="prev"`. `次へ` is present when a next page exists, with `rel="next"`. The first page's href is `/`. A later page's href is `/?page=` plus the number. The current page is text with `aria-current="page"` and is not a link. When there are more than seven pages, the numbers are the first page, the last page, and the current page plus its neighbors. A skipped run is the text `…` and is not a link. The document head has `link rel="prev"` and `link rel="next"` for those same URLs.
+
+An insert or a delete between requests can repeat or skip an item. The home list accepts that so a reader can open `/?page=2`.
+
+#### Feeds
+
+The first feed page has no query. A later page sets `before` and `before_id` on that same path.
 
 The response reads 11 rows. It returns the first 10. When an 11th row exists, the next URL is absolute and uses the 10th row's stored sort value as `before` and that row's id as `before_id`. The last page omits the next URL. The predicate for a descending sort is `sort_column < ? OR (sort_column = ? AND id < ?)`. The pages partition that order. A cursor whose row was later deleted still continues from that position.
 
-For `GET /` and a feed, `before` is the stored `updated_at`. Values are percent-encoded. This cursor is not the owner's list cursor. The owner list remains 50 rows and includes drafts.
+For a feed, `before` is the stored `updated_at`. Values are percent-encoded. This cursor is not the owner's list cursor. The owner list remains 50 rows and includes drafts.
 
 Both parameters are required together. `before_id` is a lowercase UUID. `before` is a non-empty string of at most 40 characters and contains no whitespace. Any other combination is 400 `invalid_cursor`. The body is `text/plain; charset=utf-8` and `Cache-Control: no-store`. A 400 is not an empty list.
 
@@ -233,7 +249,7 @@ A public note's GET `/e/{id}` lists the thread. The thread root is that note's `
 
 A feed row is `visibility = 'public'`, `published_at` is not null, `in_reply_to_id` is null, and `kind` is `article`, `note`, or `bookmark`. Order is `updated_at` descending, then `id` descending. Text comparison of the lowercase UUID is the tie-break. A public page is excluded. A kind feed adds `kind = ?`. There is no per-kind JSON Feed.
 
-`GET /` is the HTML timeline. Each item has a heading link, the rendered body, and the bookmark line when the kind is bookmark. For a bookmark whose external URL starts with `http://` or `https://`, the heading link is that URL. For every other item, the heading link uses the view path when one exists, and otherwise the canonical URL. The page groups items by the calendar date of the stored `updated_at` in `Asia/Tokyo`. Each date is one `section`. Its heading is a `time` element. The visible text is that date in Japanese, such as `2026年11月20日`. `datetime` is `YYYY-MM-DD`. The stored instant is not rewritten. Items stay in `updated_at` descending order, so one date stays together. Feeds do not use these sections.
+`GET /` is the HTML timeline. Each item has a heading link, the rendered body, and the bookmark line when the kind is bookmark. For a bookmark whose external URL starts with `http://` or `https://`, the heading link is that URL. For every other item, the heading link uses the view path when one exists, and otherwise the canonical URL. The page groups that page's items by the calendar date of the stored `updated_at` in `Asia/Tokyo`. Each date is one `section`. Its heading is a `time` element. The visible text is that date in Japanese, such as `2026年11月20日`. `datetime` is `YYYY-MM-DD`. The stored instant is not rewritten. Items stay in `updated_at` descending order, so one date stays together. Feeds do not use these sections.
 
 `GET /feed.xml` and the three kind feeds are Atom. The media type is `application/atom+xml; charset=utf-8`. The feed `id` is the absolute URL of that feed without a query. The feed title is `weblog.yamanoku.net` for `/feed.xml`, and `記事`, `ノート`, or `ブックマーク` for the kind feeds. `link rel="self"` is the absolute URL of this page, including the query when one is present. `link rel="alternate"` points at `GET /`. `link rel="next"` is present only when a next page exists. Each entry `id` is the canonical URL. For a bookmark whose external URL starts with `http://` or `https://`, the entry `link rel="alternate"` is that URL. For every other entry, it is the view path or the canonical URL. `published` is the stored `published_at`. `updated` is the stored `updated_at`. The feed order is `updated_at` descending, then `id` descending. The entry `title` is the stored title. When the title is empty, the Atom title is the canonical URL. `content type="html"` is the same body fragment as the entry page. For a bookmark, that content also includes the external URL. The entry page shows that URL beside the title. An empty feed is 200 and has no entry elements. Its feed `updated` is `1970-01-01T00:00:00Z`.
 
@@ -317,9 +333,9 @@ The index load is an owner command run from the local export listing. It is not 
 
 ## Alternatives considered
 
-### Offset page numbers
+### A keyset on the home list
 
-Page numbers are easier to type. An insert or a delete between requests repeats or skips an item. The keyset on `before` and `before_id` keeps the partition the requirements ask for.
+`before` and `before_id` keep a partition when a row is inserted or deleted between requests. The home list uses `page` instead, because a reader opens the next ten entries at `/?page=2`. Feeds keep the keyset.
 
 ### An opaque cursor
 

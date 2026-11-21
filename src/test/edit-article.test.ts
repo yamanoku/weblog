@@ -16,6 +16,7 @@ import { publicArticleHref, publicEntryHref, publicArticleMatchesPath } from "..
 import {
   commitEntry,
   listDeliverableEntries,
+  listDeliverableEntryPage,
   readPublicEntryByPath,
   readStoredEntry,
 } from "../store/entries.ts";
@@ -283,7 +284,7 @@ test("public articles are listed for the home page and matched by the title path
   assert.equal(home.includes("void/db"), false);
   assert.equal(title.includes("void/db"), false);
   assert.match(home, /readsDevCatalog\(/);
-  assert.match(home, /listDeliverableEntries\(/);
+  assert.match(home, /listDeliverableEntryPage\(/);
   assert.match(home, /deliverableEntries/);
   assert.match(title, /readsDevCatalog\(/);
   assert.match(title, /readPublicEntryByPath\(/);
@@ -437,6 +438,17 @@ test("the home list orders a later update before a later publish", async () => {
       "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
     ],
   );
+  const page = await listDeliverableEntryPage(database, 1, 2);
+  assert.equal(page.total, 3);
+  assert.deepEqual(
+    page.rows.map((entry) => entry.id),
+    ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1", "cccccccc-cccc-4ccc-8ccc-ccccccccccc3"],
+  );
+  const next = await listDeliverableEntryPage(database, 2, 2);
+  assert.deepEqual(next.rows.map((entry) => entry.id), ["bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2"]);
+  const past = await listDeliverableEntryPage(database, 3, 2);
+  assert.deepEqual(past.rows, []);
+  assert.equal(past.total, 3);
   sqlite.close();
 });
 

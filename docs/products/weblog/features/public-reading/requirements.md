@@ -161,6 +161,24 @@ Scenario: When more than ten deliverable entries exist, the response offers the 
 - When: An unauthenticated client requests the first feed page.
 - Then: The response includes the URL of the next page. That page contains the remaining entry and no URL for a further page.
 
+Scenario: When the reader opens the second page of the home list
+
+- Given: Twenty-one deliverable entries exist.
+- When: An unauthenticated client requests `GET /?page=2`.
+- Then: The response is 200 and lists the eleventh through the twentieth entries, in the same order as `GET /`. The HTML links to `/` with the text `前へ` and to `/?page=3` with the text `次へ`. The link to the first page is `/` and has no `page` query.
+
+Scenario: When `page` is not a page number
+
+- Given: A deliverable entry exists.
+- When: An unauthenticated client requests `GET /?page=0` or `GET /?page=2a`.
+- Then: The response is 400. The body is `invalid_page`. The response is not an empty HTML list.
+
+Scenario: When `page` is past the last home page
+
+- Given: Eleven deliverable entries exist.
+- When: An unauthenticated client requests `GET /?page=3`.
+- Then: The response is 404.
+
 Scenario: When no deliverable entry exists, the feed is an empty success
 
 - Given: No deliverable entry exists. A public page may exist.
@@ -315,7 +333,9 @@ The owner's API list of 50 entries is a different list. It is not this page size
 
 ##### Pages of ten
 
-Each of these responses returns ten items. The last page may be shorter. When no item exists, the response is 200 and the list is empty. When more items exist, the response includes the URL of the next page. The last page omits that URL. The pages partition the ordered list. They do not repeat an item or skip an item. Design chooses the shape of the next-page URL.
+Each of these responses returns ten items. The last page may be shorter. When no item exists, the response is 200 and the list is empty. When more items exist, the response includes the URL of the next page. The last page omits that URL. The pages partition the ordered list. They do not repeat an item or skip an item.
+
+For `GET /`, the next page is `/?page=` plus the 1-based page number. The second page is `/?page=2`. The first page omits `page`. `page=1` lists the same entries as the URL without `page`. A feed's next-page URL is the shape Design records for that feed.
 
 ### Return a Gyazo image
 

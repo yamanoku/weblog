@@ -1,11 +1,13 @@
 <script lang="ts">
   import { Form, Link, useForm } from "@void/svelte";
+  import { homePageHref, homePageNumbers } from "../domain/home-page.ts";
   import { markdownToHtml } from "../domain/markdown-html.ts";
   import { groupByUpdatedDay } from "../domain/published-day.ts";
   import { acceptNoteImage, encodeNoteImage, noteImageAltLimit } from "../domain/note-image.ts";
 
-  let { entries, owner = false, postedNote = null } = $props();
+  let { entries, owner = false, postedNote = null, page = 1, pageCount = 1 } = $props();
   const dayGroups = $derived(groupByUpdatedDay(entries));
+  const pageNumbers = $derived(homePageNumbers(page, pageCount));
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
   let attachedBase64 = "";
   let previewUrl = $state("");
@@ -126,6 +128,16 @@
   }
 </script>
 
+<svelte:head>
+  <title>weblog.yamanoku.net</title>
+  {#if page > 1}
+    <link rel="prev" href={homePageHref(page - 1)} />
+  {/if}
+  {#if page < pageCount}
+    <link rel="next" href={homePageHref(page + 1)} />
+  {/if}
+</svelte:head>
+
 <div class="dads-heading" data-size="32">
   <h1 class="dads-heading__heading">
     <span class="subdomain">weblog.</span><span class="domain">yamanoku.net</span>
@@ -218,11 +230,6 @@
 
 {#each dayGroups as group (group.date || group.entries[0].id)}
   <section class="entry-list">
-    {#if group.date}
-      <h2 class="entry-list__heading">
-        <time class="entry-list__date" datetime={group.date}>{group.label}</time>
-      </h2>
-    {/if}
     {#each group.entries as entry (entry.id)}
       <article class="entry-list">
         <p class="dads-u-std-18B-160">
@@ -249,6 +256,30 @@
   </section>
 {/each}
 
+{#if pageCount > 1}
+  <nav class="home-pages" aria-label="ページ">
+    {#if page > 1}
+      <Link class="dads-link" href={homePageHref(page - 1)} rel="prev">前へ</Link>
+    {/if}
+    <ol>
+      {#each pageNumbers as item, index (typeof item === "number" ? item : `gap-${index}`)}
+        <li>
+          {#if item === "gap"}
+            <span aria-hidden="true">…</span>
+          {:else if item === page}
+            <span aria-current="page">{item}</span>
+          {:else}
+            <Link class="dads-link" href={homePageHref(item)}>{item}</Link>
+          {/if}
+        </li>
+      {/each}
+    </ol>
+    {#if page < pageCount}
+      <Link class="dads-link" href={homePageHref(page + 1)} rel="next">次へ</Link>
+    {/if}
+  </nav>
+{/if}
+
 <style>
   h1 {
     display: inline-flex;
@@ -267,6 +298,26 @@
     justify-content: center;
     z-index: 1;
     pointer-events: none;
+  }
+
+  .home-pages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+  }
+
+  .home-pages ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .home-pages [aria-current="page"] {
+    font-weight: 700;
   }
 
   .entry-list__date {

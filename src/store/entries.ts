@@ -1,6 +1,7 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, desc, eq, isNotNull, isNull, or } from "void/db";
+import { and, count, desc, eq, isNotNull, isNull, or } from "void/db";
 import { entries, tombstones } from "../db/schema.ts";
+import { homePageCount } from "../domain/home-page.ts";
 
 export type EntryCommit = {
   id: string;
@@ -106,23 +107,23 @@ const deliverableKind = or(
   eq(entries.kind, "bookmark"),
 );
 
-// Public articles, notes, and bookmarks that have a published time. Pages and drafts stay out.
-export async function listDeliverableEntries(
-  database: BetterSQLite3Database,
-): Promise<PublicEntryRow[]> {
-  const rows = await database
-    .select()
-    .from(entries)
-    .where(
-      and(
-        eq(entries.visibility, "public"),
-        isNotNull(entries.publishedAt),
-        isNull(entries.inReplyToId),
-        deliverableKind,
-      ),
-    )
-    .orderBy(desc(entries.updatedAt), desc(entries.id));
-  return rows.map((row) => ({
+const deliverableWhere = and(
+  eq(entries.visibility, "public"),
+  isNotNull(entries.publishedAt),
+  isNull(entries.inReplyToId),
+  deliverableKind,
+);
+
+function publicEntryRow(row: {
+  id: string;
+  title: string;
+  kind: string;
+  body: string;
+  bookmarkUrl: string | null;
+  publishedAt: string | null;
+  updatedAt: string;
+}): PublicEntryRow {
+  return {
     id: row.id,
     title: row.title,
     kind: row.kind,
@@ -130,7 +131,38 @@ export async function listDeliverableEntries(
     bookmarkUrl: row.bookmarkUrl ?? null,
     publishedAt: row.publishedAt,
     updatedAt: row.updatedAt,
-  }));
+  };
+}
+
+// Public articles, notes, and bookmarks that have a published time. Pages and drafts stay out.
+export async function listDeliverableEntries(
+  database: BetterSQLite3Database,
+): Promise<PublicEntryRow[]> {
+  const rows = await database
+    .select()
+    .from(entries)
+    .where(deliverableWhere)
+    .orderBy(desc(entries.updatedAt), desc(entries.id));
+  return rows.map(publicEntryRow);
+}
+
+// One home page. The caller turns a page past the end into 404.
+export async function listDeliverableEntryPage(
+  database: BetterSQLite3Database,
+  page: number,
+  size: number,
+): Promise<{ rows: PublicEntryRow[]; total: number }> {
+  const counted = await database.select({ total: count() }).from(entries).where(deliverableWhere);
+  const total = Number(counted[0]?.total ?? 0);
+  if (page > homePageCount(total, size)) return { rows: [], total };
+  const rows = await database
+    .select()
+    .from(entries)
+    .where(deliverableWhere)
+    .orderBy(desc(entries.updatedAt), desc(entries.id))
+    .limit(size)
+    .offset((page - 1) * size);
+  return { total, rows: rows.map(publicEntryRow) };
 }
 
 // One public row for a title path. A view path wins over a raw title.
