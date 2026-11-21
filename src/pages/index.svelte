@@ -245,7 +245,6 @@
         {/if}
         <p><Link class="dads-link" href={`/e/${entry.id}`}>permalink</Link></p>
       </article>
-      <hr class="dads-divider" data-color="solid-gray-420" data-style="solid" data-width="1" />
     {/each}
   </section>
 {/each}
