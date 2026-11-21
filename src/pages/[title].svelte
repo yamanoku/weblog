@@ -2,6 +2,7 @@
   import { markdownToHtml } from "../domain/markdown-html.ts";
   import { publicArticleHref } from "../domain/public-article.ts";
   import Breadcrumb from "../ui/breadcrumb.svelte";
+  import EntryHeading from "../ui/entry-heading.svelte";
 
   let { entry } = $props();
 </script>
@@ -12,9 +13,10 @@
     { href: publicArticleHref(entry), label: entry.title, current: true },
   ]} />
   <article class="entry-article">
-    <div class="dads-heading" data-size="32">
-      <h1 class="dads-heading__heading">{entry.title}</h1>
-    </div>
+    <EntryHeading
+      title={entry.title}
+      bookmarkUrl={entry.kind === "bookmark" ? entry.bookmarkUrl : null}
+    />
     {#if entry.kind === "article" || entry.kind === "bookmark"}
       <div class="entry-body">
         {@html markdownToHtml(entry.body)}

@@ -217,7 +217,7 @@ href は、次のように決める。
 
 id の読取は `WHERE image_id IN (...)` である。80 個ずつに分け、タイトル解決と同じ batch に入れる。
 
-bookmark の外部 URL は、本文の後に描く。値が `http` または `https` なら、テキストをその URL とした外部アンカーにする。それ以外の空でない値は、エスケープしたテキストにする。所有者の書き込みは、スキームを検証しないからである。保存された本文は書き換えない。
+閲覧用パスと正規 URL の HTML では、bookmark の外部 URL を `h1` の横に描く。値が `http` または `https` なら、テキストをその URL とした外部アンカーにする。それ以外の空でない値は、エスケープしたテキストにする。所有者の書き込みは、スキームを検証しないからである。保存された本文は書き換えない。article、note、page は、そのアンカーを描かない。
 
 文書の応答は `text/html; charset=utf-8` と `Cache-Control: no-cache` を使う。Content-Security-Policy の値は、次のとおりである。
 
@@ -229,7 +229,7 @@ GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこ
 
 文書の言語は `ja` である。次ページのアンカー文言は `次へ` である。これらの応答は Cookie で変えない。例外は、所有者の GET `/` と、note の GET `/e/{id}` である。
 
-エントリの HTML は、正規 URL への canonical リンクを持つ。`/feed.xml` と `/feed.json` への alternate リンクも持つ。`h1` は現在のタイトルである。タイトルが空なら `h1` を省く。文書タイトルは正規 URL にする。フィードも、同じ head のリンクを持つ。
+エントリの HTML は、正規 URL への canonical リンクを持つ。`/feed.xml` と `/feed.json` への alternate リンクも持つ。`h1` は現在のタイトルである。bookmark では、その見出しの横に外部 URL を置く。タイトルが空なら `h1` を省く。文書タイトルは正規 URL にする。フィードも、同じ head のリンクを持つ。
 
 公開 note の GET `/e/{id}` は、スレッドを並べる。スレッドの根は、その note に `thread_root_id` があるときはその値であり、無いときはその note の id である。行は、id が根である公開 note と、`thread_root_id` が根である公開 note である。順序は `created_at` の昇順、次に `id` の昇順である。各本文をその順で出す。`in_reply_to_id` がまだスレッドにある返信は、同じページ内でその note へリンクする。返信先が無い返信は、返信先のリンクを出さない。article、bookmark、page は一件を読み、スレッドの問い合わせはしない。
 
@@ -239,7 +239,7 @@ GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこ
 
 `GET /` は HTML の時系列である。各項目は、見出しのリンク、描画した本文、bookmark ならその外部 URL の行を持つ。外部 URL が `http://` または `https://` で始まる bookmark では、見出しのリンクはその URL である。それ以外の項目では、見出しのリンクは閲覧用パスを使う。閲覧用パスが無いときは、正規 URL を使う。ページは、保存された `published_at` を `Asia/Tokyo` の暦日でまとめる。一つの日付が一つの `section` である。見出しは `time` 要素である。表示は `2026年11月20日` のような日本語の日付である。`datetime` は `YYYY-MM-DD` である。保存された時刻は書き換えない。項目は `published_at` の新しい順のままなので、同じ日付は一つのセクションにまとまる。フィードはこのセクションを使わない。
 
-`GET /feed.xml` と三つの種類別フィードは Atom である。メディア型は `application/atom+xml; charset=utf-8` である。フィードの `id` は、クエリを除いたそのフィードの絶対 URL である。`/feed.xml` のタイトルは `weblog.yamanoku.net` である。種類別のタイトルは `記事`、`ノート`、`ブックマーク` である。`link rel="self"` は、この頁の絶対 URL である。クエリがあればそれも含む。`link rel="alternate"` は `GET /` を指す。`link rel="next"` は、次の頁があるときだけ出す。各 entry の `id` は正規 URL である。外部 URL が `http://` または `https://` で始まる bookmark では、entry の `link rel="alternate"` はその URL である。それ以外の entry では、閲覧用パスまたは正規 URL である。`published` は保存された `published_at` である。`updated` は保存された `updated_at` である。後からの編集を読者へ示し、フィードの順序は `published_at` のままにするためである。entry の `title` は保存されたタイトルである。タイトルが空のとき、Atom の title は正規 URL である。`content type="html"` は、エントリ頁と同じ本文断片である。bookmark の行も含む。空のフィードは 200 で、entry 要素は無い。そのフィードの `updated` は `1970-01-01T00:00:00Z` である。
+`GET /feed.xml` と三つの種類別フィードは Atom である。メディア型は `application/atom+xml; charset=utf-8` である。フィードの `id` は、クエリを除いたそのフィードの絶対 URL である。`/feed.xml` のタイトルは `weblog.yamanoku.net` である。種類別のタイトルは `記事`、`ノート`、`ブックマーク` である。`link rel="self"` は、この頁の絶対 URL である。クエリがあればそれも含む。`link rel="alternate"` は `GET /` を指す。`link rel="next"` は、次の頁があるときだけ出す。各 entry の `id` は正規 URL である。外部 URL が `http://` または `https://` で始まる bookmark では、entry の `link rel="alternate"` はその URL である。それ以外の entry では、閲覧用パスまたは正規 URL である。`published` は保存された `published_at` である。`updated` は保存された `updated_at` である。後からの編集を読者へ示し、フィードの順序は `published_at` のままにするためである。entry の `title` は保存されたタイトルである。タイトルが空のとき、Atom の title は正規 URL である。`content type="html"` は、エントリ頁と同じ本文断片である。bookmark では、その content に外部 URL も含む。エントリ頁では、その URL をタイトルの横に出す。空のフィードは 200 で、entry 要素は無い。そのフィードの `updated` は `1970-01-01T00:00:00Z` である。
 
 `GET /feed.json` は JSON Feed 1.1 である。`version` は `https://jsonfeed.org/version/1.1` である。`title` は `weblog.yamanoku.net` である。`home_page_url` は `https://weblog.yamanoku.net/` である。`feed_url` は、この頁の絶対 URL である。`items` は必須で、空でもよい。`items[].id` は正規 URL である。外部 URL が `http://` または `https://` で始まる bookmark では、`items[].url` はその URL である。それ以外の項目では、`items[].url` は閲覧用パスまたは正規 URL である。`items[].content_html` は Atom の content と同じ断片である。`items[].date_published` は保存された `published_at` である。`items[].date_modified` は保存された `updated_at` である。保存されたタイトルが空なら、`items[].title` は出さない。外部 URL が `http` または `https` の bookmark は、`items[].external_url` にその URL を入れる。`next_url` は、次の頁があるときだけ出し、`feed_url` とは別の URL にする。空のフィードは 200 で、`items` は空配列である。
 

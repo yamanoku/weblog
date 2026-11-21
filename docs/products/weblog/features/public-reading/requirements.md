@@ -107,11 +107,11 @@ Scenario: When a delivered entry was deleted, the HTML does not include the dele
 - When: An unauthenticated client requests the canonical URL and does not ask for Activity Streams.
 - Then: The response is 410. It does not include the deleted body.
 
-Scenario: When a bookmark is public, the HTML includes its external URL
+Scenario: When a bookmark is public, the HTML includes its external URL beside the title
 
-- Given: A public bookmark has an external URL. The body may also mention other URLs.
-- When: An unauthenticated client requests that entry.
-- Then: The HTML includes the external URL as an external link. The stored body is unchanged.
+- Given: A public bookmark has an external URL. The body may also mention other URLs. A public article exists.
+- When: An unauthenticated client requests the bookmark's view path and its canonical URL, and does not ask for Activity Streams. The client also requests the article's view path.
+- Then: On the bookmark's view path and canonical URL, the HTML shows that URL beside the title. When the URL starts with `http://` or `https://`, it is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The title text stays the stored title. The stored body is unchanged. The article page does not show a bookmark URL.
 
 Scenario: When a public bookmark is listed, its title opens the external URL
 
@@ -270,7 +270,7 @@ Public HTML for an article or a bookmark renders the stored body as Markdown. It
 
 Public HTML for any other kind keeps the stored lines. Page edges become links to the target's view path. When the public target has no view path, the link uses the canonical URL. A link to a title with no public entry remains, so the empty page can be opened. External URLs become external links.
 
-A bookmark's external URL is shown as an external link. The host does not insert that URL into the stored body.
+On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body.
 
 Icons, tables, formulas, and Cosense decoration stay source text. The order of HTML for those is decided when that rendering's requirements are written.
 

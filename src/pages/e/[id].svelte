@@ -2,6 +2,7 @@
   import { Link } from "@void/svelte";
   import { markdownToHtml } from "../../domain/markdown-html.ts";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
+  import EntryHeading from "../../ui/entry-heading.svelte";
 
   let { entry = null, thread = null, owner = false, refused = null } = $props();
 </script>
@@ -55,9 +56,10 @@
     { href: `/e/${entry.id}`, label: entry.title || "permalink", current: true },
   ]} />
   <article class="entry-article">
-    <div class="dads-heading" data-size="32">
-      <h1 class="dads-heading__heading">{entry.title}</h1>
-    </div>
+    <EntryHeading
+      title={entry.title}
+      bookmarkUrl={entry.kind === "bookmark" ? entry.bookmarkUrl : null}
+    />
     {#if entry.kind === "article" || entry.kind === "bookmark"}
       <div class="entry-body">
         {@html markdownToHtml(entry.body)}

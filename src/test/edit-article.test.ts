@@ -293,6 +293,17 @@ test("public articles are listed for the home page and matched by the title path
   sqlite.close();
 });
 
+test("a bookmark page shows the stored URL beside the title", () => {
+  assert.match(readRoot("pages/[title].svelte"), /kind === "bookmark" \? entry\.bookmarkUrl/);
+  assert.match(readRoot("pages/e/[id].svelte"), /kind === "bookmark" \? entry\.bookmarkUrl/);
+  assert.match(readRoot("pages/e/[id].server.ts"), /bookmarkUrl: stored\.bookmarkUrl/);
+  const heading = readRoot("ui/entry-heading.svelte");
+  assert.match(heading, /<h1 class="dads-heading__heading">\{title\}<\/h1>/);
+  assert.match(heading, /class="entry-heading"/);
+  assert.match(heading, /rel="external"/);
+  assert.match(heading, /externalBookmarkHref/);
+});
+
 test("the article edit form posts visibility", () => {
   const page = readRoot("pages/edit/[id].svelte");
   const form = page.match(/<Form\b([^>]*)>([\s\S]*?)<\/Form>/);

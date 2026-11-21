@@ -226,7 +226,7 @@
     {#each group.entries as entry (entry.id)}
       <article class="entry-list">
         <p class="dads-u-std-18B-160">
-          <Link class="dads-link" href={entry.href}>{entry.title}</Link>
+          {entry.title}
         </p>
         {#if entry.kind === "note"}
           <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { Link } from "@void/svelte";
-  import "yama-normalize";
   import "../styles/dads/global.css";
   import "../styles/dads/heading.css";
   import "../styles/dads/link.css";

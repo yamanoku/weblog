@@ -24,11 +24,17 @@ html:not([lang="ja"]) body {
 html[lang="ja"] body {
   line-break: loose;
 }
+
 :where(header, main, footer) {
   display: block;
   max-inline-size: 45rem;
   box-sizing: content-box;
   padding-inline: clamp(calc(.5rem * 2), calc(1vw * 3), calc(.5rem * 4));
+}
+
+article {
+  border-bottom: 1px dotted var(--color-neutral-solid-gray-200);
+  padding-block-end: 1.75rem;
 }
 
 .site-brand {
@@ -121,6 +127,22 @@ ol.dads-breadcrumb__list {
 .entry-article {
   display: grid;
   gap: 1.5rem;
+}
+
+.entry-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 1rem;
+  row-gap: 0.25rem;
+}
+
+.entry-heading__link {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
 .entry-body {

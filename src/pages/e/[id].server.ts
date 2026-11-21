@@ -50,6 +50,7 @@ export const loader = defineHandler(async (c) => {
         title: stored.title,
         kind: stored.kind,
         body: stored.body,
+        bookmarkUrl: stored.bookmarkUrl,
         images,
       },
       thread: null,
