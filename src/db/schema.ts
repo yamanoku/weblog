@@ -25,7 +25,7 @@ export const entries = sqliteTable(
   },
   (table) => [
     index("entries_feed")
-      .on(table.kind, table.publishedAt, table.id)
+      .on(table.kind, table.updatedAt, table.id)
       .where(sql`visibility = 'public' AND published_at IS NOT NULL`),
     index("entries_titles")
       .on(table.updatedAt, table.id)

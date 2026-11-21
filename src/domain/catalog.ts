@@ -8,6 +8,7 @@ export type CatalogEntry = {
   visibility: string;
   deliverable: boolean;
   publishedAt: string | null;
+  updatedAt?: string | null;
   bookmarkUrl?: string;
 };
 
@@ -29,7 +30,8 @@ export const reservedTitles = [
 
 const reserved = new Set<string>(reservedTitles);
 
-// Local `vp dev` sample. Newest publishedAt first. Tokyo noon is 03:00Z, so a day holds
+// Local `vp dev` sample. Newest updatedAt first. These rows set no separate updatedAt,
+// so the order follows publishedAt. Tokyo noon is 03:00Z, so a day holds
 // an article at 15:00 JST (06:00Z), a note at 12:00 JST (03:00Z), and a bookmark at 09:00 JST (00:00Z).
 const entries: CatalogEntry[] = [
   {
@@ -82,7 +84,7 @@ const entries: CatalogEntry[] = [
 
 ## 気にしていること
 
-- 同じ日の投稿は、新しい \`publishedAt\` が上
+- 同じ日の投稿は、新しい \`updatedAt\` が上
 - 同時刻なら id の降順
 - フィードは日付ではまとめない
 
@@ -494,8 +496,16 @@ export function isReservedTitle(title: string): boolean {
   return reserved.has(title);
 }
 
+function byUpdatedThenId(left: CatalogEntry, right: CatalogEntry): number {
+  const leftTime = left.updatedAt ?? left.publishedAt ?? "";
+  const rightTime = right.updatedAt ?? right.publishedAt ?? "";
+  if (leftTime !== rightTime) return leftTime < rightTime ? 1 : -1;
+  if (left.id === right.id) return 0;
+  return left.id < right.id ? 1 : -1;
+}
+
 export function deliverableEntries(): CatalogEntry[] {
-  return entries.filter((entry) => entry.deliverable);
+  return entries.filter((entry) => entry.deliverable).sort(byUpdatedThenId);
 }
 
 export function publicEntries(): CatalogEntry[] {

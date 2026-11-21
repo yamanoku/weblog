@@ -174,6 +174,7 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
     tableSql(sqlite, "entries_feed"),
     /visibility = 'public' AND published_at IS NOT NULL/,
   );
+  assert.match(tableSql(sqlite, "entries_feed"), /updated_at/);
   assert.match(tableSql(sqlite, "entries_titles"), /visibility = 'public' AND title <> ''/);
   assert.match(tableSql(sqlite, "entries_thread"), /thread_root_id/);
   assert.match(tableSql(sqlite, "entries_view_path_unique"), /UNIQUE/i);

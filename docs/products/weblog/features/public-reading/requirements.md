@@ -153,7 +153,7 @@ Scenario: When deliverable entries exist, the first page lists ten of them
 
 - Given: More than ten deliverable entries exist. A page is public and is not deliverable.
 - When: An unauthenticated client requests `GET /`, `GET /feed.xml`, or `GET /feed.json`.
-- Then: The response lists ten deliverable entries. Order is `publishedAt` descending, then the immutable id descending. The public page is absent. Each item includes the body. The item id is the canonical URL. The HTML for `GET /` places those items in one section per calendar date of `publishedAt` in `Asia/Tokyo`. The later date comes first. The section heading shows that date as `2026年11月20日`, and the `time` element's `datetime` is `YYYY-MM-DD`. Entries that share a date are inside that section. The feeds are not grouped.
+- Then: The response lists ten deliverable entries. Order is `updatedAt` descending, then the immutable id descending. The public page is absent. Each item includes the body. The item id is the canonical URL. The HTML for `GET /` places those items in one section per calendar date of `updatedAt` in `Asia/Tokyo`. The later date comes first. The section heading shows that date as `2026年11月20日`, and the `time` element's `datetime` is `YYYY-MM-DD`. Entries that share a date are inside that section. The feeds are not grouped.
 
 Scenario: When more than ten deliverable entries exist, the response offers the next page
 
@@ -309,7 +309,7 @@ When no public entry has the title and no public inbound edge points at it, the 
 
 `GET /feed/articles.xml`, `GET /feed/notes.xml`, and `GET /feed/bookmarks.xml` are Atom feeds for that kind only. There is no per-kind JSON Feed.
 
-A feed includes only deliverable entries, ordered by `publishedAt` descending. When `publishedAt` is equal, the immutable id descending breaks the tie. A page is excluded. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
+A feed includes only deliverable entries, ordered by `updatedAt` descending. When `updatedAt` is equal, the immutable id descending breaks the tie. A page is excluded. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
 
 The owner's API list of 50 entries is a different list. It is not this page size.
 

@@ -97,6 +97,7 @@ export type PublicEntryRow = {
   body: string;
   bookmarkUrl: string | null;
   publishedAt: string | null;
+  updatedAt: string;
 };
 
 const deliverableKind = or(
@@ -120,7 +121,7 @@ export async function listDeliverableEntries(
         deliverableKind,
       ),
     )
-    .orderBy(desc(entries.publishedAt), desc(entries.id));
+    .orderBy(desc(entries.updatedAt), desc(entries.id));
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
@@ -128,6 +129,7 @@ export async function listDeliverableEntries(
     body: row.body,
     bookmarkUrl: row.bookmarkUrl ?? null,
     publishedAt: row.publishedAt,
+    updatedAt: row.updatedAt,
   }));
 }
 

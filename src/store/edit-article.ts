@@ -141,7 +141,7 @@ export async function listPublicArticles(
     .where(
       and(eq(entries.kind, "article"), eq(entries.visibility, "public"), isNotNull(entries.publishedAt)),
     )
-    .orderBy(desc(entries.publishedAt), desc(entries.id));
+    .orderBy(desc(entries.updatedAt), desc(entries.id));
   return rows.flatMap((row) => {
     if (!row.publishedAt) return [];
     return [

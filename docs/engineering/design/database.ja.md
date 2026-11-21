@@ -79,7 +79,7 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 読み取り用の索引は、次の三つである。一意な `view_path` は置き換えない。辺と過去タイトルの索引も置き換えない。
 
-- `entries_feed` は `(kind, published_at, id)` である。条件は `visibility = 'public'` かつ `published_at` が NULL でないことである。
+- `entries_feed` は `(kind, updated_at, id)` である。条件は `visibility = 'public'` かつ `published_at` が NULL でないことである。
 - `entries_titles` は `(updated_at, id)` である。条件は `visibility = 'public'` かつ `title <> ''` である。
 - `entries_thread` は `(thread_root_id, created_at, id)` である。
 

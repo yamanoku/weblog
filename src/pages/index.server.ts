@@ -17,6 +17,7 @@ function homeEntry(
     body: string;
     bookmarkUrl?: string | null;
     publishedAt?: string | null;
+    updatedAt?: string | null;
   },
   imageHref: string | null = null,
   imageAlt: string | null = null,
@@ -32,6 +33,7 @@ function homeEntry(
     imageAlt,
     images,
     publishedAt: entry.publishedAt ?? null,
+    updatedAt: entry.updatedAt ?? entry.publishedAt ?? null,
   };
 }
 

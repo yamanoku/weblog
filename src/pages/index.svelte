@@ -1,11 +1,11 @@
 <script lang="ts">
   import { Form, Link, useForm } from "@void/svelte";
   import { markdownToHtml } from "../domain/markdown-html.ts";
-  import { groupByPublishedDay } from "../domain/published-day.ts";
+  import { groupByUpdatedDay } from "../domain/published-day.ts";
   import { acceptNoteImage, encodeNoteImage, noteImageAltLimit } from "../domain/note-image.ts";
 
   let { entries, owner = false, postedNote = null } = $props();
-  const dayGroups = $derived(groupByPublishedDay(entries));
+  const dayGroups = $derived(groupByUpdatedDay(entries));
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
   let attachedBase64 = "";
   let previewUrl = $state("");
@@ -219,9 +219,9 @@
 {#each dayGroups as group (group.date || group.entries[0].id)}
   <section class="entry-list">
     {#if group.date}
-      <div class="dads-heading" data-size="24">
-        <h2 class="dads-heading__heading"><time datetime={group.date}>{group.label}</time></h2>
-      </div>
+      <h2 class="entry-list__heading">
+        <time class="entry-list__date" datetime={group.date}>{group.label}</time>
+      </h2>
     {/if}
     {#each group.entries as entry (entry.id)}
       <article class="entry-list">
@@ -256,5 +256,27 @@
   }
   h1 span {
     overflow-wrap: anywhere;
+  }
+
+  .entry-list__heading {
+    border-top: 1px solid var(--color-neutral-solid-gray-200);
+    margin-block: 0.5lh;
+    display: flex;
+    height: 0;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .entry-list__date {
+    display: block;
+    flex: 0 0 auto;
+    font-weight: normal;
+    font-size: 0.875rem;
+    margin-block-start: -0.25lh;
+    padding-inline: 0.5lh;
+    background-color: white;
+    pointer-events: none;
   }
 </style>

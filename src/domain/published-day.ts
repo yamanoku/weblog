@@ -1,4 +1,4 @@
-// Groups a home timeline by the calendar date of publishedAt in Asia/Tokyo.
+// Groups a home timeline by the calendar date of updatedAt in Asia/Tokyo.
 // The stored value stays a UTC instant. The zone is fixed so the date does not follow the server clock.
 
 const tokyo = "Asia/Tokyo";
@@ -31,13 +31,13 @@ export type PublishedDayGroup<T> = {
   entries: T[];
 };
 
-// The list is already newest publishedAt first. A later instant is never an earlier Tokyo date.
-export function groupByPublishedDay<T extends { id: string; publishedAt?: string | null }>(
+// The list is already newest updatedAt first. A later instant is never an earlier Tokyo date.
+export function groupByUpdatedDay<T extends { id: string; updatedAt?: string | null }>(
   entries: T[],
 ): PublishedDayGroup<T>[] {
   const groups: PublishedDayGroup<T>[] = [];
   for (const entry of entries) {
-    const day = entry.publishedAt ? tokyoPublishedDay(entry.publishedAt) : null;
+    const day = entry.updatedAt ? tokyoPublishedDay(entry.updatedAt) : null;
     const date = day?.date ?? "";
     const label = day?.label ?? "";
     const last = groups.at(-1);

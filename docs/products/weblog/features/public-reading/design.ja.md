@@ -143,7 +143,7 @@ erDiagram
 
 フィードのクエリは、読取用の索引を一つ使う。
 
-- `entries_feed` は `(kind, published_at, id)` である。条件は `visibility = 'public'` かつ `published_at` が NULL でないことである。
+- `entries_feed` は `(kind, updated_at, id)` である。条件は `visibility = 'public'` かつ `published_at` が NULL でないことである。
 
 表には `entries_titles` もある。列は `(updated_at, id)` である。条件は `visibility = 'public'` かつ `title <> ''` である。この機能は、その索引を読まない。
 
@@ -180,7 +180,7 @@ Worker は、タイトルより前に次のパスを一致させる。比較キ�
 
 応答は 11 行を読む。返すのは先頭の 10 行である。11 行目があるとき、次の URL は絶対 URL である。`before` には 10 行目の保存されたソート値を入れる。`before_id` には、その行の id を入れる。最後の頁は、次の URL を省く。降順の条件は `sort_column < ? OR (sort_column = ? AND id < ?)` である。各頁は、この順序を分割する。カーソルの行が後から消えても、その位置から続く。
 
-フィードの `before` は、保存された `published_at` である。値は百分率符号化する。このカーソルは、所有者一覧のカーソルとは別である。所有者一覧は 50 件のままで、draft を含む。
+`GET /` とフィードの `before` は、保存された `updated_at` である。値は百分率符号化する。このカーソルは、所有者一覧のカーソルとは別である。所有者一覧は 50 件のままで、draft を含む。
 
 二つのパラメータは、揃って初めて有効である。`before_id` は小文字の UUID である。`before` は空でない文字列で、長さは 40 文字までである。空白を含まない。それ以外は 400 `invalid_cursor` である。本文は `text/plain; charset=utf-8` で、`Cache-Control` は `no-store` である。400 は空の一覧ではない。
 
@@ -235,11 +235,11 @@ GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこ
 
 ### フィード
 
-フィードの行は、`visibility = 'public'` かつ `published_at` が NULL でなく、`in_reply_to_id` が NULL のものである。kind は `article`、`note`、`bookmark` のいずれかである。順序は `published_at` の降順、次に `id` の降順である。同着の判定は、小文字 UUID のテキスト比較である。公開の page は含めない。種類別フィードは `kind = ?` を加える。種類別の JSON Feed は作らない。
+フィードの行は、`visibility = 'public'` かつ `published_at` が NULL でなく、`in_reply_to_id` が NULL のものである。kind は `article`、`note`、`bookmark` のいずれかである。順序は `updated_at` の降順、次に `id` の降順である。同着の判定は、小文字 UUID のテキスト比較である。公開の page は含めない。種類別フィードは `kind = ?` を加える。種類別の JSON Feed は作らない。
 
-`GET /` は HTML の時系列である。各項目は、見出しのリンク、描画した本文、bookmark ならその外部 URL の行を持つ。外部 URL が `http://` または `https://` で始まる bookmark では、見出しのリンクはその URL である。それ以外の項目では、見出しのリンクは閲覧用パスを使う。閲覧用パスが無いときは、正規 URL を使う。ページは、保存された `published_at` を `Asia/Tokyo` の暦日でまとめる。一つの日付が一つの `section` である。見出しは `time` 要素である。表示は `2026年11月20日` のような日本語の日付である。`datetime` は `YYYY-MM-DD` である。保存された時刻は書き換えない。項目は `published_at` の新しい順のままなので、同じ日付は一つのセクションにまとまる。フィードはこのセクションを使わない。
+`GET /` は HTML の時系列である。各項目は、見出しのリンク、描画した本文、bookmark ならその外部 URL の行を持つ。外部 URL が `http://` または `https://` で始まる bookmark では、見出しのリンクはその URL である。それ以外の項目では、見出しのリンクは閲覧用パスを使う。閲覧用パスが無いときは、正規 URL を使う。ページは、保存された `updated_at` を `Asia/Tokyo` の暦日でまとめる。一つの日付が一つの `section` である。見出しは `time` 要素である。表示は `2026年11月20日` のような日本語の日付である。`datetime` は `YYYY-MM-DD` である。保存された時刻は書き換えない。項目は `updated_at` の新しい順のままなので、同じ日付は一つのセクションにまとまる。フィードはこのセクションを使わない。
 
-`GET /feed.xml` と三つの種類別フィードは Atom である。メディア型は `application/atom+xml; charset=utf-8` である。フィードの `id` は、クエリを除いたそのフィードの絶対 URL である。`/feed.xml` のタイトルは `weblog.yamanoku.net` である。種類別のタイトルは `記事`、`ノート`、`ブックマーク` である。`link rel="self"` は、この頁の絶対 URL である。クエリがあればそれも含む。`link rel="alternate"` は `GET /` を指す。`link rel="next"` は、次の頁があるときだけ出す。各 entry の `id` は正規 URL である。外部 URL が `http://` または `https://` で始まる bookmark では、entry の `link rel="alternate"` はその URL である。それ以外の entry では、閲覧用パスまたは正規 URL である。`published` は保存された `published_at` である。`updated` は保存された `updated_at` である。後からの編集を読者へ示し、フィードの順序は `published_at` のままにするためである。entry の `title` は保存されたタイトルである。タイトルが空のとき、Atom の title は正規 URL である。`content type="html"` は、エントリ頁と同じ本文断片である。bookmark では、その content に外部 URL も含む。エントリ頁では、その URL をタイトルの横に出す。空のフィードは 200 で、entry 要素は無い。そのフィードの `updated` は `1970-01-01T00:00:00Z` である。
+`GET /feed.xml` と三つの種類別フィードは Atom である。メディア型は `application/atom+xml; charset=utf-8` である。フィードの `id` は、クエリを除いたそのフィードの絶対 URL である。`/feed.xml` のタイトルは `weblog.yamanoku.net` である。種類別のタイトルは `記事`、`ノート`、`ブックマーク` である。`link rel="self"` は、この頁の絶対 URL である。クエリがあればそれも含む。`link rel="alternate"` は `GET /` を指す。`link rel="next"` は、次の頁があるときだけ出す。各 entry の `id` は正規 URL である。外部 URL が `http://` または `https://` で始まる bookmark では、entry の `link rel="alternate"` はその URL である。それ以外の entry では、閲覧用パスまたは正規 URL である。`published` は保存された `published_at` である。`updated` は保存された `updated_at` である。フィードの順序は `updated_at` の降順、次に `id` の降順である。entry の `title` は保存されたタイトルである。タイトルが空のとき、Atom の title は正規 URL である。`content type="html"` は、エントリ頁と同じ本文断片である。bookmark では、その content に外部 URL も含む。エントリ頁では、その URL をタイトルの横に出す。空のフィードは 200 で、entry 要素は無い。そのフィードの `updated` は `1970-01-01T00:00:00Z` である。
 
 `GET /feed.json` は JSON Feed 1.1 である。`version` は `https://jsonfeed.org/version/1.1` である。`title` は `weblog.yamanoku.net` である。`home_page_url` は `https://weblog.yamanoku.net/` である。`feed_url` は、この頁の絶対 URL である。`items` は必須で、空でもよい。`items[].id` は正規 URL である。外部 URL が `http://` または `https://` で始まる bookmark では、`items[].url` はその URL である。それ以外の項目では、`items[].url` は閲覧用パスまたは正規 URL である。`items[].content_html` は Atom の content と同じ断片である。`items[].date_published` は保存された `published_at` である。`items[].date_modified` は保存された `updated_at` である。保存されたタイトルが空なら、`items[].title` は出さない。外部 URL が `http` または `https` の bookmark は、`items[].external_url` にその URL を入れる。`next_url` は、次の頁があるときだけ出し、`feed_url` とは別の URL にする。空のフィードは 200 で、`items` は空配列である。
 

@@ -135,8 +135,8 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     bookmarks.every((entry) => entry.bookmarkUrl?.startsWith("https://")),
     true,
   );
-  const published = deliverable.map((entry) => entry.publishedAt ?? "");
-  assert.deepEqual(published, [...published].sort((left, right) => (left < right ? 1 : left > right ? -1 : 0)));
+  const updated = deliverable.map((entry) => entry.updatedAt ?? entry.publishedAt ?? "");
+  assert.deepEqual(updated, [...updated].sort((left, right) => (left < right ? 1 : left > right ? -1 : 0)));
   const sample = deliverable[0];
   if (!sample) throw new Error("deliverable catalog is empty");
   const found = publicEntryByTitle(sample.title);

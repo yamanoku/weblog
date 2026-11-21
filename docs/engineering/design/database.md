@@ -79,7 +79,7 @@ Columns are `image_id`, `extension`, and `object_key`. `extension` is lowercase 
 
 Read indexes, and they do not replace the unique `view_path` or the edge and past-title indexes:
 
-- `entries_feed` on `(kind, published_at, id)` where `visibility = 'public'` and `published_at` is not null
+- `entries_feed` on `(kind, updated_at, id)` where `visibility = 'public'` and `published_at` is not null
 - `entries_titles` on `(updated_at, id)` where `visibility = 'public'` and `title <> ''`
 - `entries_thread` on `(thread_root_id, created_at, id)`
 

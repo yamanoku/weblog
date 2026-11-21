@@ -385,11 +385,58 @@ test("deployed public reads use D1 rows and skip drafts and pages", async () => 
   const deliverable = await listDeliverableEntries(database);
   assert.deepEqual(
     deliverable.map((entry) => entry.id),
-    ["note-1", "article-1"],
+    ["article-1", "note-1"],
   );
   const byPath = await readPublicEntryByPath(database, "Spaced_title");
   assert.equal(byPath?.id, "article-1");
   assert.equal(await readPublicEntryByPath(database, "draft-thought"), null);
+  sqlite.close();
+});
+
+test("the home list orders a later update before a later publish", async () => {
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  await commitEntry(database, {
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+    kind: "note",
+    title: "",
+    body: "earlier update",
+    visibility: "public",
+    publishedAt: "2026-11-07T05:00:00.000Z",
+    createdAt: "2026-11-07T05:00:00.000Z",
+    updatedAt: "2026-11-07T05:00:00.000Z",
+  });
+  await commitEntry(database, {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+    kind: "article",
+    title: "Edited",
+    body: "later update",
+    visibility: "public",
+    publishedAt: "2026-11-07T01:00:00.000Z",
+    createdAt: "2026-11-07T01:00:00.000Z",
+    updatedAt: "2026-11-07T06:00:00.000Z",
+    viewPath: "Edited",
+  });
+  await commitEntry(database, {
+    id: "cccccccc-cccc-4ccc-8ccc-ccccccccccc3",
+    kind: "bookmark",
+    title: "Same time",
+    body: "tie",
+    visibility: "public",
+    bookmarkUrl: "https://example.com/tie",
+    publishedAt: "2026-11-07T02:00:00.000Z",
+    createdAt: "2026-11-07T02:00:00.000Z",
+    updatedAt: "2026-11-07T05:00:00.000Z",
+  });
+  const deliverable = await listDeliverableEntries(database);
+  assert.deepEqual(
+    deliverable.map((entry) => entry.id),
+    [
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+      "cccccccc-cccc-4ccc-8ccc-ccccccccccc3",
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+    ],
+  );
   sqlite.close();
 });
 

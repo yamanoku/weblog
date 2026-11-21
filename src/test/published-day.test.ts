@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
-import { groupByPublishedDay, tokyoPublishedDay } from "../domain/published-day.ts";
+import { groupByUpdatedDay, tokyoPublishedDay } from "../domain/published-day.ts";
 
 test("a published instant uses the Tokyo calendar date", () => {
   assert.deepEqual(tokyoPublishedDay("2026-11-19T15:00:00.000Z"), {
@@ -14,16 +14,20 @@ test("a published instant uses the Tokyo calendar date", () => {
   assert.equal(tokyoPublishedDay("not-a-time"), null);
 });
 
-test("home entries that share a Tokyo date stay in one section", () => {
-  const groups = groupByPublishedDay([
-    { id: "later", publishedAt: "2026-11-20T01:00:00.000Z" },
-    { id: "same-day", publishedAt: "2026-11-20T00:30:00.000Z" },
-    { id: "previous", publishedAt: "2026-11-19T01:00:00.000Z" },
+test("home entries that share a Tokyo update date stay in one section", () => {
+  const groups = groupByUpdatedDay([
+    {
+      id: "edited",
+      publishedAt: "2026-11-10T00:00:00.000Z",
+      updatedAt: "2026-11-20T01:00:00.000Z",
+    },
+    { id: "same-day", updatedAt: "2026-11-20T00:30:00.000Z" },
+    { id: "previous", updatedAt: "2026-11-19T01:00:00.000Z" },
   ]);
   assert.deepEqual(
     groups.map((group) => ({ date: group.date, ids: group.entries.map((entry) => entry.id) })),
     [
-      { date: "2026-11-20", ids: ["later", "same-day"] },
+      { date: "2026-11-20", ids: ["edited", "same-day"] },
       { date: "2026-11-19", ids: ["previous"] },
     ],
   );
