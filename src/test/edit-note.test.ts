@@ -198,7 +198,7 @@ test("the home page shows the note field to the owner and the edit screen keeps 
   const page = readFileSync(join(rootDir, "pages/edit/index.svelte"), "utf8");
   assert.equal(page.includes("Post a note"), false);
   assert.equal(page.includes("noteBody"), false);
-  assert.match(page, /<h2>Notes<\/h2>/);
+  assert.match(page, /<h2\b[^>]*>Notes<\/h2>/);
   assert.match(page, /action="\?deleteNote"/);
   assert.match(page, /name="noteId"/);
   assert.equal(page.includes('"/edit/" + note.id'), false);

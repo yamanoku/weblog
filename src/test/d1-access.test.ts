@@ -410,7 +410,7 @@ test("domain and pages stay free of the store and the Access check", () => {
   assert.equal(config.includes("queues"), false);
   assert.equal(config.includes("durable_objects"), false);
   assert.equal(config.includes("crons"), false);
-  assert.match(readRoot("pages/index.svelte"), /weblog\.yamanoku\.net/);
+  assert.match(readRoot("pages/index.svelte"), /weblog\.<\/span><span class="domain">yamanoku\.net/);
   assert.equal(readRoot("pages/index.svelte").includes("OWNER_EMAIL"), false);
   assert.match(readRoot("middleware/01.access.ts"), /editAccessDecision/);
   assert.match(readRoot("middleware/01.access.ts"), /Cf-Access-Jwt-Assertion/);

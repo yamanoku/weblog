@@ -18,7 +18,7 @@
 
 - 経路の割り当て、フィードの文書、編集フォームの項目。これらは上の要件に残す。
 - ORM、保存、連合の署名。
-- 見た目。
+- 文言、項目、経路の振る舞い。これらは上の要件に残す。
 
 ## 実装方針
 
@@ -39,11 +39,11 @@
 }
 ```
 
-ドメインは `void` を import しない。ドメインは Svelte を import しない。ドメインは `@void/svelte` を import しない。ページのファイルは `void/db` を import しない。レイアウトは `yama-normalize` を読み込む。このスタイルシートは、全ページの既定の見た目である。
+ドメインは `void` を import しない。ドメインは Svelte を import しない。ドメインは `@void/svelte` を import しない。ページのファイルは `void/db` を import しない。レイアウトは `yama-normalize` を読み込む。これはリセットである。見える部品は、デジタル庁デザインシステムの HTML スニペット（MIT、[design-system-example-components-html](https://github.com/digital-go-jp/design-system-example-components-html)）に合わせる。レイアウトは `src/styles/dads/` のスタイルシートをリセットの後に読み、ページの幅は `src/styles/site.css` で足す。書体は Noto Sans JP で、Google Fonts から読む。読めないときは `sans-serif` になる。スニペットは npm の依存にしない。
 
 ## アーキテクチャ・シーケンス図
 
-図は要らない。決定は、パッケージ一覧一つである。図を足しても、名前は増えない。
+図は要らない。決定は、パッケージ一覧と、見えるスタイルの出どころである。図を足しても、名前は増えない。
 
 ## データモデル・ER 図
 

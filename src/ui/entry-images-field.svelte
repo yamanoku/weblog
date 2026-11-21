@@ -152,34 +152,42 @@
 {#each items as item (item.id)}
   <div class="preview">
     <img src={item.previewUrl} alt={item.alt.trim()} />
-    <div class="field">
-      <label for="{inputId}-alt-{item.id}">代替テキスト</label>
-      <input
-        id="{inputId}-alt-{item.id}"
-        type="text"
-        maxlength="1500"
-        bind:value={item.alt}
-        use:bindAlt={item.id}
-        aria-invalid={overLimit(item.alt) || serverCode === "image_alt_length" ? "true" : undefined}
-        aria-describedby={overLimit(item.alt)
-          ? `${inputId}-hint-${item.id} ${inputId}-alt-error-${item.id}`
-          : `${inputId}-hint-${item.id}`}
-      />
-      <p id="{inputId}-hint-{item.id}">空欄のままでも保存できます</p>
-      {#if overLimit(item.alt)}
-        <p id="{inputId}-alt-error-{item.id}" role="alert">代替テキストは 1500 字までです</p>
-      {/if}
+    <div class="dads-form-control-label" data-size="md">
+      <label class="dads-form-control-label__label" for="{inputId}-alt-{item.id}">代替テキスト</label>
+      <p id="{inputId}-hint-{item.id}" class="dads-form-control-label__support-text">空欄のままでも保存できます</p>
+      <div class="dads-form-control-label__field">
+        <span class="dads-input-text">
+          <input
+            id="{inputId}-alt-{item.id}"
+            class="dads-input-text__input"
+            type="text"
+            data-size="md"
+            maxlength="1500"
+            bind:value={item.alt}
+            use:bindAlt={item.id}
+            aria-invalid={overLimit(item.alt) || serverCode === "image_alt_length" ? "true" : undefined}
+            aria-describedby={overLimit(item.alt)
+              ? `${inputId}-hint-${item.id} ${inputId}-alt-error-${item.id}`
+              : `${inputId}-hint-${item.id}`}
+          />
+          {#if overLimit(item.alt)}
+            <span id="{inputId}-alt-error-{item.id}" class="dads-input-text__error-text" role="alert">代替テキストは 1500 字までです</span>
+          {/if}
+        </span>
+      </div>
     </div>
-    <button type="button" onclick={() => insertImage(item)}>本文に入れる</button>
-    <button type="button" onclick={() => removeImage(item.id)}>外す</button>
+    <div class="button-row">
+      <button class="dads-button" data-size="md" data-type="outline" type="button" onclick={() => insertImage(item)}>本文に入れる</button>
+      <button class="dads-button" data-size="md" data-type="outline" type="button" onclick={() => removeImage(item.id)}>外す</button>
+    </div>
   </div>
 {/each}
 {#if attachError || (serverCode && serverCode !== "image_alt_length")}
-  <p id="{inputId}-error" role="alert">{fieldError(attachError || serverCode)}</p>
+  <p id="{inputId}-error" class="dads-input-text__error-text" role="alert">{fieldError(attachError || serverCode)}</p>
 {/if}
 <input
   id={inputId}
-  class="visually-hidden"
+  class="dads-u-visually-hidden"
   type="file"
   name="entryImage"
   accept="image/jpeg,image/png,image/gif,image/webp"
@@ -189,67 +197,5 @@
   bind:this={fileInput}
   onchange={onFile}
 />
-<label class="attach" for={inputId}>画像を添付</label>
+<label class="dads-button" data-size="md" data-type="outline" for={inputId}>画像を添付</label>
 
-<style scoped>
-  .preview {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--y-rhythm-1);
-    margin-block-start: var(--y-rhythm-1);
-  }
-  img {
-    max-width: 100%;
-    height: auto;
-  }
-  .field {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    width: 100%;
-  }
-  button,
-  label,
-  input[type="text"] {
-    font: inherit;
-    font-size: max(1rem, 1em);
-  }
-  button,
-  label.attach,
-  input[type="text"] {
-    min-height: 48px;
-    padding: var(--y-rhythm-1);
-    box-sizing: border-box;
-  }
-  label.attach {
-    display: inline-flex;
-    align-items: center;
-    border: 2px solid var(--y-black-base, #111);
-    border-radius: var(--y-rhythm-1);
-  }
-  input[type="text"] {
-    width: 100%;
-    border: 2px solid var(--y-black-base, #111);
-    border-radius: var(--y-rhythm-1);
-  }
-  button:focus-visible,
-  label.attach:focus-visible,
-  input[type="text"]:focus-visible,
-  input:focus-visible + label.attach {
-    outline: 3px solid var(--y-black-base, #111);
-    outline-offset: 2px;
-  }
-  .visually-hidden {
-    position: absolute;
-    clip-path: inset(50%);
-    overflow: hidden;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    border: 0;
-    white-space: nowrap;
-  }
-</style>

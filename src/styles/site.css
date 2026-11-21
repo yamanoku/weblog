@@ -1,0 +1,144 @@
+/* Page column and article body. Component looks stay in src/styles/dads/. */
+
+html {
+  background-color: var(--color-neutral-white);
+  color: var(--color-neutral-solid-gray-900);
+  font-family: var(--font-family-sans);
+}
+
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding-block: 1rem 0.5rem;
+  color: var(--color-neutral-solid-gray-900);
+  font-weight: bold;
+}
+
+.site-brand svg {
+  flex-shrink: 0;
+  fill: currentcolor;
+}
+
+.site-nav .dads-horizontal-menu {
+  flex-wrap: wrap;
+  border-bottom: 0;
+}
+
+.site-main {
+  display: grid;
+  gap: 1.5rem;
+  padding-block: 1.5rem 3rem;
+}
+
+.site-footer {
+  display: grid;
+  gap: 0.5rem;
+  padding-block: 1.5rem 2.5rem;
+  color: var(--color-neutral-solid-gray-700);
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.dads-heading,
+.dads-heading__heading {
+  overflow-wrap: anywhere;
+}
+
+ol.dads-breadcrumb__list {
+  list-style: none;
+}
+
+.dads-breadcrumb__link[aria-current="page"] {
+  color: var(--color-neutral-solid-gray-900);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+@media (forced-colors: active) {
+  .dads-breadcrumb__link[aria-current="page"] {
+    text-decoration: underline;
+  }
+}
+
+.form-stack {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dads-input-text__input,
+.dads-textarea__textarea,
+.dads-select__select {
+  width: 100%;
+  font-size: max(1rem, 1em);
+}
+
+.dads-select__control {
+  width: min(100%, 20rem);
+}
+
+.entry-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.entry-body {
+  display: grid;
+  gap: 1rem;
+  color: var(--color-neutral-solid-gray-900);
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+
+.entry-body :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+  color: var(--color-neutral-solid-gray-800);
+  line-height: 1.5;
+}
+
+.entry-body h1 { font-size: 2rem; }
+.entry-body h2 { font-size: 1.5rem; }
+.entry-body h3 { font-size: 1.25rem; }
+.entry-body :is(h4, h5, h6) { font-size: 1.125rem; }
+
+.entry-body :is(p, ul, pre) {
+  margin: 0;
+}
+
+.entry-body ul {
+  padding-left: 2rem;
+}
+
+.entry-body pre {
+  overflow-x: auto;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-neutral-solid-gray-50);
+}
+
+.entry-body code {
+  font-family: var(--font-family-mono), ui-monospace, monospace;
+}
+
+.site-main img,
+.preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+.preview {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}

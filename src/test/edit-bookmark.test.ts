@@ -281,7 +281,7 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.match(page, /\/edit\?bookmark/);
   assert.match(page, /name="bookmarkUrl"/);
   assert.match(page, /Save bookmark/);
-  assert.match(page, /<h2>Bookmarks<\/h2>/);
+  assert.match(page, /<h2\b[^>]*>Bookmarks<\/h2>/);
   assert.match(page, /action="\?deleteBookmark"/);
   assert.match(page, /name="bookmarkId"/);
   assert.match(page, /href=\{"\/edit\/" \+ bookmark\.id\}/);

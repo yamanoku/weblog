@@ -128,196 +128,134 @@
 
 {#if owner}
 <div class="post-note">
-  <Form form={noteForm} onpaste={onPaste}>
-    <div>
-      <textarea
-        name="noteBody"
-        rows="4"
-        placeholder="いまどうしてる？"
-        bind:value={noteForm.data.noteBody}
-        aria-invalid={noteForm.errors.noteBody === "empty_body" ? "true" : undefined}
-        aria-describedby={noteForm.errors.noteBody ? "note-field-error" : undefined}
-      ></textarea>
-    </div>
-    {#if previewUrl}
-      <div class="preview">
-        <img src={previewUrl} alt={imageAlt.trim()} />
-        <div class="field">
-          <label for="note-image-alt">代替テキスト <span aria-hidden="true">*</span></label>
-          <input
-            id="note-image-alt"
-            name="noteImageAlt"
-            type="text"
-            required
-            maxlength="1500"
-            bind:value={imageAlt}
-            bind:this={altInput}
-            aria-invalid={altError || noteForm.errors.noteImageAlt ? "true" : undefined}
-            aria-describedby={altError || noteForm.errors.noteImageAlt
-              ? "note-image-alt-hint note-image-alt-error"
-              : "note-image-alt-hint"}
-            oninput={onAltInput}
-          />
-          <p id="note-image-alt-hint">画像があるときは必須です</p>
-          {#if altError || noteForm.errors.noteImageAlt}
-            <p id="note-image-alt-error" role="alert">
-              {noteFieldError(altError || noteForm.errors.noteImageAlt)}
-            </p>
-          {/if}
+  <Form form={noteForm} onpaste={onPaste} aria-labelledby="note-label">
+    <div class="form-stack">
+      <div class="dads-form-control-label" data-size="md">
+        <label id="note-label" class="dads-form-control-label__label" for="note-body">いまどうしてる？</label>
+        <div class="dads-form-control-label__field">
+          <span class="dads-textarea">
+            <textarea
+              id="note-body"
+              class="dads-textarea__textarea"
+              name="noteBody"
+              rows="4"
+              bind:value={noteForm.data.noteBody}
+              aria-invalid={noteForm.errors.noteBody === "empty_body" ? "true" : undefined}
+              aria-describedby={noteForm.errors.noteBody ? "note-field-error" : undefined}
+            ></textarea>
+            {#if noteForm.errors.noteBody}
+              <span id="note-field-error" class="dads-textarea__error-text" role="alert">{noteFieldError(noteForm.errors.noteBody)}</span>
+            {/if}
+          </span>
         </div>
-        <button type="button" onclick={removeImage}>外す</button>
       </div>
-    {/if}
-    {#if attachError}
-      <p id="note-attach-error" role="alert">{noteFieldError(attachError)}</p>
-    {/if}
-    {#if noteForm.errors.noteBody}
-      <p id="note-field-error" role="alert">{noteFieldError(noteForm.errors.noteBody)}</p>
-    {/if}
-    <div class="actions">
-      <input
-        id="note-image"
-        class="visually-hidden"
-        type="file"
-        name="noteImage"
-        accept="image/jpeg,image/png,image/gif,image/webp"
-        aria-invalid={attachError ? "true" : undefined}
-        aria-describedby={attachError ? "note-attach-error" : undefined}
-        bind:this={fileInput}
-        onchange={onFile}
-      />
-      <label for="note-image">画像を添付</label>
-      <button type="submit" disabled={noteForm.pending}>投稿</button>
+      {#if previewUrl}
+        <div class="preview">
+          <img src={previewUrl} alt={imageAlt.trim()} />
+          <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="note-image-alt">
+              代替テキスト
+              <span class="dads-form-control-label__requirement" data-required="true">※必須</span>
+            </label>
+            <p id="note-image-alt-hint" class="dads-form-control-label__support-text">画像があるときは必須です</p>
+            <div class="dads-form-control-label__field">
+              <span class="dads-input-text">
+                <input
+                  id="note-image-alt"
+                  class="dads-input-text__input"
+                  name="noteImageAlt"
+                  type="text"
+                  data-size="md"
+                  required
+                  maxlength="1500"
+                  bind:value={imageAlt}
+                  bind:this={altInput}
+                  aria-invalid={altError || noteForm.errors.noteImageAlt ? "true" : undefined}
+                  aria-describedby={altError || noteForm.errors.noteImageAlt
+                    ? "note-image-alt-hint note-image-alt-error"
+                    : "note-image-alt-hint"}
+                  oninput={onAltInput}
+                />
+                {#if altError || noteForm.errors.noteImageAlt}
+                  <span id="note-image-alt-error" class="dads-input-text__error-text" role="alert">
+                    {noteFieldError(altError || noteForm.errors.noteImageAlt)}
+                  </span>
+                {/if}
+              </span>
+            </div>
+          </div>
+          <button class="dads-button" data-size="md" data-type="outline" type="button" onclick={removeImage}>外す</button>
+        </div>
+      {/if}
+      {#if attachError}
+        <p id="note-attach-error" class="dads-input-text__error-text" role="alert">{noteFieldError(attachError)}</p>
+      {/if}
+      <div class="button-row">
+        <input
+          id="note-image"
+          class="dads-u-visually-hidden"
+          type="file"
+          name="noteImage"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          aria-invalid={attachError ? "true" : undefined}
+          aria-describedby={attachError ? "note-attach-error" : undefined}
+          bind:this={fileInput}
+          onchange={onFile}
+        />
+        <label class="dads-button" data-size="md" data-type="outline" for="note-image">画像を添付</label>
+        <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={noteForm.pending}>投稿</button>
+      </div>
     </div>
   </Form>
 </div>
 {/if}
 
-<h1>
-  <span class="subdomain">weblog.</span><span class="domain">yamanoku.net</span>
-</h1>
-
+<div class="dads-heading" data-size="32">
+  <h1 class="dads-heading__heading">
+    <span class="subdomain">weblog.</span><span class="domain">yamanoku.net</span>
+  </h1>
+</div>
 
 {#each dayGroups as group (group.date || group.entries[0].id)}
-  <section>
+  <section class="entry-list">
     {#if group.date}
-      <h2><time datetime={group.date}>{group.label}</time></h2>
+      <div class="dads-heading" data-size="24">
+        <h2 class="dads-heading__heading"><time datetime={group.date}>{group.label}</time></h2>
+      </div>
     {/if}
     {#each group.entries as entry (entry.id)}
-      <article>
-        <Link href={entry.href}>{entry.title}</Link>
+      <article class="entry-list">
+        <p class="dads-u-std-18B-160">
+          <Link class="dads-link" href={entry.href}>{entry.title}</Link>
+        </p>
         {#if entry.kind === "note"}
-          <p style="white-space: pre-wrap">{entry.body}</p>
+          <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
           {#if entry.imageHref}
             <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
           {/if}
         {:else}
-          {@html markdownToHtml(entry.body)}
+          <div class="entry-body">
+            {@html markdownToHtml(entry.body)}
+          </div>
           {#if entry.kind === "bookmark"}
             {#each entry.images ?? [] as image (image.href)}
               <img src={image.href} alt={image.alt} />
             {/each}
           {/if}
         {/if}
-        <Link href={`/e/${entry.id}`}>permalink</Link>
+        <p><Link class="dads-link" href={`/e/${entry.id}`}>permalink</Link></p>
       </article>
+      <hr class="dads-divider" data-color="solid-gray-420" data-style="solid" data-width="1" />
     {/each}
   </section>
 {/each}
 
-<style scoped >
+<style>
   h1 {
     display: inline-flex;
     flex-wrap: wrap;
-    span {
-      word-wrap: anywhere;
-    }
   }
-  section {
-    margin-block-start: var(--y-rhythm-3);
-  }
-  h2 {
-    font-size: 1.125rem;
-    margin-block: 0 var(--y-rhythm-1);
-  }
-  .post-note {
-    margin-block-start: var(--y-rhythm-2);
-  }
-  .post-note textarea,
-  .post-note button,
-  .post-note label,
-  .post-note input[type="text"] {
-    font: inherit;
-    font-size: max(1rem, 1em);
-  }
-  .post-note textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: var(--y-rhythm-1);
-    border: 2px solid var(--y-black-base, #111);
-    border-radius: var(--y-rhythm-1);
-  }
-  .post-note .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--y-rhythm-1);
-    margin-block-start: var(--y-rhythm-1);
-  }
-  .post-note button,
-  .post-note label[for="note-image"] {
-    min-height: 48px;
-    padding: var(--y-rhythm-1);
-    box-sizing: border-box;
-  }
-  .post-note label[for="note-image"] {
-    display: inline-flex;
-    align-items: center;
-    border: 2px solid var(--y-black-base, #111);
-    border-radius: var(--y-rhythm-1);
-  }
-  .post-note .field {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-    width: 100%;
-  }
-  .post-note input[type="text"] {
-    width: 100%;
-    min-height: 48px;
-    padding: var(--y-rhythm-1);
-    box-sizing: border-box;
-    border: 2px solid var(--y-black-base, #111);
-    border-radius: var(--y-rhythm-1);
-  }
-  .post-note input:focus-visible + label,
-  .post-note button:focus-visible,
-  .post-note textarea:focus-visible,
-  .post-note input[type="text"]:focus-visible {
-    outline: 3px solid var(--y-black-base, #111);
-    outline-offset: 2px;
-  }
-  .preview img,
-  article img {
-    max-width: 100%;
-    height: auto;
-  }
-  .preview {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--y-rhythm-1);
-    margin-block-start: var(--y-rhythm-1);
-  }
-  .visually-hidden {
-    position: absolute;
-    clip-path: inset(50%);
-    overflow: hidden;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    border: 0;
-    white-space: nowrap;
+  h1 span {
+    overflow-wrap: anywhere;
   }
 </style>

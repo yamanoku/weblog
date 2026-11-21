@@ -18,7 +18,7 @@ The product principle that the UI framework is Svelte. One Worker serves this ho
 
 - Path assignment, feed documents, and the edit form fields. Those stay in the requirements linked above.
 - The ORM, the store, and federation signing.
-- Visual design.
+- Wording, fields, and path behavior. Those stay in the requirements linked above.
 
 ## Implementation approach
 
@@ -39,11 +39,11 @@ This app's packages are:
 }
 ```
 
-The domain does not import `void`, Svelte, or `@void/svelte`. Page files do not import `void/db`. The layout imports `yama-normalize`. That stylesheet is the default style for every page.
+The domain does not import `void`, Svelte, or `@void/svelte`. Page files do not import `void/db`. The layout imports `yama-normalize`. That stylesheet is the reset. Visible controls follow the Digital Agency Design System HTML snippets (MIT, [design-system-example-components-html](https://github.com/digital-go-jp/design-system-example-components-html)). The layout imports those stylesheets from `src/styles/dads/` after the reset, then `src/styles/site.css` for the page column. The typeface is Noto Sans JP, loaded from Google Fonts, with `sans-serif` when that request fails. The snippets are not an npm dependency.
 
 ## Architecture and sequence diagrams
 
-No diagram. One package list is the decision. A picture would restate those four names.
+No diagram. The decision is the package list and the source of the visible styles. A picture would restate those names.
 
 ## Data model and ER diagrams
 

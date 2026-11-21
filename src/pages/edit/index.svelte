@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Form, Link, useForm } from "@void/svelte";
   import EntryImages from "../../ui/entry-images-field.svelte";
+  import Breadcrumb from "../../ui/breadcrumb.svelte";
 
   let { articles = [], notes = [], bookmarks = [] } = $props();
   const articleForm = useForm("/edit", { title: "", body: "" });
@@ -49,16 +50,31 @@
   }
 </script>
 
-<h1>Create an entry</h1>
-<Form form={articleForm} onpaste={(event) => articleImages.onPaste(event)}>
-  <label>
-    Title
-    <input name="title" bind:value={articleForm.data.title} />
-  </label>
-  <label>
-    Markdown
-    <textarea name="body" rows="16" bind:value={articleForm.data.body} bind:this={articleBody}></textarea>
-  </label>
+<Breadcrumb items={[
+  { href: "/", label: "トップ" },
+  { href: "/edit", label: "編集", current: true },
+]} />
+
+<div class="dads-heading" data-size="32">
+  <h1 id="create-entry" class="dads-heading__heading">Create an entry</h1>
+</div>
+<Form class="form-stack" form={articleForm} aria-labelledby="create-entry" onpaste={(event) => articleImages.onPaste(event)}>
+  <div class="dads-form-control-label" data-size="md">
+    <label class="dads-form-control-label__label" for="article-title">Title</label>
+    <div class="dads-form-control-label__field">
+      <span class="dads-input-text">
+        <input id="article-title" class="dads-input-text__input" name="title" type="text" data-size="md" bind:value={articleForm.data.title} />
+      </span>
+    </div>
+  </div>
+  <div class="dads-form-control-label" data-size="md">
+    <label class="dads-form-control-label__label" for="article-body">Markdown</label>
+    <div class="dads-form-control-label__field">
+      <span class="dads-textarea">
+        <textarea id="article-body" class="dads-textarea__textarea" name="body" rows="16" bind:value={articleForm.data.body} bind:this={articleBody}></textarea>
+      </span>
+    </div>
+  </div>
   <EntryImages
     inputId="article-image"
     getBody={() => articleForm.data.body}
@@ -67,23 +83,48 @@
     register={(api) => (articleImages = api)}
     serverCode={articleForm.errors.entryImages ?? ""}
   />
-  <button type="submit" disabled={articleForm.pending}>Save article</button>
+  <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={articleForm.pending}>Save article</button>
 </Form>
 
-<h2>Bookmark</h2>
-<Form form={bookmarkForm} onpaste={(event) => bookmarkImages.onPaste(event)}>
-  <label>
-    Title
-    <input name="title" bind:value={bookmarkForm.data.title} />
-  </label>
-  <label>
-    URL
-    <input name="bookmarkUrl" bind:value={bookmarkForm.data.bookmarkUrl} />
-  </label>
-  <label>
-    Comment
-    <textarea name="body" rows="6" bind:value={bookmarkForm.data.body} bind:this={bookmarkBody}></textarea>
-  </label>
+<div class="dads-heading" data-size="24">
+  <h2 id="create-bookmark" class="dads-heading__heading">Bookmark</h2>
+</div>
+<Form class="form-stack" form={bookmarkForm} aria-labelledby="create-bookmark" onpaste={(event) => bookmarkImages.onPaste(event)}>
+  <div class="dads-form-control-label" data-size="md">
+    <label class="dads-form-control-label__label" for="bookmark-title">Title</label>
+    <div class="dads-form-control-label__field">
+      <span class="dads-input-text">
+        <input id="bookmark-title" class="dads-input-text__input" name="title" type="text" data-size="md" bind:value={bookmarkForm.data.title} />
+      </span>
+    </div>
+  </div>
+  <div class="dads-form-control-label" data-size="md">
+    <label class="dads-form-control-label__label" for="bookmark-url">URL</label>
+    <div class="dads-form-control-label__field">
+      <span class="dads-input-text">
+        <input
+          id="bookmark-url"
+          class="dads-input-text__input"
+          name="bookmarkUrl"
+          type="url"
+          data-size="md"
+          inputmode="url"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          bind:value={bookmarkForm.data.bookmarkUrl}
+        />
+      </span>
+    </div>
+  </div>
+  <div class="dads-form-control-label" data-size="md">
+    <label class="dads-form-control-label__label" for="bookmark-body">Comment</label>
+    <div class="dads-form-control-label__field">
+      <span class="dads-textarea">
+        <textarea id="bookmark-body" class="dads-textarea__textarea" name="body" rows="6" bind:value={bookmarkForm.data.body} bind:this={bookmarkBody}></textarea>
+      </span>
+    </div>
+  </div>
   <EntryImages
     inputId="bookmark-image"
     getBody={() => bookmarkForm.data.body}
@@ -92,85 +133,65 @@
     register={(api) => (bookmarkImages = api)}
     serverCode={bookmarkForm.errors.entryImages ?? ""}
   />
-  <button type="submit" disabled={bookmarkForm.pending}>Save bookmark</button>
+  <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={bookmarkForm.pending}>Save bookmark</button>
 </Form>
 
-<h2>Notes</h2>
+<div class="dads-heading" data-size="24">
+  <h2 class="dads-heading__heading">Notes</h2>
+</div>
 {#if notes.length === 0}
   <p>No notes yet.</p>
 {:else}
-  <ul>
+  <ul class="dads-list" data-spacing="8">
     {#each notes as note (note.id)}
       <li>
         <p style="white-space: pre-wrap">{note.body}</p>
         {#if note.imageHref}
           <img src={note.imageHref} alt={note.imageAlt ?? ""} />
         {/if}
-        {note.visibility}
+        <p>{note.visibility}</p>
         <form method="post" action="?deleteNote">
           <input type="hidden" name="noteId" value={note.id} />
-          <button type="submit">Delete</button>
+          <button class="dads-button" data-size="sm" data-type="outline" type="submit">Delete</button>
         </form>
       </li>
     {/each}
   </ul>
 {/if}
 
-<h2>Articles</h2>
+<div class="dads-heading" data-size="24">
+  <h2 class="dads-heading__heading">Articles</h2>
+</div>
 {#if articles.length === 0}
   <p>No articles yet.</p>
 {:else}
-  <ul>
+  <ul class="dads-list" data-spacing="8">
     {#each articles as article (article.id)}
       <li>
-        <Link href={"/edit/" + article.id}>{article.title || article.id}</Link>
+        <Link class="dads-link" href={"/edit/" + article.id}>{article.title || article.id}</Link>
         {article.visibility}
       </li>
     {/each}
   </ul>
 {/if}
 
-<h2>Bookmarks</h2>
+<div class="dads-heading" data-size="24">
+  <h2 class="dads-heading__heading">Bookmarks</h2>
+</div>
 {#if bookmarks.length === 0}
   <p>No bookmarks yet.</p>
 {:else}
-  <ul>
+  <ul class="dads-list" data-spacing="8">
     {#each bookmarks as bookmark (bookmark.id)}
       <li>
-        <Link href={"/edit/" + bookmark.id}>{bookmark.title || bookmark.id}</Link>
+        <Link class="dads-link" href={"/edit/" + bookmark.id}>{bookmark.title || bookmark.id}</Link>
         {bookmark.bookmarkUrl}
         {bookmark.visibility}
         <form method="post" action="?deleteBookmark">
           <input type="hidden" name="bookmarkId" value={bookmark.id} />
-          <button type="submit">Delete</button>
+          <button class="dads-button" data-size="sm" data-type="outline" type="submit">Delete</button>
         </form>
       </li>
     {/each}
   </ul>
 {/if}
-
-<style scoped>
-  textarea,
-  input,
-  button,
-  select {
-    font: inherit;
-    font-size: max(1rem, 1em);
-  }
-  textarea,
-  input,
-  button {
-    min-height: 48px;
-    box-sizing: border-box;
-  }
-  textarea:focus-visible,
-  input:focus-visible,
-  button:focus-visible {
-    outline: 3px solid var(--y-black-base, #111);
-    outline-offset: 2px;
-  }
-  img {
-    max-width: 100%;
-    height: auto;
-  }
-</style>
