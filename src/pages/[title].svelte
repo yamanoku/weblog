@@ -7,6 +7,10 @@
   let { entry } = $props();
 </script>
 
+<svelte:head>
+  <title>{entry.title} - weblog.yamanoku.net</title>
+</svelte:head>
+
 {#if entry}
   <Breadcrumb items={[
     { href: "/", label: "トップ" },

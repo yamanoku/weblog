@@ -1,6 +1,7 @@
 /* Page column and article body. Component looks stay in src/styles/dads/. */
 
 html {
+  color-scheme: light;
   background-color: var(--color-neutral-white);
   color: var(--color-neutral-solid-gray-900);
   font-family: var(--font-family-sans);
@@ -35,6 +36,10 @@ html[lang="ja"] body {
 article {
   border-bottom: 1px dotted var(--color-neutral-solid-gray-200);
   padding-block-end: 1.75rem;
+}
+
+article:last-child {
+  border-bottom: none;
 }
 
 .site-brand {
@@ -158,12 +163,13 @@ ol.dads-breadcrumb__list {
   margin: 0;
   color: var(--color-neutral-solid-gray-800);
   line-height: 1.5;
+  font-size: inherit;
 }
 
-.entry-body h1 { font-size: 2rem; }
+/* .entry-body h1 { font-size: 2rem; }
 .entry-body h2 { font-size: 1.5rem; }
 .entry-body h3 { font-size: 1.25rem; }
-.entry-body :is(h4, h5, h6) { font-size: 1.125rem; }
+.entry-body :is(h4, h5, h6) { font-size: 1.125rem; } */
 
 .entry-body :is(p, ul, pre) {
   margin: 0;

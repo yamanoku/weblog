@@ -84,6 +84,10 @@
   });
 </script>
 
+<svelte:head>
+  <title>新規 - weblog.yamanoku.net</title>
+</svelte:head>
+
 <Breadcrumb items={[
   { href: "/", label: "トップ" },
   { href: "/new", label: "新規", current: true },

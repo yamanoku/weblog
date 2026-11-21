@@ -5,6 +5,10 @@
   let { articles = [], notes = [], bookmarks = [] } = $props();
 </script>
 
+<svelte:head>
+  <title>編集 - weblog.yamanoku.net</title>
+</svelte:head>
+
 <Breadcrumb items={[
   { href: "/", label: "トップ" },
   { href: "/edit", label: "編集", current: true },

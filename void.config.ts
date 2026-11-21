@@ -33,5 +33,18 @@ export default defineConfig({
     htmlAttrs: {
       lang: "ja",
     },
+    // Shared document head. Charset stays first. The page is light only, so
+    // color-scheme is light and theme-color matches the page background.
+    meta: [
+      { charset: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1.0" },
+      { name: "color-scheme", content: "light" },
+      { name: "theme-color", content: "#ffffff" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
+    ],
+    link: [
+      { rel: "icon", href: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: "/icons/icon-192.png" },
+    ],
   },
 });

@@ -44,11 +44,13 @@
 </script>
 
 <svelte:head>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
   <link
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+Mono:wght@400;700&display=swap"
     rel="stylesheet"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
   />
   <link rel="manifest" href="/manifest.webmanifest" />
 </svelte:head>

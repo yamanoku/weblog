@@ -35,6 +35,10 @@
   };
 </script>
 
+<svelte:head>
+  <title>{entry.title} - weblog.yamanoku.net</title>
+</svelte:head>
+
 <Breadcrumb items={[
   { href: "/", label: "トップ" },
   { href: "/edit", label: "編集" },
