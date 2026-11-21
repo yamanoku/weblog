@@ -24,6 +24,7 @@ export const reservedTitles = [
   "note-images",
   "new",
   ".well-known",
+  "manifest.webmanifest",
 ];
 
 const reserved = new Set<string>(reservedTitles);
@@ -340,7 +341,7 @@ URL は本文とは別の列です。本文に URL を書き写して代わり�
     kind: "article",
     body: `閲覧パスは、タイトルの空白を \`_\` にしたものです。空のタイトルと、予約語にぶつかるタイトルには閲覧パスを付けません。公開の住所は \`/e/{id}\` だけです。
 
-予約している比較キーは \`e\`、\`edit\`、\`entries\`、\`tokens\`、\`feed\`、\`feed.xml\`、\`feed.json\`、\`users\`、\`gyazo\`、\`note-images\`、\`new\`、\`.well-known\` です。
+予約している比較キーは \`e\`、\`edit\`、\`entries\`、\`tokens\`、\`feed\`、\`feed.xml\`、\`feed.json\`、\`users\`、\`gyazo\`、\`note-images\`、\`new\`、\`.well-known\`、\`manifest.webmanifest\` です。
 
 古いパスは、今の閲覧パスへ 301 します。閲覧パスが無いときは正規 URL です。`,
     visibility: "public",

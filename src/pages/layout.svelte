@@ -50,6 +50,7 @@
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+Mono:wght@400;700&display=swap"
     rel="stylesheet"
   />
+  <link rel="manifest" href="/manifest.webmanifest" />
 </svelte:head>
 
 <header>

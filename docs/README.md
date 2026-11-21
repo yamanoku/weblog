@@ -8,6 +8,7 @@ Feature specifications go under `docs/products/weblog/features/`. Open questions
 
 - [Owner writing](products/weblog/features/owner-writing/requirements.md) and its [design](products/weblog/features/owner-writing/design.md)
 - [Public reading](products/weblog/features/public-reading/requirements.md) and its [design](products/weblog/features/public-reading/design.md)
+- [Install](products/weblog/features/install/requirements.md) and its [design](products/weblog/features/install/design.md)
 - [Cosense import](products/weblog/features/cosense-import/requirements.md) and its [design](products/weblog/features/cosense-import/design.md)
 - [ActivityPub](products/weblog/features/activitypub/requirements.md) and its [design](products/weblog/features/activitypub/design.md)
 - [Relocation](products/weblog/features/relocation/requirements.md) and its [design](products/weblog/features/relocation/design.md)

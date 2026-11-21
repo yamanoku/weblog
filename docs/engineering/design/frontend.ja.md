@@ -42,7 +42,7 @@
 
 編集画面は、ブラウザに `focusgroup` が無いときだけ `@microsoft/focusgroup-polyfill` を読む。記事とブックマークの作成タブのキー操作に使う。ドメインはこれを import しない。
 
-ドメインは `void` を import しない。ドメインは Svelte を import しない。ドメインは `@void/svelte` を import しない。ページのファイルは `void/db` を import しない。レイアウトは `yama-normalize` を読み込む。これはリセットである。見える部品は、デジタル庁デザインシステムの HTML スニペット（MIT、[design-system-example-components-html](https://github.com/digital-go-jp/design-system-example-components-html)）に合わせる。レイアウトは `src/styles/dads/` のスタイルシートをリセットの後に読み、ページの幅は `src/styles/site.css` で足す。書体は Noto Sans JP で、Google Fonts から読む。読めないときは `sans-serif` になる。スニペットは npm の依存にしない。
+ドメインは `void` を import しない。ドメインは Svelte を import しない。ドメインは `@void/svelte` を import しない。ページのファイルは `void/db` を import しない。レイアウトは `yama-normalize` を読み込まない。見える部品は、デジタル庁デザインシステムの HTML スニペット（MIT、[design-system-example-components-html](https://github.com/digital-go-jp/design-system-example-components-html)）に合わせる。レイアウトは `src/styles/dads/` のスタイルシートを読み、ページの幅は `src/styles/site.css` で足す。書体は Noto Sans JP で、Google Fonts から読む。読めないときは `sans-serif` になる。スニペットは npm の依存にしない。
 
 ## アーキテクチャ・シーケンス図
 

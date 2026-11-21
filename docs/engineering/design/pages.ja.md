@@ -23,13 +23,13 @@
 
 ## 実装方針
 
-成果物は、要件が既に名付けた経路の一覧である。この設計は経路を足さない。
+成果物は、要件が既に名付けた経路の一覧である。[インストール](../../products/weblog/features/install/requirements.ja.md) は、マニフェストとそのアイコンを足す。この設計は、それ以外の経路を足さない。
 
 [ページルーティング](https://void.cloud/guide/pages-routing/overview) は、`pages/` があると始まると説明している。`routes/` と並べて置ける。ページの最初の要求は、描画された HTML を受け取る。このホスト内の後の移動は、ローダを実行し、文書を読み直さずにページを更新する。公開 HTML と編集画面は、そのモードを使う。画面のアダプタは `@void/svelte` である。このアプリは `ssr = false` を出さない。Void の `sourceDir` は `src` である。これらのディレクトリは `src/pages/` と `src/routes/` である。`npm run dev`、`npm run build`、デプロイは、リポジトリのルートから実行する。`void.config.ts`、`vite.config.ts`、`package.json` は、そこに残す。
 
 HTML のページでない経路は `src/routes/` に置く。フィード、画像のバイト列、Activity Streams、所有者向けの JSON API がそれである。ローダはドメインを呼び、props を返す。action は、CLI と同じ書き込み処理を呼ぶ。ドメインは Svelte を import しない。ドメインは `void/db` を import しない。ページのファイルは `void/db` を import しない。
 
-Worker は、タイトルの経路より前に固定の経路を一致させる。タイトルはパス要素一つである。所有者の書き込みは、次の比較キーを予約する。タイトルは、その URL を取らない。キーは `e`、`edit`、`entries`、`tokens`、`feed`、`feed.xml`、`feed.json`、`users`、`gyazo`、`note-images`、`.well-known` である。`GET /pages` は Svelte のページではない。比較キー `pages` のタイトルパスである。
+Worker は、タイトルの経路より前に固定の経路を一致させる。タイトルはパス要素一つである。所有者の書き込みは、次の比較キーを予約する。タイトルは、その URL を取らない。前半のキーは `e`、`edit`、`entries`、`tokens`、`feed`、`feed.xml`、`feed.json` である。残りのキーは `users`、`gyazo`、`note-images`、`.well-known`、`manifest.webmanifest` である。`GET /pages` は Svelte のページではない。比較キー `pages` のタイトルパスである。
 
 ## アーキテクチャ・シーケンス図
 
@@ -95,6 +95,8 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 フィードの続きは、フィードの経路に残す。種類別の JSON Feed は無い。page は、所有者が種類を変えるまでフィードに入らない。
 
 `GET /e/{id}` は URL 一つである。Activity Streams の Accept は、Svelte のページより前に判定する。HTML のページは、活動文書を描かない。
+
+`GET /manifest.webmanifest`、`GET /icons/icon-192.png`、`GET /icons/icon-512.png` は静的ファイルである。`routes/` のハンドラではない。未認証の GET は、インストール文書とアイコンのバイト列を返す。振る舞いは [インストール](../../products/weblog/features/install/requirements.ja.md) にある。
 
 ## 外部サービスとの連携方式
 

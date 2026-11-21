@@ -288,7 +288,8 @@ test("public articles are listed for the home page and matched by the title path
   assert.match(title, /readsDevCatalog\(/);
   assert.match(title, /readPublicEntryByPath\(/);
   assert.match(title, /publicEntryByTitle\(/);
-  assert.match(readRoot("pages/index.svelte"), /entry\.href/);
+  assert.match(readRoot("pages/index.svelte"), /\{entry\.title\}/);
+  assert.match(readRoot("pages/index.svelte"), /\/e\/\$\{entry\.id\}/);
   assert.match(readRoot("pages/[title].svelte"), /entry\.body/);
   sqlite.close();
 });

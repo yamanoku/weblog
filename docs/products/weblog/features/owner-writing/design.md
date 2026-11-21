@@ -102,7 +102,7 @@ Timestamps are UTC ISO 8601 strings. `publishedAt` is set to the commit time onl
 
 The view-path comparison key is the normalized title with each space replaced by `_`. Percent-encoding is applied only when emitting a URL. Titles whose keys match before encoding collide. A colliding entry's `view_path` is NULL, and its public URL is only the canonical URL.
 
-These comparison keys are used by the API, the edit screen, Gyazo images, and the human-readable feeds. A title whose comparison key matches one of them gets no view path.
+These comparison keys are used by the API, the edit screen, Gyazo images, the human-readable feeds, and the install manifest. A title whose comparison key matches one of them gets no view path. `manifest.webmanifest` is the document [Install](../install/requirements.md) serves at that path.
 
 - `e`
 - `edit`
@@ -116,6 +116,7 @@ These comparison keys are used by the API, the edit screen, Gyazo images, and th
 - `note-images`
 - `new`
 - `.well-known`
+- `manifest.webmanifest`
 
 An old key dropped because of a collision or a reserved name redirects with 301 to that entry's canonical URL. If the destination entry is public and still has a view path, the redirect target is that view path.
 

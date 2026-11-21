@@ -18,7 +18,7 @@ The host is `weblog.yamanoku.net`. The only writer is the owner, and the product
 - Two-way sync with Cosense
 - Cosense pages created after the migration set. The set is defined in [Cosense import](features/cosense-import/requirements.md)
 - Posting into an existing Mastodon or Misskey
-- Visual design
+- Visual design. The mark already drawn in the page header is repeated at the sizes [Install](features/install/requirements.md) needs. That repetition is not a new visual system.
 
 ## Background and problems
 

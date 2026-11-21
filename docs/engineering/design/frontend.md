@@ -42,7 +42,7 @@ This app's packages are:
 
 The edit screen imports `@microsoft/focusgroup-polyfill` in the browser only when `focusgroup` is missing. That polyfill is the keyboard behavior for the article and bookmark create tabs. The domain does not import it.
 
-The domain does not import `void`, Svelte, or `@void/svelte`. Page files do not import `void/db`. The layout imports `yama-normalize`. That stylesheet is the reset. Visible controls follow the Digital Agency Design System HTML snippets (MIT, [design-system-example-components-html](https://github.com/digital-go-jp/design-system-example-components-html)). The layout imports those stylesheets from `src/styles/dads/` after the reset, then `src/styles/site.css` for the page column. The typeface is Noto Sans JP, loaded from Google Fonts, with `sans-serif` when that request fails. The snippets are not an npm dependency.
+The domain does not import `void`, Svelte, or `@void/svelte`. Page files do not import `void/db`. The layout does not import `yama-normalize`. Visible controls follow the Digital Agency Design System HTML snippets (MIT, [design-system-example-components-html](https://github.com/digital-go-jp/design-system-example-components-html)). The layout imports those stylesheets from `src/styles/dads/`, then `src/styles/site.css` for the page column. The typeface is Noto Sans JP, loaded from Google Fonts, with `sans-serif` when that request fails. The snippets are not an npm dependency.
 
 ## Architecture and sequence diagrams
 

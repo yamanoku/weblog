@@ -18,7 +18,7 @@ weblog.yamanoku.net は、yamanoku 一人が公開するハイパーテキスト
 - Cosense との双方向同期
 - 移行対象より後に Cosense で作られたページ。対象の定めは [Cosense からの取り込み](features/cosense-import/requirements.ja.md) にある
 - 既存の Mastodon や Misskey への投稿
-- 見た目
+- 見た目。ページ見出しに既にある印は、[インストール](features/install/requirements.ja.md) が必要な大きさで繰り返す。その繰り返しは、新しい見た目ではない。
 
 ## 背景と解決する課題
 

@@ -74,7 +74,7 @@ test("the app manifest declares the Svelte Void packages", () => {
   for (const name of rejected) {
     assert.equal(names.includes(name), false, name);
   }
-  assert.match(readRoot("pages/layout.svelte"), /import ["']yama-normalize["']/);
+  assert.match(readRoot("pages/layout.svelte"), /import ["']\.\.\/styles\/site\.css["']/);
 });
 
 test("Vite+ runs the app tasks and registers the Void Svelte plugins", () => {
@@ -159,6 +159,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     "note-images",
     "new",
     ".well-known",
+    "manifest.webmanifest",
   ]);
   for (const key of reservedTitles) {
     assert.equal(isReservedTitle(key), true);

@@ -23,13 +23,13 @@ The requirements linked above. One Void application serves this host. The screen
 
 ## Implementation approach
 
-The deliverable is one map for the paths the requirements already name. This design adds no path.
+The deliverable is one map for the paths the requirements already name. [Install](../../products/weblog/features/install/requirements.md) adds the manifest and its icons. This design adds no other path.
 
 [Pages Routing](https://void.cloud/guide/pages-routing/overview) starts when a `pages/` directory exists. It can live alongside `routes/`. The first request for a page receives rendered HTML. Later navigation on this host runs the loader and updates the page without reloading the document. Public HTML and the edit screen use that mode. The screen adapter is `@void/svelte`. This app does not export `ssr = false`. Void `sourceDir` is `src`, so those directories are `src/pages/` and `src/routes/`. `npm run dev`, `npm run build`, and deploy run from the repository root. `void.config.ts`, `vite.config.ts`, and `package.json` stay there.
 
 A path whose response is not an HTML page stays under `src/routes/`. Feeds, image bytes, Activity Streams, and the owner JSON API are those paths. A loader calls the domain and returns props. An action calls the same write operation as the CLI. The domain does not import Svelte or `void/db`. Page files do not import `void/db`.
 
-The Worker matches a fixed path before a title path. A title is one path segment. Owner writing reserves these comparison keys, so a title does not take their URL: `e`, `edit`, `entries`, `tokens`, `feed`, `feed.xml`, `feed.json`, `users`, `gyazo`, `note-images`, and `.well-known`. `GET /pages` is not a Svelte page. It is the title path for the comparison key `pages`.
+The Worker matches a fixed path before a title path. A title is one path segment. Owner writing reserves these comparison keys, so a title does not take their URL: `e`, `edit`, `entries`, `tokens`, `feed`, `feed.xml`, `feed.json`, `users`, `gyazo`, `note-images`, `.well-known`, and `manifest.webmanifest`. `GET /pages` is not a Svelte page. It is the title path for the comparison key `pages`.
 
 ## Architecture and sequence diagrams
 
@@ -95,6 +95,8 @@ These handlers live under `routes/`. They are outside the browser move between S
 Feed cursors stay on the feed path. There is no per-kind JSON Feed. A page entry stays out of the feeds until the owner changes its kind.
 
 `GET /e/{id}` is one URL. The Activity Streams Accept check runs before the Svelte page. The HTML page does not render the activity document.
+
+`GET /manifest.webmanifest`, `GET /icons/icon-192.png`, and `GET /icons/icon-512.png` are static files. They are not handlers under `routes/`. An unauthenticated GET returns the install document and the icon bytes. The behavior is [Install](../../products/weblog/features/install/requirements.md).
 
 ## External service integration
 
