@@ -277,17 +277,19 @@ test("deleting a bookmark removes only that bookmark", async () => {
 });
 
 test("the edit screen posts a bookmark form and opens bookmark edit", () => {
-  const page = readFileSync(join(rootDir, "pages/edit/index.svelte"), "utf8");
+  const page = readFileSync(join(rootDir, "pages/new/index.svelte"), "utf8");
   assert.match(page, /\/edit\?bookmark/);
   assert.match(page, /name="bookmarkUrl"/);
   assert.match(page, /Save bookmark/);
   assert.match(page, /id="create-entry-tab"/);
   assert.match(page, /id="create-bookmark-tab"/);
   assert.match(page, /until-found/);
-  assert.match(page, /<h2\b[^>]*>Bookmarks<\/h2>/);
-  assert.match(page, /action="\?deleteBookmark"/);
-  assert.match(page, /name="bookmarkId"/);
-  assert.match(page, /href=\{"\/edit\/" \+ bookmark\.id\}/);
+  const list = readFileSync(join(rootDir, "pages/edit/index.svelte"), "utf8");
+  assert.equal(list.includes("useForm"), false);
+  assert.match(list, /<h2\b[^>]*>Bookmarks<\/h2>/);
+  assert.match(list, /action="\?deleteBookmark"/);
+  assert.match(list, /name="bookmarkId"/);
+  assert.match(list, /href=\{"\/edit\/" \+ bookmark\.id\}/);
   const server = readFileSync(join(rootDir, "pages/edit/index.server.ts"), "utf8");
   assert.match(server, /submitBookmarkFromEdit\(/);
   assert.match(server, /listBookmarksForEdit\(/);

@@ -39,7 +39,7 @@ The existing R2 bucket `gyazo-archives` is read and is not copied. Storage past 
 
 Entry images use the R2 binding `STORAGE`. That binding is not the bucket `gyazo-archives`. Each stored image is one object at the key `notes/{id}`. For a note, that id is the entry id, so an existing object stays at `notes/{entryId}`. An article or a bookmark may store many objects. Storage beyond the free allowance stays outside the zero-yen target. This app does not contract a new paid plan for that binding.
 
-Cloudflare Access on the Zero Trust Free plan covers `/edit` and `/edit/*` only. Paid Access add-ons stay off.
+Cloudflare Access on the Zero Trust Free plan covers `/edit`, `/edit/*`, and `/new`. Paid Access add-ons stay off.
 
 A custom domain attaches to a zone on the Free plan. The DNS provider can still be replaced. The hostname's HTTPS still resolves to this app.
 

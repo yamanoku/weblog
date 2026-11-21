@@ -202,6 +202,18 @@ test("the home page shows the note field to the owner and the edit screen keeps 
   assert.match(page, /action="\?deleteNote"/);
   assert.match(page, /name="noteId"/);
   assert.equal(page.includes('"/edit/" + note.id'), false);
+  const created = readFileSync(join(rootDir, "pages/new/index.svelte"), "utf8");
+  const composer = readFileSync(join(rootDir, "ui/note-composer.svelte"), "utf8");
+  assert.match(created, /id="create-note-tab"/);
+  assert.match(created, /NoteComposer/);
+  assert.match(composer, /useForm\(\s*"\/edit\?note"/);
+  assert.match(composer, /name="noteBody"/);
+  assert.match(composer, /name="noteImage"/);
+  assert.match(composer, /name="noteImageAlt"/);
+  assert.match(composer, /いまどうしてる？/);
+  assert.match(composer, /画像を添付/);
+  assert.match(composer, /代替テキスト/);
+  assert.match(composer, /本文か画像を入れてください/);
   const server = readFileSync(join(rootDir, "pages/edit/index.server.ts"), "utf8");
   assert.match(server, /actions\s*=\s*\{/);
   assert.match(server, /submitNoteFromEdit\(/);

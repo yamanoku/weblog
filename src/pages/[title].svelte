@@ -11,7 +11,7 @@
     { href: "/", label: "トップ" },
     { href: publicArticleHref(entry), label: entry.title, current: true },
   ]} />
-  <article>
+  <article class="entry-article">
     <div class="dads-heading" data-size="32">
       <h1 class="dads-heading__heading">{entry.title}</h1>
     </div>

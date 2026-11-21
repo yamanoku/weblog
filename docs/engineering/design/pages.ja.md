@@ -52,7 +52,8 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /` | 配送対象の HTML 一覧。所有者として確認できたとき、ナビゲーションの下に note 欄を出す。未確認の応答は出さない。続きは、この経路に `before` と `before_id` を付ける。 |
 | `GET /{タイトル}` | 公開エントリ。要件が空ページとするときは、空ページである。 |
 | `GET /e/{id}` | 正規 URL の HTML。下の Activity Streams の場合を除く。 |
-| `GET /edit` | 記事、note、bookmark の編集画面。note 欄は無い。 |
+| `GET /edit` | 保存済みの article、note、bookmark の一覧。作成フォームと note 欄は無い。 |
+| `GET /new` | 記事、bookmark、note の作成フォーム。タブは一つずつ出す。一覧は無い。 |
 | `GET /edit/{id}` | その article または bookmark の編集フォーム。note の ID と page の ID は 404。 |
 | `POST /edit` | 下書きの article を作成する。フォームは画像を何枚でも送れる。 |
 | `POST /edit?note` | note 欄から公開の note を作成する。欄は本文と、画像を多くて 1 枚送る。 |
@@ -105,7 +106,7 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 
 ## 認証認可に関する特記事項
 
-Access が覆うのは `/edit` と `/edit/*` だけである。公開 HTML、フィード、WebFinger、どちらの inbox、`/entries` も、そのログインの外である。各経路の資格は、上の要件に残す。
+Access が覆うのは `/edit`、`/edit/*`、`/new` である。公開 HTML、フィード、WebFinger、どちらの inbox、`/entries` も、そのログインの外である。各経路の資格は、上の要件に残す。
 
 ## セキュリティ上の留意事項
 
@@ -113,7 +114,7 @@ Access が覆うのは `/edit` と `/edit/*` だけである。公開 HTML、フ
 
 ## デプロイに関する特記事項
 
-無し。このアプリの公開は、経路を足さない。ホスト名も変えない。
+このアプリの公開は、ホスト名を変えない。GET `/new` は、そのホストの別のページである。
 
 ## 検討した代替手段
 

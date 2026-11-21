@@ -247,7 +247,7 @@ test("commitEntry reads back the entries row it writes", async () => {
   sqlite.close();
 });
 
-test("edit access accepts only a verified owner JWT on /edit and /edit/*", async () => {
+test("edit access accepts only a verified owner JWT on /edit, /edit/*, and /new", async () => {
   const pair = await keyPair();
   const jwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
   const publicKey = await importAccessPublicKey(JSON.stringify(jwk));
@@ -261,6 +261,7 @@ test("edit access accepts only a verified owner JWT on /edit and /edit/*", async
   const accepted = await decideEditAccess({ header: token, ...settings(publicKey) });
   assert.equal(accepted.ok, true);
   assert.equal((await editAccessDecision("/edit", token, settings(publicKey))).ok, true);
+  assert.equal((await editAccessDecision("/new", token, settings(publicKey))).ok, true);
   assert.equal(
     (await editAccessDecision("/edit/entry-morning-note", token, settings(publicKey))).ok,
     true,
@@ -298,10 +299,20 @@ test("edit access accepts only a verified owner JWT on /edit and /edit/*", async
     401,
   );
   assert.equal((await editAccessDecision("/edit", "", settings(publicKey))).status, 401);
+  assert.equal((await editAccessDecision("/new", "", settings(publicKey))).status, 401);
   assert.equal(localEditPreview({ method: "GET", localPreview: true }), true);
   assert.equal(
     (await editAccessDecision("/edit", "", settings(null), { method: "GET", localPreview: true })).ok,
     true,
+  );
+  assert.equal(
+    (await editAccessDecision("/new", "", settings(null), { method: "GET", localPreview: true })).ok,
+    true,
+  );
+  assert.equal(
+    (await editAccessDecision("/new", "", settings(null), { method: "POST", localPreview: true }))
+      .status,
+    401,
   );
   assert.equal(
     (
@@ -338,6 +349,7 @@ test("edit access accepts only a verified owner JWT on /edit and /edit/*", async
     "/e/entry-morning-note",
     "/entries",
     "/editor",
+    "/newer",
   ]) {
     const decision = await editAccessDecision(path, "", settings(null));
     assert.equal(decision.ok, true, path);

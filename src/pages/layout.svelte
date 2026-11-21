@@ -60,16 +60,6 @@
     </svg>
     <span>ウェブログ</span>
   </p>
-  <nav class="site-nav" aria-label="サイト">
-    <ul class="dads-horizontal-menu">
-      <li class="dads-horizontal-menu__item">
-        <Link class="dads-horizontal-menu__item-inner" href="/" aria-current={here("/")}>トップ</Link>
-      </li>
-      <li class="dads-horizontal-menu__item">
-        <Link class="dads-horizontal-menu__item-inner" href="/edit" aria-current={here("/edit")}>編集</Link>
-      </li>
-    </ul>
-  </nav>
 </header>
 
 <main class="site-main">
@@ -82,9 +72,6 @@
     Source:
     <a class="dads-utility-link" href="https://github.com/yamanoku/weblog" target="_blank" rel="noopener noreferrer">
       <span class="dads-utility-link__label">yamanoku/weblog</span>
-      <svg class="dads-utility-link__tail-icon" width="16" height="16" viewBox="0 0 48 48" fill="currentcolor" role="img" aria-label="新規タブで開きます">
-        <path d="M22 6V9H9V39H39V26H42V42H6V6H22ZM42 6V20H39V11.2L21 29L19 27L36.8 9H28V6H42Z" />
-      </svg>
     </a>
   </p>
 </footer>

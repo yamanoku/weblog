@@ -52,7 +52,8 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /` | HTML list of deliverable entries. When the request is verified as the owner, the note field is under the navigation. An unverified response omits it. A later page uses `before` and `before_id` on this path. |
 | `GET /{title}` | Public entry HTML, or the empty page when the requirements say so. |
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. |
-| `GET /edit` | Edit screen for articles, notes, and bookmarks. No note field. |
+| `GET /edit` | Lists of stored articles, notes, and bookmarks. No create form and no note field. |
+| `GET /new` | Article, bookmark, and note create forms, one tab at a time. No lists. |
 | `GET /edit/{id}` | Edit form for that article or bookmark. A note ID or a page ID is 404. |
 | `POST /edit` | Create a draft article. The form may send many images. |
 | `POST /edit?note` | Create a public note from the note field. The field sends the body and at most one image. |
@@ -105,7 +106,7 @@ This design adds no stored record. A page receives props from its loader. It doe
 
 ## Authentication and authorization notes
 
-Access covers `/edit` and `/edit/*` only. Public HTML, feeds, WebFinger, both inboxes, and `/entries` stay outside that login. The credentials for each path stay in the requirements linked above.
+Access covers `/edit`, `/edit/*`, and `/new`. Public HTML, feeds, WebFinger, both inboxes, and `/entries` stay outside that login. The credentials for each path stay in the requirements linked above.
 
 ## Security considerations
 
@@ -113,7 +114,7 @@ Page files import Svelte through `@void/svelte`. They do not import `void/db`, t
 
 ## Deployment notes
 
-None. Publishing this app does not add a path and does not change the hostname.
+Publishing this app does not change the hostname. GET `/new` is another page on that host.
 
 ## Alternatives considered
 

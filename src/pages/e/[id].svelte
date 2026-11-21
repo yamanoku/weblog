@@ -15,7 +15,7 @@
     <p class="dads-textarea__error-text" role="alert">本文が空です</p>
   {/if}
   {#each thread as note (note.id)}
-    <article id="note-{note.id}">
+    <article class="entry-article" id="note-{note.id}">
       <p class="entry-body" style="white-space: pre-wrap">{note.body}</p>
       {#if note.imageHref}
         <img src={note.imageHref} alt={note.imageAlt ?? ""} />
@@ -54,7 +54,7 @@
     { href: "/", label: "トップ" },
     { href: `/e/${entry.id}`, label: entry.title || "permalink", current: true },
   ]} />
-  <article>
+  <article class="entry-article">
     <div class="dads-heading" data-size="32">
       <h1 class="dads-heading__heading">{entry.title}</h1>
     </div>

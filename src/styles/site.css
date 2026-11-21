@@ -6,6 +6,31 @@ html {
   font-family: var(--font-family-sans);
 }
 
+html[lang="ja"] {
+  font-kerning: none;
+}
+body {
+  margin: 0;
+}
+@supports (text-autospace: normal) {
+  body {
+    text-autospace: normal;
+  }
+}
+html:not([lang="ja"]) body {
+  hyphens: auto;
+}
+
+html[lang="ja"] body {
+  line-break: loose;
+}
+:where(header, main, footer) {
+  display: block;
+  max-inline-size: 45rem;
+  box-sizing: content-box;
+  padding-inline: clamp(calc(.5rem * 2), calc(1vw * 3), calc(.5rem * 4));
+}
+
 .site-brand {
   display: flex;
   align-items: center;
@@ -13,7 +38,6 @@ html {
   margin: 0;
   padding-block: 1rem 0.5rem;
   color: var(--color-neutral-solid-gray-900);
-  font-weight: bold;
 }
 
 .site-brand svg {
@@ -37,10 +61,12 @@ html {
   gap: 0.5rem;
   padding-block: 1.5rem 2.5rem;
   color: var(--color-neutral-solid-gray-700);
-}
-
-.site-footer p {
-  margin: 0;
+  p {
+    margin: 0;
+    display: inline-flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 }
 
 .dads-heading,
@@ -88,6 +114,11 @@ ol.dads-breadcrumb__list {
 }
 
 .entry-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.entry-article {
   display: grid;
   gap: 1.5rem;
 }

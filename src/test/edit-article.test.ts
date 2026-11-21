@@ -86,7 +86,7 @@ test("the edit create submit stores markdown as an article body", async () => {
 });
 
 test("the create form posts the markdown body to the article submit", () => {
-  const page = readRoot("pages/edit/index.svelte");
+  const page = readRoot("pages/new/index.svelte");
   const form = page.match(/<Form\b([^>]*)>([\s\S]*?)<\/Form>/);
   assert.ok(form);
   const attrs = form[1] ?? "";
@@ -109,8 +109,10 @@ test("the create form posts the markdown body to the article submit", () => {
     /submitArticleFromEdit\([\s\S]*title:\s*postedText\(\s*posted\.title\s*\)[\s\S]*body:\s*postedText\(\s*posted\.body\s*\)/,
   );
   assert.match(server, /listArticlesForEdit\(/);
-  assert.match(page, /href=\{"\/edit\/" \+ article\.id\}/);
-  assert.match(page, /article\.visibility/);
+  const list = readRoot("pages/edit/index.svelte");
+  assert.equal(list.includes("useForm"), false);
+  assert.match(list, /href=\{"\/edit\/" \+ article\.id\}/);
+  assert.match(list, /article\.visibility/);
 });
 
 test("the edit screen lists draft and public articles, newest first", async () => {

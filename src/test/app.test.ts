@@ -112,7 +112,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.equal(catalog.includes("void/db"), false);
   assert.equal(/\bfrom\s+["']void["']/.test(catalog), false);
   assert.equal(catalog.includes("@void/svelte"), false);
-  assert.equal(catalog.includes("svelte"), false);
+  assert.equal(/\bfrom\s+["']svelte["']/.test(catalog), false);
 
   const deliverable = deliverableEntries();
   assert.equal(deliverable.length > 0, true);
@@ -123,10 +123,20 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   const titles = publicEntries().map((entry) => entry.title);
   assert.equal(titles.includes("index-only"), true);
   assert.equal(titles.includes("draft-thought"), false);
-  assert.deepEqual(
-    publicArticles().map((entry) => entry.title),
-    ["morning-note"],
+  const articles = publicArticles();
+  assert.equal(articles.length >= 12, true);
+  assert.equal(articles.every((entry) => entry.kind === "article" && entry.visibility === "public"), true);
+  assert.equal(articles.some((entry) => entry.title === "morning-note"), true);
+  const notes = publicEntries().filter((entry) => entry.kind === "note");
+  const bookmarks = publicEntries().filter((entry) => entry.kind === "bookmark");
+  assert.equal(notes.length >= 12, true);
+  assert.equal(bookmarks.length >= 12, true);
+  assert.equal(
+    bookmarks.every((entry) => entry.bookmarkUrl?.startsWith("https://")),
+    true,
   );
+  const published = deliverable.map((entry) => entry.publishedAt ?? "");
+  assert.deepEqual(published, [...published].sort((left, right) => (left < right ? 1 : left > right ? -1 : 0)));
   const sample = deliverable[0];
   if (!sample) throw new Error("deliverable catalog is empty");
   const found = publicEntryByTitle(sample.title);
@@ -147,6 +157,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     "users",
     "gyazo",
     "note-images",
+    "new",
     ".well-known",
   ]);
   for (const key of reservedTitles) {
@@ -166,7 +177,10 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.equal(existsSync(join(rootDir, "pages/pages.svelte")), false);
   assert.equal(existsSync(join(rootDir, "pages/pages.server.ts")), false);
   const editForm = readRoot("pages/edit/index.svelte");
-  assert.match(editForm, /Create an entry/);
+  assert.match(editForm, /href="\/new"/);
+  assert.equal(editForm.includes("useForm"), false);
+  const newForm = readRoot("pages/new/index.svelte");
+  assert.match(newForm, /useForm\("\/edit"/);
 });
 
 test("page files do not import void/db", () => {

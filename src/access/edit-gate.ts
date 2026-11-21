@@ -41,7 +41,7 @@ type TokenClaims = {
 };
 
 export function editPathNeedsAccess(path: string): boolean {
-  return path === "/edit" || path.startsWith("/edit/");
+  return path === "/edit" || path.startsWith("/edit/") || path === "/new" || path.startsWith("/new/");
 }
 
 export function accessAssertion(header: string, cookie: string): string {

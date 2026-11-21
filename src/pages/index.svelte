@@ -126,6 +126,12 @@
   }
 </script>
 
+<div class="dads-heading" data-size="32">
+  <h1 class="dads-heading__heading">
+    <span class="subdomain">weblog.</span><span class="domain">yamanoku.net</span>
+  </h1>
+</div>
+
 {#if owner}
 <div class="post-note">
   <Form form={noteForm} onpaste={onPaste} aria-labelledby="note-label">
@@ -209,12 +215,6 @@
   </Form>
 </div>
 {/if}
-
-<div class="dads-heading" data-size="32">
-  <h1 class="dads-heading__heading">
-    <span class="subdomain">weblog.</span><span class="domain">yamanoku.net</span>
-  </h1>
-</div>
 
 {#each dayGroups as group (group.date || group.entries[0].id)}
   <section class="entry-list">
