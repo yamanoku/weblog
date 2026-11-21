@@ -12,6 +12,7 @@
     "emit:clip": "tsrs -p packages/clip/tsconfig.clip.json --pretty false"
   },
   "dependencies": {
+    "@microsoft/focusgroup-polyfill": "1.6.0",
     "@void/svelte": "^1.5.0",
     "svelte": "^5.39.0",
     "void": "^1.5.0",

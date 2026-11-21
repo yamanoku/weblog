@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { Form, Link, useForm } from "@void/svelte";
   import EntryImages from "../../ui/entry-images-field.svelte";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
@@ -6,6 +7,7 @@
   let { articles = [], notes = [], bookmarks = [] } = $props();
   const articleForm = useForm("/edit", { title: "", body: "" });
   const bookmarkForm = useForm("/edit?bookmark", { title: "", body: "", bookmarkUrl: "" });
+  let createTab = $state<"entry" | "bookmark">("entry");
   let articleBody = $state<HTMLTextAreaElement | null>(null);
   let bookmarkBody = $state<HTMLTextAreaElement | null>(null);
   let articleImages = idleImages();
@@ -48,6 +50,33 @@
       onPaste: (_event: ClipboardEvent) => undefined,
     };
   }
+
+  function selectCreate(tab: "entry" | "bookmark", event?: Event) {
+    createTab = tab;
+    const button = event?.currentTarget;
+    if (button instanceof HTMLElement) {
+      button.scrollIntoView({ block: "nearest", inline: "nearest", container: "nearest" });
+    }
+  }
+
+  function onBeforeMatch(event: Event) {
+    const panel = event.target;
+    if (!(panel instanceof HTMLElement)) return;
+    if (panel.id === "create-entry-panel") createTab = "entry";
+    if (panel.id === "create-bookmark-panel") createTab = "bookmark";
+    const panels = panel.parentElement?.querySelectorAll<HTMLElement>("[role='tabpanel']") ?? [];
+    for (const other of panels) {
+      if (other !== panel) other.hidden = "until-found";
+    }
+  }
+
+  onMount(() => {
+    if (!Object.hasOwn(HTMLElement.prototype, "focusGroup")) {
+      void import("@microsoft/focusgroup-polyfill").then(({ polyfill }) => {
+        polyfill();
+      });
+    }
+  });
 </script>
 
 <Breadcrumb items={[
@@ -55,6 +84,29 @@
   { href: "/edit", label: "編集", current: true },
 ]} />
 
+<div class="create-tabs" onbeforematch={onBeforeMatch}>
+  <div class="create-tabs__list" focusgroup="tablist nomemory" aria-label="Create">
+    <button
+      class="create-tabs__tab"
+      type="button"
+      id="create-entry-tab"
+      aria-selected={createTab === "entry" ? "true" : "false"}
+      focusgroupstart={createTab === "entry" ? "" : undefined}
+      onfocus={(event) => selectCreate("entry", event)}
+      onclick={(event) => selectCreate("entry", event)}
+    >Create an entry</button>
+    <button
+      class="create-tabs__tab"
+      type="button"
+      id="create-bookmark-tab"
+      aria-selected={createTab === "bookmark" ? "true" : "false"}
+      focusgroupstart={createTab === "bookmark" ? "" : undefined}
+      onfocus={(event) => selectCreate("bookmark", event)}
+      onclick={(event) => selectCreate("bookmark", event)}
+    >Bookmark</button>
+  </div>
+  <div class="create-tabs__panels">
+    <div role="tabpanel" id="create-entry-panel" aria-labelledby="create-entry-tab" hidden={createTab === "entry" ? undefined : "until-found"}>
 <div class="dads-heading" data-size="32">
   <h1 id="create-entry" class="dads-heading__heading">Create an entry</h1>
 </div>
@@ -85,7 +137,8 @@
   />
   <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={articleForm.pending}>Save article</button>
 </Form>
-
+    </div>
+    <div role="tabpanel" id="create-bookmark-panel" aria-labelledby="create-bookmark-tab" hidden={createTab === "bookmark" ? undefined : "until-found"}>
 <div class="dads-heading" data-size="24">
   <h2 id="create-bookmark" class="dads-heading__heading">Bookmark</h2>
 </div>
@@ -135,6 +188,9 @@
   />
   <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={bookmarkForm.pending}>Save bookmark</button>
 </Form>
+    </div>
+  </div>
+</div>
 
 <div class="dads-heading" data-size="24">
   <h2 class="dads-heading__heading">Notes</h2>
@@ -195,3 +251,61 @@
     {/each}
   </ul>
 {/if}
+
+<style>
+  .create-tabs__panels {
+    display: grid;
+  }
+
+  .create-tabs__panels > [role="tabpanel"] {
+    grid-area: 1 / 1;
+  }
+
+  .create-tabs__list {
+    display: flex;
+    overflow-x: auto;
+    border-block-end: 1px solid var(--color-neutral-solid-gray-420);
+  }
+
+  .create-tabs__tab {
+    position: relative;
+    flex: none;
+    margin: 0;
+    border: 0;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    color: var(--color-neutral-solid-gray-800);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .create-tabs__tab[aria-selected="true"] {
+    color: var(--color-primitive-blue-600);
+  }
+
+  .create-tabs__tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    border-block-end: 3px solid var(--color-primitive-blue-600);
+  }
+
+  .create-tabs__tab:focus-visible {
+    outline: 2px solid var(--color-primitive-blue-600);
+    outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    .create-tabs__tab[aria-selected="true"] {
+      color: SelectedItem;
+    }
+
+    .create-tabs__tab[aria-selected="true"]::after {
+      border-block-end-color: SelectedItem;
+    }
+
+    .create-tabs__tab:focus-visible {
+      outline-color: Highlight;
+    }
+  }
+</style>
