@@ -10,6 +10,7 @@ import {
   accessAssertion,
   decideEditAccess,
   editAccessDecision,
+  localEditPreview,
   importAccessPublicKey,
 } from "../access/edit-gate.ts";
 import { importWalkProject } from "../db/schema.ts";
@@ -297,6 +298,35 @@ test("edit access accepts only a verified owner JWT on /edit and /edit/*", async
     401,
   );
   assert.equal((await editAccessDecision("/edit", "", settings(publicKey))).status, 401);
+  assert.equal(localEditPreview({ method: "GET", localPreview: true }), true);
+  assert.equal(
+    (await editAccessDecision("/edit", "", settings(null), { method: "GET", localPreview: true })).ok,
+    true,
+  );
+  assert.equal(
+    (
+      await editAccessDecision("/edit/images/one", "", settings(null), {
+        method: "GET",
+        localPreview: true,
+      })
+    ).ok,
+    true,
+  );
+  assert.equal(
+    (await editAccessDecision("/edit", "", settings(null), { method: "POST", localPreview: true }))
+      .status,
+    401,
+  );
+  assert.equal(
+    (await editAccessDecision("/edit/tokens", "", settings(null), { method: "POST", localPreview: true }))
+      .status,
+    401,
+  );
+  assert.equal(
+    (await editAccessDecision("/edit", "", settings(null), { method: "GET", localPreview: false }))
+      .status,
+    401,
+  );
   assert.equal(
     (await editAccessDecision("/edit/entry-morning-note", "", settings(publicKey))).status,
     401,
@@ -413,5 +443,6 @@ test("domain and pages stay free of the store and the Access check", () => {
   assert.match(readRoot("pages/index.svelte"), /weblog\.<\/span><span class="domain">yamanoku\.net/);
   assert.equal(readRoot("pages/index.svelte").includes("OWNER_EMAIL"), false);
   assert.match(readRoot("middleware/01.access.ts"), /editAccessDecision/);
+  assert.match(readRoot("middleware/01.access.ts"), /readsDevCatalog\(\)/);
   assert.match(readRoot("middleware/01.access.ts"), /Cf-Access-Jwt-Assertion/);
 });

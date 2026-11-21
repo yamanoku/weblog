@@ -6,6 +6,7 @@ import {
   editAccessDecision,
   importAccessPublicKey,
 } from "../access/edit-gate.ts";
+import { readsDevCatalog } from "../store/read-source.ts";
 
 type EnvStore = { getStore?: () => unknown };
 
@@ -74,6 +75,7 @@ export default defineMiddleware(async (context, next) => {
     context.req.path,
     presentedAssertion(context),
     await accessSettings(context),
+    { method: context.req.method, localPreview: readsDevCatalog() },
   );
   if (!decision.ok) return context.text("Unauthorized", 401, { "cache-control": "no-store" });
   await next();

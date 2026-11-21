@@ -237,12 +237,25 @@ export async function decideEditAccess({
   return { ok: true };
 }
 
+export type EditAccessRequest = {
+  method?: string;
+  localPreview?: boolean;
+};
+
+// Local `vp dev` has no Access in front of the process. GET is for looking.
+// Preview and deploy leave localPreview false. Writes stay behind the JWT.
+export function localEditPreview(request: EditAccessRequest | undefined): boolean {
+  return request?.localPreview === true && request.method === "GET";
+}
+
 export async function editAccessDecision(
   path: string,
   header: string,
   settings: AccessSettings,
+  request?: EditAccessRequest,
 ): Promise<AccessDecision> {
   if (!editPathNeedsAccess(path)) return { ok: true, skipped: true };
+  if (localEditPreview(request)) return { ok: true };
   const decision = await decideEditAccess({
     header,
     ownerEmail: settings.ownerEmail,

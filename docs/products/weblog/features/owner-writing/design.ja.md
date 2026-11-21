@@ -169,7 +169,7 @@ erDiagram
 
 ### 編集画面
 
-GET `/edit` は、記事の作成フォームを返す。保存済み article の一覧も返す。note の一覧は別に返す。ブックマークの作成フォームも返す。保存済み bookmark の一覧は別に返す。二つの作成フォームは、一つのタブ一覧に並べる。最初の HTML は記事のタブを選び、ブックマークのパネルを隠す。タブを選ぶと、そのフォームを出し、もう一方を隠す。URL は変えない。エントリは保存しない。隠したフォームに書いた文字は残る。note の一覧、記事の一覧、bookmark の一覧は、タブの下へ残す。note 欄は返さない。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は createdAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォーム、またはその bookmark のフォームを返す。note の ID と page の ID は 404 である。POST `/edit` は article を draft で作成する。保存済みの種類が article のとき、POST `/edit/{id}` はその article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。bookmark の ID は、下の bookmark の更新に従う。POST `/edit/tokens` はトークンを発行するか、再発行する。
+GET `/edit` は、記事の作成フォームを返す。ローカルの開発サーバは Access の前に無いので、この GET と GET `/edit/*` は JWT 無しで画面を返す。そのサーバの POST は、これまでどおり JWT を要する。保存済み article の一覧も返す。note の一覧は別に返す。ブックマークの作成フォームも返す。保存済み bookmark の一覧は別に返す。二つの作成フォームは、一つのタブ一覧に並べる。最初の HTML は記事のタブを選び、ブックマークのパネルを隠す。タブを選ぶと、そのフォームを出し、もう一方を隠す。URL は変えない。エントリは保存しない。隠したフォームに書いた文字は残る。note の一覧、記事の一覧、bookmark の一覧は、タブの下へ残す。note 欄は返さない。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は createdAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォーム、またはその bookmark のフォームを返す。note の ID と page の ID は 404 である。POST `/edit` は article を draft で作成する。保存済みの種類が article のとき、POST `/edit/{id}` はその article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。bookmark の ID は、下の bookmark の更新に従う。POST `/edit/tokens` はトークンを発行するか、再発行する。
 
 note 欄は GET `/` の先頭、ナビゲーションの直下に置く。`/edit` と同じ JWT の規則で所有者と確認できたときだけ含める。Access の対象は `/edit` と `/edit/*` のままなので、GET `/` はログイン画面にしない。JWT が無い、または無効なとき、GET `/` は 200 のままで欄を出さない。Worker は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。配送対象の一覧は変えない。draft の本文は含めない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
 
@@ -262,7 +262,7 @@ CLI トークンは 32 バイトの乱数を base64url にした値である。�
 
 書き込み、削除、トークン発行、所有者向けの取得と一覧は、要求ごとに確認する。Access の背後に画面があることだけでは認めない。
 
-`/edit` では JWT が所有者を示す必要がある。`/entries` と `/tokens` では、Bearer のハッシュが `owner_token` と一致する必要がある。両方の資格が付いている場合は、少なくとも一方が所有者なら認める。どちらも確認できない場合は 401 である。HTTP 署名のヘッダは、この機能の資格として見ない。
+`/edit` では JWT が所有者を示す必要がある。見るためだけの例外は、ローカルの開発サーバである。`vp dev` は Vite の `import.meta.env.DEV` を真にする。そのとき GET `/edit` と GET `/edit/*` は、JWT 無しで画面を返す。draft と GET `/edit/images/{id}` を含む。それらのパスの POST と、それ以外のメソッドは 401 のままで、保存しない。`vp preview` とデプロイは `DEV` を偽のままにするので、JWT の確認は残る。`/entries` と `/tokens` では、Bearer のハッシュが `owner_token` と一致する必要がある。両方の資格が付いている場合は、少なくとも一方が所有者なら認める。どちらも確認できない場合は 401 である。HTTP 署名のヘッダは、この機能の資格として見ない。
 
 無効な Bearer は 401 である。Access が所有者を確認できないブラウザ要求も 401 である。発行済みトークンの照合は、Access を呼ばない。
 
