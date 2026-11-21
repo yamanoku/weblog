@@ -29,7 +29,7 @@ The deliverable is one map for the paths the requirements already name. This des
 
 A path whose response is not an HTML page stays under `src/routes/`. Feeds, image bytes, Activity Streams, and the owner JSON API are those paths. A loader calls the domain and returns props. An action calls the same write operation as the CLI. The domain does not import Svelte or `void/db`. Page files do not import `void/db`.
 
-The Worker matches a fixed path before a title path. A title is one path segment. Owner writing reserves these comparison keys, so a title does not take their URL: `e`, `edit`, `entries`, `tokens`, `feed`, `feed.xml`, `feed.json`, `pages`, `users`, `gyazo`, `note-images`, and `.well-known`.
+The Worker matches a fixed path before a title path. A title is one path segment. Owner writing reserves these comparison keys, so a title does not take their URL: `e`, `edit`, `entries`, `tokens`, `feed`, `feed.xml`, `feed.json`, `users`, `gyazo`, `note-images`, and `.well-known`. `GET /pages` is not a Svelte page. It is the title path for the comparison key `pages`.
 
 ## Architecture and sequence diagrams
 
@@ -50,7 +50,6 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | Path | Role |
 | --- | --- |
 | `GET /` | HTML list of deliverable entries. When the request is verified as the owner, the note field is under the navigation. An unverified response omits it. A later page uses `before` and `before_id` on this path. |
-| `GET /pages` | HTML list of public articles. A later page uses the same cursor shape. |
 | `GET /{title}` | Public entry HTML, or the empty page when the requirements say so. |
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. |
 | `GET /edit` | Edit screen for articles, notes, and bookmarks. No note field. |

@@ -6,7 +6,7 @@
 
 この設計は、[公開閲覧](requirements.ja.md) の実装方法を決める。親プロダクトは [weblog.yamanoku.net](../../product.ja.md) である。実行場所は一つの Worker である。
 
-未認証の読者へ HTML を返す。人間向けフィード、タイトル一覧、空ページ、Gyazo のバイト列も返す。保存された本文は、プレーンテキストのままである。
+未認証の読者へ HTML を返す。人間向けフィード、空ページ、Gyazo のバイト列も返す。保存された本文は、プレーンテキストのままである。
 
 書き込みの検証、閲覧用パス、draft、tombstone は [所有者の書き込み](../owner-writing/requirements.ja.md) に従う。この設計は、その規則を書き換えない。
 
@@ -54,7 +54,7 @@ Free プランの D1 は、Worker の 1 回の実行でクエリ 50 までであ
 
 この設計は、HTML 描画が無料枠の 1 回あたり CPU 時間に収まると主張しない。その時間は未測定である。無料枠で終わらない要求は、その要求だけ失敗する。アプリは有料プランへ移さない。
 
-`vp dev` の公開 HTML は、ドメインのメモリ上のカタログから返す。このローダは D1 を問い合わせない。`/` はカタログの配信対象を並べる。`/pages` はカタログの公開 article を並べる。`/{title}` は公開カタログのタイトルを解決する。`/e/{id}` はその id のカタログ項目を返す。カタログの note は一件であり、返信の結び付きは持たない。`vp dev` のあいだ保存した返信は、ローカルの D1 に書き、そのページには出さない。`vp dev` のあいだ編集画面から保存した記事は、ローカルの D1 に書き、それらのページには出さない。
+`vp dev` の公開 HTML は、ドメインのメモリ上のカタログから返す。このローダは D1 を問い合わせない。`/` はカタログの配信対象を並べる。`/{title}` は公開カタログのタイトルを解決する。`/e/{id}` はその id のカタログ項目を返す。カタログの note は一件であり、返信の結び付きは持たない。`vp dev` のあいだ保存した返信は、ローカルの D1 に書き、そのページには出さない。`vp dev` のあいだ編集画面から保存した記事は、ローカルの D1 に書き、それらのページには出さない。
 
 `vp preview` とデプロイした Worker は、同じページを保存アダプタ経由で D1 から読む。カタログの行は足さない。空の表は空の一覧のままである。draft の行は出さない。ページのファイルは `void/db` を import しない。編集画面は、どちらのモードでも D1 を読む。受入基準が説明するのは、デプロイした Worker である。カタログは二つ目の保存先ではない。
 
@@ -105,7 +105,7 @@ sequenceDiagram
   end
 ```
 
-これ以上の図は置かない。フィードとタイトル一覧は、最初の図の SELECT を変えたものだからである。実行時の構成要素は増えない。
+これ以上の図は置かない。フィードは、最初の図の SELECT を変えたものだからである。実行時の構成要素は増えない。
 
 ## データモデル・ER 図
 
@@ -141,10 +141,11 @@ erDiagram
 
 `gyazo_objects` から `entries` への外部キーは無い。画像 id は本文のテキストから取り出す。エントリとの関係図は、表に無い関係を作ることになる。
 
-頁のクエリを順序どおり読むため、読取用の索引を二つ置く。
+フィードのクエリは、読取用の索引を一つ使う。
 
 - `entries_feed` は `(kind, published_at, id)` である。条件は `visibility = 'public'` かつ `published_at` が NULL でないことである。
-- `entries_titles` は `(updated_at, id)` である。条件は `visibility = 'public'` かつ `title <> ''` である。
+
+表には `entries_titles` もある。列は `(updated_at, id)` である。条件は `visibility = 'public'` かつ `title <> ''` である。この機能は、その索引を読まない。
 
 `view_path` は既に一意である。`edges.written_title` と `past_titles.title` は既に索引がある。この機能は、その索引を置き換えない。
 
@@ -162,7 +163,6 @@ Worker は、タイトルより前に次のパスを一致させる。比較キ�
 - `GET /feed/articles.xml`
 - `GET /feed/notes.xml`
 - `GET /feed/bookmarks.xml`
-- `GET /pages`
 - `GET /gyazo/{imageId}.{extension}`
 - `GET /note-images/{id}`
 - `GET /e/{id}`
@@ -176,11 +176,11 @@ Worker は、タイトルより前に次のパスを一致させる。比較キ�
 
 ### 次のページ
 
-`GET /`、各フィード、`GET /pages` は、同じクエリ形を使う。最初の頁にクエリは無い。続きの頁は、同じパスへ `before` と `before_id` を付ける。
+`GET /` と各フィードは、同じクエリ形を使う。最初の頁にクエリは無い。続きの頁は、同じパスへ `before` と `before_id` を付ける。
 
 応答は 11 行を読む。返すのは先頭の 10 行である。11 行目があるとき、次の URL は絶対 URL である。`before` には 10 行目の保存されたソート値を入れる。`before_id` には、その行の id を入れる。最後の頁は、次の URL を省く。降順の条件は `sort_column < ? OR (sort_column = ? AND id < ?)` である。各頁は、この順序を分割する。カーソルの行が後から消えても、その位置から続く。
 
-フィードの `before` は、保存された `published_at` である。`GET /pages` の `before` は、保存された `updated_at` である。値は百分率符号化する。このカーソルは、所有者一覧のカーソルとは別である。所有者一覧は 50 件のままで、draft を含む。
+フィードの `before` は、保存された `published_at` である。値は百分率符号化する。このカーソルは、所有者一覧のカーソルとは別である。所有者一覧は 50 件のままで、draft を含む。
 
 二つのパラメータは、揃って初めて有効である。`before_id` は小文字の UUID である。`before` は空でない文字列で、長さは 40 文字までである。空白を含まない。それ以外は 400 `invalid_cursor` である。本文は `text/plain; charset=utf-8` で、`Cache-Control` は `no-store` である。400 は空の一覧ではない。
 
@@ -229,7 +229,7 @@ GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこ
 
 文書の言語は `ja` である。次ページのアンカー文言は `次へ` である。これらの応答は Cookie で変えない。例外は、所有者の GET `/` と、note の GET `/e/{id}` である。
 
-エントリの HTML は、正規 URL への canonical リンクを持つ。`/feed.xml` と `/feed.json` への alternate リンクも持つ。`h1` は現在のタイトルである。タイトルが空なら `h1` を省く。文書タイトルは正規 URL にする。フィードと一覧も、同じ head のリンクを持つ。
+エントリの HTML は、正規 URL への canonical リンクを持つ。`/feed.xml` と `/feed.json` への alternate リンクも持つ。`h1` は現在のタイトルである。タイトルが空なら `h1` を省く。文書タイトルは正規 URL にする。フィードも、同じ head のリンクを持つ。
 
 公開 note の GET `/e/{id}` は、スレッドを並べる。スレッドの根は、その note に `thread_root_id` があるときはその値であり、無いときはその note の id である。行は、id が根である公開 note と、`thread_root_id` が根である公開 note である。順序は `created_at` の昇順、次に `id` の昇順である。各本文をその順で出す。`in_reply_to_id` がまだスレッドにある返信は、同じページ内でその note へリンクする。返信先が無い返信は、返信先のリンクを出さない。article、bookmark、page は一件を読み、スレッドの問い合わせはしない。
 
@@ -243,9 +243,9 @@ GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこ
 
 `GET /feed.json` は JSON Feed 1.1 である。`version` は `https://jsonfeed.org/version/1.1` である。`title` は `weblog.yamanoku.net` である。`home_page_url` は `https://weblog.yamanoku.net/` である。`feed_url` は、この頁の絶対 URL である。`items` は必須で、空でもよい。`items[].id` は正規 URL である。外部 URL が `http://` または `https://` で始まる bookmark では、`items[].url` はその URL である。それ以外の項目では、`items[].url` は閲覧用パスまたは正規 URL である。`items[].content_html` は Atom の content と同じ断片である。`items[].date_published` は保存された `published_at` である。`items[].date_modified` は保存された `updated_at` である。保存されたタイトルが空なら、`items[].title` は出さない。外部 URL が `http` または `https` の bookmark は、`items[].external_url` にその URL を入れる。`next_url` は、次の頁があるときだけ出し、`feed_url` とは別の URL にする。空のフィードは 200 で、`items` は空配列である。
 
-### タイトル一覧
+### パス `/pages`
 
-`GET /pages` は、保存されたタイトルが空でない公開の article を出す。条件は `visibility = 'public'` かつ `kind = 'article'` である。順序は `updated_at` の降順、次に `id` の降順である。SELECT する列は id と title である。本文は選ばない。note、bookmark、page は出さない。タイトルは、閲覧用パスへのアンカーである。閲覧用パスが無いエントリは、正規 URL へのアンカーである。各項目は、正規 URL `/e/{id}` へのパーマリンクも持つ。表示文言は `パーマリンク` である。見出しは `公開記事` である。空の一覧は 200 である。
+タイトル一覧は無い。`src/pages/pages.svelte` も無い。比較キー `pages` は予約していない。`GET /pages` は、下のタイトルパスに従う。記事は並べない。
 
 ### タイトルパス
 

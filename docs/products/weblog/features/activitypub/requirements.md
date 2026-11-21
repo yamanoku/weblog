@@ -22,7 +22,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Which entries are
 - ActivityPub Reply activities, boosts, likes, and WebMention. A note the owner adds as a reply stays in owner writing. It is not deliverable, and this feature does not send it
 - More than one user on this host
 - A client posting API. Owner writes stay in owner writing
-- Human-readable HTML, Atom, JSON Feed, the title index, empty pages, and Gyazo bytes
+- Human-readable HTML, Atom, JSON Feed, empty pages, and Gyazo bytes
 - Bulk import from Cosense, and sending an activity for a page the owner has not made deliverable
 - A block list or an owner approval step for Follow
 - Changing the hostname or a published object ID

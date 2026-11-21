@@ -27,7 +27,7 @@ The signature joint follows the Social Web Incubator Community Group report on A
 ### Outside this document
 
 - Owner validation, the edit screen, and the CLI token
-- Human-readable HTML, Atom, JSON Feed, the title index, empty pages, and Gyazo bytes
+- Human-readable HTML, Atom, JSON Feed, empty pages, and Gyazo bytes
 - Cosense listing, the import cursor, and merging a local edit with a newer source
 - A block list, ActivityPub Reply activities, boosts, likes, and a client posting API. An owner reply on a note stays in owner writing and is not delivered
 - The UI framework and the ORM

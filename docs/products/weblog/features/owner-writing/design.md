@@ -22,7 +22,7 @@ Access adds `Cf-Access-Jwt-Assertion` on requests to a protected path. Verificat
 
 ### Outside this document
 
-- Human-readable feeds, the title index, and empty-page HTML. This feature returns 404 for an unknown title path. The public-reading feature may later turn that into an empty page.
+- Human-readable feeds and empty-page HTML. This feature returns 404 for an unknown title path. The public-reading feature may later turn that into an empty page.
 - Sending and signing ActivityPub activities. Inserting rows into `delivery_records` belongs to that feature.
 - Inserting a bookmark URL into a delivered body.
 - Cosense listing, retries, and merging a local edit with a newer source.
@@ -111,7 +111,6 @@ These comparison keys are used by the API, the edit screen, Gyazo images, and th
 - `feed`
 - `feed.xml`
 - `feed.json`
-- `pages`
 - `users`
 - `gyazo`
 - `note-images`

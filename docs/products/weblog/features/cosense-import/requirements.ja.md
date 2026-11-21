@@ -22,7 +22,7 @@
 - 所有者の手作業による作成、更新、削除、ブラウザ認証、CLI トークンの規則。この機能は、所有者の書き込みが発行済みの CLI トークンを使う
 - 取り込んだページを article、note、bookmark に振り分けること。種類を変えるのは、その後の所有者の書き込みである
 - 活動の送信、ActivityPub のアクター、Follow、署名
-- 人間向けフィード、タイトル一覧、空ページの HTML、Gyazo 画像のバイト列。これらは [公開閲覧](../public-reading/requirements.ja.md) が決める
+- 人間向けフィード、空ページの HTML、Gyazo 画像のバイト列。これらは [公開閲覧](../public-reading/requirements.ja.md) が決める
 - 画像やファイルのバイナリの複製と、バケット `gyazo-archives` へのアップロード
 - `archives.yamanoku.net` の記事の取り込み
 - Cosense へ戻す双方向の同期

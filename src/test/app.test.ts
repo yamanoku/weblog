@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "vitest";
@@ -144,7 +144,6 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     "feed",
     "feed.xml",
     "feed.json",
-    "pages",
     "users",
     "gyazo",
     "note-images",
@@ -164,10 +163,8 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   const homeLoader = readRoot("pages/index.server.ts");
   assert.match(homeLoader, /deliverableEntries/);
   assert.match(homeLoader, /readsDevCatalog\(/);
-  const pagesLoader = readRoot("pages/pages.server.ts");
-  assert.match(pagesLoader, /publicArticles/);
-  assert.match(pagesLoader, /listPublicTitles\(/);
-  assert.equal(pagesLoader.includes("void/db"), false);
+  assert.equal(existsSync(join(rootDir, "pages/pages.svelte")), false);
+  assert.equal(existsSync(join(rootDir, "pages/pages.server.ts")), false);
   const editForm = readRoot("pages/edit/index.svelte");
   assert.match(editForm, /Create an entry/);
 });

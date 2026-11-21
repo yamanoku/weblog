@@ -22,7 +22,7 @@ Access は、保護した経路のリクエストに `Cf-Access-Jwt-Assertion` �
 
 ### このドキュメントで扱わないこと
 
-- 人間向けフィード、タイトル一覧、空ページの HTML。未知のタイトルパスは、この機能では 404 にする。空ページへ変えるのは公開閲覧の機能である。
+- 人間向けフィード、空ページの HTML。未知のタイトルパスは、この機能では 404 にする。空ページへ変えるのは公開閲覧の機能である。
 - ActivityPub の活動の送信と署名。`delivery_records` へ行を入れるのも、そちらの機能である。
 - bookmark の URL を配送本文へ挿入すること。
 - Cosense の一覧取得、再試行、ローカル編集との合流。
@@ -111,7 +111,6 @@ sequenceDiagram
 - `feed`
 - `feed.xml`
 - `feed.json`
-- `pages`
 - `users`
 - `gyazo`
 - `note-images`

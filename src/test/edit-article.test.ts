@@ -16,7 +16,6 @@ import { publicArticleHref, publicEntryHref, publicArticleMatchesPath } from "..
 import {
   commitEntry,
   listDeliverableEntries,
-  listPublicTitles,
   readPublicEntryByPath,
   readStoredEntry,
 } from "../store/entries.ts";
@@ -276,10 +275,6 @@ test("public articles are listed for the home page and matched by the title path
     "/Spaced_title",
   );
   assert.equal(articles[0]?.body, markdown);
-  const titleIndex = readRoot("pages/pages.svelte");
-  assert.match(titleIndex, /href=\{`\/e\/\$\{entry\.id\}`\}/);
-  assert.match(titleIndex, /rel="bookmark"/);
-  assert.match(titleIndex, /permalink/);
 
   const home = readRoot("pages/index.server.ts");
   const title = readRoot("pages/[title].server.ts");
@@ -377,11 +372,6 @@ test("deployed public reads use D1 rows and skip drafts and pages", async () => 
   assert.deepEqual(
     deliverable.map((entry) => entry.id),
     ["note-1", "article-1"],
-  );
-  const titles = await listPublicTitles(database);
-  assert.deepEqual(
-    titles.map((entry) => entry.title),
-    ["Spaced title"],
   );
   const byPath = await readPublicEntryByPath(database, "Spaced_title");
   assert.equal(byPath?.id, "article-1");

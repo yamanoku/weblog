@@ -18,7 +18,6 @@ export const reservedTitles = [
   "feed",
   "feed.xml",
   "feed.json",
-  "pages",
   "users",
   "gyazo",
   "note-images",

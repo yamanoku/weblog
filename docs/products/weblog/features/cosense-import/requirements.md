@@ -22,7 +22,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Writes use the va
 - The owner's manual create, update, delete, browser authentication, and CLI token rules. This feature uses a CLI token that owner writing has already issued
 - Choosing article, note, or bookmark for an imported page. The owner changes kind afterwards through owner writing
 - Sending activities, and the ActivityPub actor, Follow, and signatures
-- Human-readable feeds, title index, empty-page HTML, and the bytes of a Gyazo image. Those belong to [Public reading](../public-reading/requirements.md)
+- Human-readable feeds, empty-page HTML, and the bytes of a Gyazo image. Those belong to [Public reading](../public-reading/requirements.md)
 - Copying image or file binaries, and uploading into the bucket `gyazo-archives`
 - Importing articles from `archives.yamanoku.net`
 - Two-way sync back to Cosense

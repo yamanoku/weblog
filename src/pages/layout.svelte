@@ -66,9 +66,6 @@
         <Link class="dads-horizontal-menu__item-inner" href="/" aria-current={here("/")}>トップ</Link>
       </li>
       <li class="dads-horizontal-menu__item">
-        <Link class="dads-horizontal-menu__item-inner" href="/pages" aria-current={here("/pages")}>公開記事</Link>
-      </li>
-      <li class="dads-horizontal-menu__item">
         <Link class="dads-horizontal-menu__item-inner" href="/edit" aria-current={here("/edit")}>編集</Link>
       </li>
     </ul>

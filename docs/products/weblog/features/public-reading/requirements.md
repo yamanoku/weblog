@@ -4,14 +4,14 @@
 
 ## About this document
 
-An unauthenticated reader reads public entries, human-readable feeds, the title index, empty pages, and Gyazo images without logging in. The canonical body stays plain text. HTML for display is produced from that text.
+An unauthenticated reader reads public entries, human-readable feeds, empty pages, and Gyazo images without logging in. The canonical body stays plain text. HTML for display is produced from that text.
 
 The parent product is [weblog.yamanoku.net](../../product.md). Write rules are in [Owner writing](../owner-writing/requirements.md).
 
 ### Scope
 
 - Unauthenticated HTML for `GET /`, `GET /{title}`, and `GET /e/{id}`
-- Human-readable feeds and the title index
+- Human-readable feeds
 - Empty pages for titles that have public inbound edges and no public entry
 - The public Gyazo image URL and the bytes it returns
 - Links in public HTML
@@ -145,7 +145,7 @@ Scenario: When the note is missing or not public, the image URL returns no bytes
 
 ### Read the human-readable feeds
 
-As an unauthenticated reader, I want to read a feed of deliverable entries so that I can follow new articles, short posts, and bookmarks without taking the title index as the feed.
+As an unauthenticated reader, I want to read a feed of deliverable entries so that I can follow new articles, short posts, and bookmarks.
 
 **Acceptance criteria:**
 
@@ -175,15 +175,9 @@ Scenario: When the reader asks for one kind, the Atom feed contains only that ki
 
 ### Walk titles
 
-As an unauthenticated reader, I want to walk titles and open a title that has no entry yet so that public pages form a link graph and the title index stays separate from the feed.
+As an unauthenticated reader, I want to open a title that has no entry yet so that public pages form a link graph.
 
 **Acceptance criteria:**
-
-Scenario: When public articles exist, the index lists ten titles
-
-- Given: More than ten public articles have a title. A public page, a public note, and a public bookmark exist. One public article has an empty title.
-- When: An unauthenticated client requests `GET /pages`.
-- Then: The response lists ten titles and no bodies. Order is updated time descending, then the immutable id descending. Each listed entry is an article. The public page, the note, and the bookmark are omitted. The empty-title article is omitted. The response includes the URL of the next page. Each item also has a permalink to `/e/{id}` whose visible text is `パーマリンク`.
 
 Scenario: When a title has no public entry and has a public inbound edge, the host returns an empty page
 
@@ -292,9 +286,9 @@ When no public entry has the requested title, and a public entry has an inbound 
 
 When no public entry has the title and no public inbound edge points at it, the response is 404.
 
-### List feeds and titles
+### List feeds
 
-**Overview:** Human-readable feeds list deliverable entries. The title index lists public articles. Both pages contain ten items.
+**Overview:** Human-readable feeds list deliverable entries. A feed page contains ten items.
 
 **Input:** One of the following paths. A later page uses the next-page URL from the previous response.
 
@@ -304,7 +298,6 @@ When no public entry has the title and no public inbound edge points at it, the 
 - `GET /feed/articles.xml`
 - `GET /feed/notes.xml`
 - `GET /feed/bookmarks.xml`
-- `GET /pages`
 
 **Output:** A page of ten items, or fewer on the last page. The response includes the next page's URL when more items exist.
 
@@ -319,10 +312,6 @@ When no public entry has the title and no public inbound edge points at it, the 
 A feed includes only deliverable entries, ordered by `publishedAt` descending. When `publishedAt` is equal, the immutable id descending breaks the tie. A page is excluded. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
 
 The owner's API list of 50 entries is a different list. It is not this page size.
-
-##### Title index
-
-`GET /pages` lists titles of public articles. Order is updated time descending. When the updated time is equal, the immutable id descending breaks the tie. Each item shows the title and a permalink. It does not show the body. A note, a bookmark, and a page are omitted. An article whose title is empty is omitted. It is not the weblog feed. The title links to the view path, or to the canonical URL when the entry has no view path. The permalink links to that entry's canonical path `/e/{id}`. Its visible text is `パーマリンク`.
 
 ##### Pages of ten
 
@@ -371,7 +360,7 @@ When a read cannot run inside the free allowance, the response is not 404, 410, 
 
 ### Relationships
 
-A feed item and a title-index item point at one public entry. An empty page points at the public entries whose edges name its title. An image URL points at one object key.
+A feed item points at one public entry. An empty page points at the public entries whose edges name its title. An image URL points at one object key.
 
 ### Personal information
 

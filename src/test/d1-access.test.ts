@@ -334,7 +334,6 @@ test("edit access accepts only a verified owner JWT on /edit and /edit/*", async
 
   for (const path of [
     "/",
-    "/pages",
     "/morning-note",
     "/e/entry-morning-note",
     "/entries",

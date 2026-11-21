@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, desc, eq, isNotNull, isNull, ne, or } from "void/db";
+import { and, desc, eq, isNotNull, isNull, or } from "void/db";
 import { entries, tombstones } from "../db/schema.ts";
 
 export type EntryCommit = {
@@ -128,31 +128,6 @@ export async function listDeliverableEntries(
     body: row.body,
     bookmarkUrl: row.bookmarkUrl ?? null,
     publishedAt: row.publishedAt,
-  }));
-}
-
-export type PublicTitleRow = {
-  id: string;
-  title: string;
-};
-
-// Public articles for /pages. An empty title is omitted. Other kinds and drafts stay out.
-export async function listPublicTitles(
-  database: BetterSQLite3Database,
-): Promise<PublicTitleRow[]> {
-  const rows = await database
-    .select({
-      id: entries.id,
-      title: entries.title,
-    })
-    .from(entries)
-    .where(
-      and(eq(entries.visibility, "public"), eq(entries.kind, "article"), ne(entries.title, "")),
-    )
-    .orderBy(desc(entries.updatedAt), desc(entries.id));
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
   }));
 }
 

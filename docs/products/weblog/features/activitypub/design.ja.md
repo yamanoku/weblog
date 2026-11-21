@@ -27,7 +27,7 @@ Workers Free の Cron Trigger は、アカウントあたり 5 件までであ�
 ### このドキュメントで扱わないこと
 
 - 所有者の検証、編集画面、CLI トークン
-- 人間向けの HTML、Atom、JSON Feed、タイトル索引、空のページ、Gyazo のバイト列
+- 人間向けの HTML、Atom、JSON Feed、空のページ、Gyazo のバイト列
 - Cosense の一覧、取り込みのカーソル、ローカル編集と新しいソースの合流
 - ブロックリスト、ActivityPub の返信、ブースト、いいね、クライアント投稿 API。note への所有者の返信は、所有者の書き込みに残し、配送しない
 - UI フレームワークと ORM

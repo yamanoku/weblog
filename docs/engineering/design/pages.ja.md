@@ -29,7 +29,7 @@
 
 HTML のページでない経路は `src/routes/` に置く。フィード、画像のバイト列、Activity Streams、所有者向けの JSON API がそれである。ローダはドメインを呼び、props を返す。action は、CLI と同じ書き込み処理を呼ぶ。ドメインは Svelte を import しない。ドメインは `void/db` を import しない。ページのファイルは `void/db` を import しない。
 
-Worker は、タイトルの経路より前に固定の経路を一致させる。タイトルはパス要素一つである。所有者の書き込みは、次の比較キーを予約する。タイトルは、その URL を取らない。キーは `e`、`edit`、`entries`、`tokens`、`feed`、`feed.xml`、`feed.json`、`pages`、`users`、`gyazo`、`note-images`、`.well-known` である。
+Worker は、タイトルの経路より前に固定の経路を一致させる。タイトルはパス要素一つである。所有者の書き込みは、次の比較キーを予約する。タイトルは、その URL を取らない。キーは `e`、`edit`、`entries`、`tokens`、`feed`、`feed.xml`、`feed.json`、`users`、`gyazo`、`note-images`、`.well-known` である。`GET /pages` は Svelte のページではない。比較キー `pages` のタイトルパスである。
 
 ## アーキテクチャ・シーケンス図
 
@@ -50,7 +50,6 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | 経路 | 役割 |
 | --- | --- |
 | `GET /` | 配送対象の HTML 一覧。所有者として確認できたとき、ナビゲーションの下に note 欄を出す。未確認の応答は出さない。続きは、この経路に `before` と `before_id` を付ける。 |
-| `GET /pages` | 公開 article の HTML 一覧。続きは、同じ形のカーソルを使う。 |
 | `GET /{タイトル}` | 公開エントリ。要件が空ページとするときは、空ページである。 |
 | `GET /e/{id}` | 正規 URL の HTML。下の Activity Streams の場合を除く。 |
 | `GET /edit` | 記事、note、bookmark の編集画面。note 欄は無い。 |

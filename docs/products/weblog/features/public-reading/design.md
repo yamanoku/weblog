@@ -4,7 +4,7 @@
 
 ## About this document
 
-This design decides how one Worker serves [Public reading](requirements.md) on [weblog.yamanoku.net](../../product.md). An unauthenticated reader receives HTML, the human-readable feeds, the title index, empty pages, and Gyazo bytes. The stored body stays plain text.
+This design decides how one Worker serves [Public reading](requirements.md) on [weblog.yamanoku.net](../../product.md). An unauthenticated reader receives HTML, the human-readable feeds, empty pages, and Gyazo bytes. The stored body stays plain text.
 
 Write validation, the view path, drafts, and tombstones stay in [Owner writing](../owner-writing/requirements.md). This document does not restate those rules.
 
@@ -50,7 +50,7 @@ The read flow is as follows.
 
 A page that needs title resolution uses two `batch()` calls. The first reads the entry or the 11-row page. The second resolves titles and Gyazo ids, with `IN` lists chunked at 80 bound parameters. [Limits](https://developers.cloudflare.com/d1/platform/limits/) counts one `batch()` as one query toward the 50-query invocation limit. Statement length and the 100-parameter limit still apply inside the batch. An image request uses one SELECT and one R2 `get`. This feature does not issue one query per edge. This design does not claim that HTML rendering fits the free tier's CPU time per invocation. That time is unmeasured. A request that cannot finish inside the free tier fails for that request. The app does not move onto a paid plan.
 
-`vp dev` answers the public HTML pages from the in-memory domain catalog. Those loaders do not query D1. `/` lists the catalog's deliverable entries. `/pages` lists its public articles. `/{title}` resolves a public catalog title. `/e/{id}` returns the catalog entry for that id. A catalog note is one note and has no reply link. A reply saved during `vp dev` is written to local D1 and does not appear on that page. An article saved from the edit screen during `vp dev` is written to local D1 and does not appear on those pages.
+`vp dev` answers the public HTML pages from the in-memory domain catalog. Those loaders do not query D1. `/` lists the catalog's deliverable entries. `/{title}` resolves a public catalog title. `/e/{id}` returns the catalog entry for that id. A catalog note is one note and has no reply link. A reply saved during `vp dev` is written to local D1 and does not appear on that page. An article saved from the edit screen during `vp dev` is written to local D1 and does not appear on those pages.
 
 `vp preview` and the deployed Worker read those pages from D1 through the store adapter. They do not add catalog rows. An empty table stays an empty list. A draft row stays absent. Page files do not import `void/db`. The edit screens read D1 in both modes. The acceptance criteria describe the deployed Worker. The catalog is not a second store.
 
@@ -101,7 +101,7 @@ sequenceDiagram
   end
 ```
 
-A further diagram is omitted. Feed pages and the title index use the first sequence with a different SELECT. They do not add another runtime component.
+A further diagram is omitted. Feed pages use the first sequence with a different SELECT. They do not add another runtime component.
 
 ## Data model and ER diagrams
 
@@ -137,10 +137,11 @@ erDiagram
 
 There is no foreign key from `gyazo_objects` to `entries`. The image id is parsed from body text. An entry diagram would invent a relationship the tables do not have.
 
-Two read indexes keep the page queries ordered:
+The feed query uses one read index:
 
 - `entries_feed` on `(kind, published_at, id)` where `visibility = 'public'` and `published_at` is not null
-- `entries_titles` on `(updated_at, id)` where `visibility = 'public'` and `title <> ''`
+
+The table also has `entries_titles` on `(updated_at, id)` where `visibility = 'public'` and `title <> ''`. This feature does not read that index.
 
 `view_path` is already unique. `edges.written_title` and `past_titles.title` are already indexed. This feature does not replace those indexes.
 
@@ -158,7 +159,6 @@ The Worker matches these paths before a title. The comparison keys `feed.xml` an
 - `GET /feed/articles.xml`
 - `GET /feed/notes.xml`
 - `GET /feed/bookmarks.xml`
-- `GET /pages`
 - `GET /gyazo/{imageId}.{extension}`
 - `GET /note-images/{id}`
 - `GET /e/{id}`
@@ -172,11 +172,11 @@ A title URL is one path segment. The segment is percent-decoded to the compariso
 
 ### Next page
 
-`GET /`, every feed, and `GET /pages` use the same query shape. The first page has no query. A later page sets `before` and `before_id` on that same path.
+`GET /` and every feed use the same query shape. The first page has no query. A later page sets `before` and `before_id` on that same path.
 
 The response reads 11 rows. It returns the first 10. When an 11th row exists, the next URL is absolute and uses the 10th row's stored sort value as `before` and that row's id as `before_id`. The last page omits the next URL. The predicate for a descending sort is `sort_column < ? OR (sort_column = ? AND id < ?)`. The pages partition that order. A cursor whose row was later deleted still continues from that position.
 
-For a feed, `before` is the stored `published_at`. For `GET /pages`, `before` is the stored `updated_at`. Values are percent-encoded. This cursor is not the owner's list cursor. The owner list remains 50 rows and includes drafts.
+For a feed, `before` is the stored `published_at`. Values are percent-encoded. This cursor is not the owner's list cursor. The owner list remains 50 rows and includes drafts.
 
 Both parameters are required together. `before_id` is a lowercase UUID. `before` is a non-empty string of at most 40 characters and contains no whitespace. Any other combination is 400 `invalid_cursor`. The body is `text/plain; charset=utf-8` and `Cache-Control: no-store`. A 400 is not an empty list.
 
@@ -225,7 +225,7 @@ When GET `/e/{id}` includes a reply field, that response sets `form-action` to t
 
 The document language is `ja`. The visible next-page anchor text is `次へ`. These responses do not vary on a cookie, except the owner response for GET `/` and for a note's GET `/e/{id}`.
 
-Entry HTML has a canonical link, plus alternate links to `/feed.xml` and `/feed.json`. The `h1` is the current title. An empty title omits the `h1`, and the document title is the canonical URL. Feed and index pages use the same head links.
+Entry HTML has a canonical link, plus alternate links to `/feed.xml` and `/feed.json`. The `h1` is the current title. An empty title omits the `h1`, and the document title is the canonical URL. Feed pages use the same head links.
 
 A public note's GET `/e/{id}` lists the thread. The thread root is that note's `thread_root_id` when the column is set, and otherwise that note's id. The rows are the public note whose id is the root, plus public notes whose `thread_root_id` is the root. Order is `created_at` ascending, then `id` ascending. Each body is shown in that order. A reply whose `in_reply_to_id` is still in the thread has a same-page link to that note. A reply whose target is absent has no target link. An article, a bookmark, and a page load one entry and do not run the thread query.
 
@@ -239,9 +239,9 @@ A feed row is `visibility = 'public'`, `published_at` is not null, `in_reply_to_
 
 `GET /feed.json` is JSON Feed 1.1. `version` is `https://jsonfeed.org/version/1.1`. `title` is `weblog.yamanoku.net`. `home_page_url` is `https://weblog.yamanoku.net/`. `feed_url` is the absolute URL of this page. `items` is required and may be empty. `items[].id` is the canonical URL. For a bookmark whose external URL starts with `http://` or `https://`, `items[].url` is that URL. For every other item, `items[].url` is the view path or the canonical URL. `items[].content_html` is the same fragment as Atom content. `items[].date_published` is the stored `published_at`. `items[].date_modified` is the stored `updated_at`. `items[].title` is omitted when the stored title is empty. A bookmark whose external URL is `http` or `https` sets `items[].external_url` to that URL. `next_url` is present only when a next page exists, and it differs from `feed_url`. An empty feed is 200 with `"items": []`.
 
-### Title index
+### Path `/pages`
 
-`GET /pages` lists public articles whose stored title is not empty. The condition is `visibility = 'public'` and `kind = 'article'`. Order is `updated_at` descending, then `id` descending. The selected columns are id and title. The response does not include the body. A note, a bookmark, and a page are absent. The title is an anchor to the view path, or to the canonical URL when the entry has no view path. Each item also has a permalink to the canonical path `/e/{id}`. The visible text is `パーマリンク`. The heading is `公開記事`. An empty index is 200.
+There is no title index and no `src/pages/pages.svelte`. The comparison key `pages` is not reserved. `GET /pages` follows the title path below. The response does not list articles.
 
 ### Title path
 

@@ -19,7 +19,7 @@ The parent product is [weblog.yamanoku.net](../../product.md).
 
 ### Out of scope
 
-- The format, page size, and presentation of human-readable feeds, the title index, and the HTML of an empty page. The public-reading feature decides those. This feature still forbids putting a draft body on those responses.
+- The format, page size, and presentation of human-readable feeds and the HTML of an empty page. The public-reading feature decides those. This feature still forbids putting a draft body on those responses.
 - The ActivityPub actor, Follow, signatures, and sending activities. This feature records the state needed to decide delivery. It does not send activities.
 - Putting a bookmark's external URL into the body of a delivered Note as a link. This feature stores that URL as a field separate from the body.
 - Bulk import from Cosense, retries, and merging a local edit with a newer source page. When import writes an entry, it passes this feature's validation and the same entry-and-edge update boundary. Import has no path that stores an entry directly.
@@ -123,7 +123,7 @@ Scenario: The edit screen lists draft articles too
 
 - Given: The request is verified as the owner. One article is draft and another is public. One note exists.
 - When: The owner opens GET `/edit`.
-- Then: Both articles appear, newest `createdAt` first. The same timestamp is broken by descending immutable ID. Each item opens that article's edit screen. The note is not in this list. The unauthenticated home page and title index do not include the draft body.
+- Then: Both articles appear, newest `createdAt` first. The same timestamp is broken by descending immutable ID. Each item opens that article's edit screen. The note is not in this list. The unauthenticated home page does not include the draft body.
 
 ### Look at the edit screen on the local dev server
 
@@ -453,7 +453,7 @@ Scenario: When the owner sets draft, the body disappears from unauthenticated re
 
 - Given: An entry exists whose body the owner can read.
 - When: The owner saves visibility draft.
-- Then: The owner's get returns the body. The unauthenticated canonical URL responds as it would if that entry did not exist. The draft body does not appear in feeds, the title index, an empty page, or delivery.
+- Then: The owner's get returns the body. The unauthenticated canonical URL responds as it would if that entry did not exist. The draft body does not appear in feeds, an empty page, or delivery.
 
 Scenario: When the owner publishes an article, note, or bookmark, the host records when it became deliverable
 
@@ -614,7 +614,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 ##### Get and list
 
-The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated list, feeds, and title index.
+The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated feeds and empty pages.
 
 GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns the article create form, a list of stored articles, a separate list of stored notes, a bookmark create form, and a separate list of stored bookmarks. The two create forms share one tab list. The first response shows the article create form. The bookmark create form stays in the response and is hidden until the owner chooses its tab. Choosing a tab stores nothing and keeps text already typed in either form. The three lists stay shown. It does not show the note field. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body, its visibility, and its image when it has one, and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The article form, the bookmark form, and GET `/edit/{id}` accept many images for that entry. Each image is JPEG, PNG, GIF, or WebP and at most 8 MiB. Alternative text is optional, surrounding whitespace is removed, and more than 1500 Unicode scalar values stores no change. Empty text is stored as empty. A public bookmark lists the images under the Markdown body. A public article does not list them there. A control labeled `本文に入れる` copies one image into the body as Markdown. Removing an image does not rewrite the body. A draft image is not on the public image URL. The CLI does not send these images. A reply and a page do not get them. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The local dev server is the exception: its GET `/edit` and GET `/edit/*` return the screens, including drafts, so the owner can look. POST from that process stays 401. Preview and the deployed Worker are not this exception. The note field does not submit a title. When it has a body or one image, the host stores kind note, an empty title, and visibility public. The body stays the submitted text. The response shows that the save succeeded and shows the canonical URL. An empty body with no image stores nothing. One image is at most 8 MiB and is JPEG, PNG, GIF, or WebP. The owner writes alternative text for that image. Without that text, or when the text is only whitespace, the host stores nothing. The stored text is at most 1500 Unicode scalar values, after surrounding whitespace is removed. Public pages use that text as the image alt. Deleting a note removes that note only, and a reader can no longer retrieve its image bytes. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only.
 
