@@ -1,6 +1,7 @@
 import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
 import { entryById } from "../../domain/catalog.ts";
+import { publicDocumentTitle } from "../../domain/public-article.ts";
 import { verifiedOwner } from "../../middleware/01.access.ts";
 import { editArticleDatabase } from "../../store/edit-article.ts";
 import { entryImageViews } from "../../store/entry-images.ts";
@@ -30,11 +31,12 @@ export const loader = defineHandler(async (c) => {
         thread: [{ id: entry.id, body: entry.body, replyToId: null }],
         owner: true,
         refused,
+        headTitle: publicDocumentTitle(entry),
       };
     }
     const showEdit = owner && editableKind(entry?.kind);
     if (showEdit) privateOwner(c);
-    return { entry, thread: null, owner: showEdit, refused: null };
+    return { entry, thread: null, owner: showEdit, refused: null, headTitle: publicDocumentTitle(entry) };
   }
   const stored = await readStoredEntry(editArticleDatabase(), id);
   if (stored?.visibility === "public" && stored.kind === "note") {
@@ -44,6 +46,7 @@ export const loader = defineHandler(async (c) => {
       thread: await listPublicNoteThread(editArticleDatabase(), id),
       owner,
       refused,
+      headTitle: publicDocumentTitle({ title: stored.title, id }),
     };
   }
   if (stored?.visibility === "public") {
@@ -65,6 +68,7 @@ export const loader = defineHandler(async (c) => {
       thread: null,
       owner: showEdit,
       refused: null,
+      headTitle: publicDocumentTitle({ title: stored.title, id }),
     };
   }
   if (await hasTombstone(editArticleDatabase(), id)) {

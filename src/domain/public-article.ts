@@ -1,5 +1,15 @@
 import { isReservedTitle } from "./catalog.ts";
 
+const documentHost = "weblog.yamanoku.net";
+
+// A missing entry has no title to show. An empty title uses the canonical URL.
+export function publicDocumentTitle(entry: { title?: string | null; id?: string | null } | null): string {
+  const title = entry?.title?.trim() ?? "";
+  if (title.length > 0) return `${title} - ${documentHost}`;
+  if (entry?.id) return `https://${documentHost}/e/${entry.id}`;
+  return documentHost;
+}
+
 // The title path is the title with spaces written as underscores.
 export function articlePathTitle(title: string): string {
   return title.replaceAll(" ", "_");

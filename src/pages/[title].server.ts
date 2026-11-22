@@ -1,5 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { isReservedTitle, publicEntryByTitle } from "../domain/catalog.ts";
+import { publicDocumentTitle } from "../domain/public-article.ts";
 import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
@@ -24,10 +25,10 @@ export const loader = defineHandler(async (c) => {
       c.header("cache-control", "private, no-store");
       c.header("vary", "Cookie");
     }
-    return { entry, owner };
+    return { entry, owner, headTitle: publicDocumentTitle(entry) };
   }
   const entry = await readPublicEntryByPath(editArticleDatabase(), title);
-  if (!entry) return { entry: null, owner: false };
+  if (!entry) return { entry: null, owner: false, headTitle: publicDocumentTitle(null) };
   if (owner && editableKind(entry.kind)) {
     c.header("cache-control", "private, no-store");
     c.header("vary", "Cookie");
@@ -36,5 +37,5 @@ export const loader = defineHandler(async (c) => {
     entry.kind === "bookmark"
       ? ((await entryImageViews(editArticleDatabase(), [entry.id])).get(entry.id) ?? [])
       : [];
-  return { entry: { ...entry, images }, owner };
+  return { entry: { ...entry, images }, owner, headTitle: publicDocumentTitle(entry) };
 });

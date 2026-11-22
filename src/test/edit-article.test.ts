@@ -12,7 +12,7 @@ import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.
 import { acceptNoteImage, encodeNoteImage, noteActivityAttachment, noteImageIsPublic } from "../domain/note-image.ts";
 import { entryImageViews, type EntryImageObjects } from "../store/entry-images.ts";
 import type { NoteImageBytes } from "../domain/note-image.ts";
-import { publicArticleHref, publicEntryHref, publicArticleMatchesPath } from "../domain/public-article.ts";
+import { publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath } from "../domain/public-article.ts";
 import {
   commitEntry,
   listDeliverableEntries,
@@ -293,6 +293,19 @@ test("public articles are listed for the home page and matched by the title path
   assert.match(readRoot("pages/index.svelte"), /\/e\/\$\{entry\.id\}/);
   assert.match(readRoot("pages/[title].svelte"), /entry\.body/);
   sqlite.close();
+});
+
+test("a missing title page and a note page keep a document title", () => {
+  assert.equal(publicDocumentTitle({ title: "朝のメモ", id: "entry-1" }), "朝のメモ - weblog.yamanoku.net");
+  assert.equal(publicDocumentTitle({ title: "  ", id: "entry-1" }), "https://weblog.yamanoku.net/e/entry-1");
+  assert.equal(publicDocumentTitle(null), "weblog.yamanoku.net");
+  for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
+    const page = readRoot(path);
+    assert.match(page, /<title>\{headTitle\}<\/title>/);
+    assert.equal(/<title>\{entry\.title\}/.test(page), false);
+  }
+  assert.match(readRoot("pages/[title].server.ts"), /publicDocumentTitle\(null\)/);
+  assert.match(readRoot("pages/e/[id].server.ts"), /publicDocumentTitle\(\{ title: stored\.title, id \}\)/);
 });
 
 test("a public article or bookmark shows an edit link for the owner", () => {

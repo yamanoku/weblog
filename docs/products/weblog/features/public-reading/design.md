@@ -241,7 +241,7 @@ When GET `/e/{id}` includes a reply field, that response sets `form-action` to t
 
 The document language is `ja`. The visible next-page anchor text is `次へ`. These responses do not vary on a cookie, except the owner response for GET `/`, for a note's GET `/e/{id}`, and for a public article or bookmark on GET `/{title}` and GET `/e/{id}` when that response includes the edit link.
 
-Entry HTML has a canonical link, plus alternate links to `/feed.xml` and `/feed.json`. The `h1` is the current title. On a bookmark, the external URL sits beside that heading. An empty title omits the `h1`, and the document title is the canonical URL. Feed pages use the same head links.
+Entry HTML has a canonical link, plus alternate links to `/feed.xml` and `/feed.json`. The `h1` is the current title. On a bookmark, the external URL sits beside that heading. An empty title omits the `h1`, and the document title is the canonical URL. A title page with no entry uses `weblog.yamanoku.net` as the document title. A note thread uses the requested note's title, and uses that note's canonical URL when the title is empty. Feed pages use the same head links.
 
 A public note's GET `/e/{id}` lists the thread. The thread root is that note's `thread_root_id` when the column is set, and otherwise that note's id. The rows are the public note whose id is the root, plus public notes whose `thread_root_id` is the root. Order is `created_at` ascending, then `id` ascending. Each body is shown in that order. A reply whose `in_reply_to_id` is still in the thread has a same-page link to that note. A reply whose target is absent has no target link. An article, a bookmark, and a page load one entry and do not run the thread query.
 

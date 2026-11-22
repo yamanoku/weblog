@@ -245,7 +245,7 @@ GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこ
 
 文書の言語は `ja` である。次ページのアンカー文言は `次へ` である。これらの応答は Cookie で変えない。例外は、所有者の GET `/` と、note の GET `/e/{id}` である。edit リンクを含む公開 article と公開 bookmark の GET `/{title}` と GET `/e/{id}` も例外である。
 
-エントリの HTML は、正規 URL への canonical リンクを持つ。`/feed.xml` と `/feed.json` への alternate リンクも持つ。`h1` は現在のタイトルである。bookmark では、その見出しの横に外部 URL を置く。タイトルが空なら `h1` を省く。文書タイトルは正規 URL にする。フィードも、同じ head のリンクを持つ。
+エントリの HTML は、正規 URL への canonical リンクを持つ。`/feed.xml` と `/feed.json` への alternate リンクも持つ。`h1` は現在のタイトルである。bookmark では、その見出しの横に外部 URL を置く。タイトルが空なら `h1` を省く。文書タイトルは正規 URL にする。エントリの無いタイトルページの文書タイトルは `weblog.yamanoku.net` である。note のスレッドは、開いた note のタイトルを文書タイトルにする。そのタイトルが空なら、その note の正規 URL にする。フィードも、同じ head のリンクを持つ。
 
 公開 note の GET `/e/{id}` は、スレッドを並べる。スレッドの根は、その note に `thread_root_id` があるときはその値であり、無いときはその note の id である。行は、id が根である公開 note と、`thread_root_id` が根である公開 note である。順序は `created_at` の昇順、次に `id` の昇順である。各本文をその順で出す。`in_reply_to_id` がまだスレッドにある返信は、同じページ内でその note へリンクする。返信先が無い返信は、返信先のリンクを出さない。article、bookmark、page は一件を読み、スレッドの問い合わせはしない。
 

@@ -5,11 +5,11 @@
   import Breadcrumb from "../ui/breadcrumb.svelte";
   import EntryHeading from "../ui/entry-heading.svelte";
 
-  let { entry, owner = false } = $props();
+  let { entry, owner = false, headTitle = "weblog.yamanoku.net" } = $props();
 </script>
 
 <svelte:head>
-  <title>{entry.title} - weblog.yamanoku.net</title>
+  <title>{headTitle}</title>
 </svelte:head>
 
 {#if entry}

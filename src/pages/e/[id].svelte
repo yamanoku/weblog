@@ -4,11 +4,11 @@
   import Breadcrumb from "../../ui/breadcrumb.svelte";
   import EntryHeading from "../../ui/entry-heading.svelte";
 
-  let { entry = null, thread = null, owner = false, refused = null } = $props();
+  let { entry = null, thread = null, owner = false, refused = null, headTitle = "weblog.yamanoku.net" } = $props();
 </script>
 
 <svelte:head>
-  <title>{entry.title} - weblog.yamanoku.net</title>
+  <title>{headTitle}</title>
 </svelte:head>
 
 {#if thread}
