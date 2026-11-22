@@ -26,13 +26,23 @@
     const sync = () => {
       pathname = window.location.pathname;
     };
-    const onClick = () => queueMicrotask(sync);
+    // In-app moves call pushState after the click returns. The click itself is too early.
+    const pushState = history.pushState.bind(history);
+    const replaceState = history.replaceState.bind(history);
+    history.pushState = (data, unused, url) => {
+      pushState(data, unused, url);
+      sync();
+    };
+    history.replaceState = (data, unused, url) => {
+      replaceState(data, unused, url);
+      sync();
+    };
     sync();
     window.addEventListener("popstate", sync);
-    window.addEventListener("click", onClick);
     return () => {
+      history.pushState = pushState;
+      history.replaceState = replaceState;
       window.removeEventListener("popstate", sync);
-      window.removeEventListener("click", onClick);
     };
   });
 
@@ -62,6 +72,9 @@
     </svg>
     <span>ウェブログ</span>
   </p>
+  <nav class="site-nav" aria-label="ヘッダー">
+    <Link class="dads-link" href="/login" aria-current={here("/login")}>ログイン</Link>
+  </nav>
 </header>
 
 <main class="site-main">

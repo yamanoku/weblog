@@ -39,7 +39,7 @@ Queues のバインディング `DELIVERY_QUEUE` は、配送ジョブを運ぶ�
 
 エントリの画像は、R2 のバインディング `STORAGE` を使う。このバインディングはバケット `gyazo-archives` ではない。保存した画像は、キー `notes/{id}` のオブジェクト一つである。note では、その id がエントリ ID なので、既存のオブジェクトは `notes/{entryId}` のままである。article と bookmark は、オブジェクトをいくつでも保存できる。無料枠を超える保管は、ゼロ円の対象外である。このアプリは、そのバインディングのために新しい有料プランを契約しない。
 
-Cloudflare Access は、Zero Trust の Free プランである。対象は `/edit`、`/edit/*`、`/new` である。有料の追加機能は切ったままである。
+Cloudflare Access は、Zero Trust の Free プランである。対象は `/login` である。有料の追加機能は切ったままである。Cookie パス属性は切ったままにする。セッションの Cookie は `/edit` と `/new` へ送られる。
 
 カスタムドメインは、Free プランのゾーンへ付ける。DNS の提供元は差し替えられる。ホスト名の HTTPS は、このアプリへ解決したままである。
 

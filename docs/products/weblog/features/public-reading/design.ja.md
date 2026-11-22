@@ -317,7 +317,7 @@ D1 は保存のアダプタで、バインディング名は `DB` である。�
 
 既存アーカイブのオブジェクトアダプタは R2 である。バインディング名は `GYAZO_BUCKET`、バケット名は `gyazo-archives` である。ドメインは、ポートからバイト列とコンテンツ型を受け取る。`R2Bucket` は知らない。`get` の定義は [Workers API の参照](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/) にある。この機能はアップロードしない。バケットの一覧も取らない。既存アーカイブの月間 10 GB を超える保管は、ゼロ円の対象外のままである。note の画像は、別の読み取りである。R2 のバインディング `STORAGE` のキー `notes/{id}` から読む。この機能は、そのオブジェクトをアップロードしない。そのバケットの一覧も取らない。`GET /note-images/{id}` のコンテンツ型は、note と一緒に保存した型である。
 
-公開経路は Cloudflare Access の背後に置かない。Access は `/edit`、`/edit/*`、`/new` に残す。
+公開経路は Cloudflare Access の背後に置かない。Access は `/login` に残す。確認できない `/edit` と `/new` は、Worker が 404 にする。
 
 ## データの取り扱い設計
 

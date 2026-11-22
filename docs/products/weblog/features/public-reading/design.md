@@ -303,7 +303,7 @@ D1 is the store adapter, binding `DB`. The adapter queries through `db` from `vo
 
 R2 is the object adapter for the existing archive, binding `GYAZO_BUCKET`, bucket `gyazo-archives`. The domain receives bytes and a content type from the port. It does not know `R2Bucket`. `get` is defined in the [Workers API reference](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/). This feature does not upload and does not list the bucket. Storage beyond 10 GB a month for the existing archive stays outside the zero-yen target. A note image is a second read, from the R2 binding `STORAGE` at the key `notes/{id}`. This feature does not upload that object and does not list that bucket. The content type of `GET /note-images/{id}` is the type stored with the note.
 
-The public routes are not behind Cloudflare Access. Access remains on `/edit`, `/edit/*`, and `/new`.
+The public routes are not behind Cloudflare Access. Access remains on `/login`. An unverified `/edit` or `/new` is 404 from the Worker.
 
 ## Data handling
 

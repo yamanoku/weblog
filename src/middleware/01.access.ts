@@ -77,6 +77,10 @@ export default defineMiddleware(async (context, next) => {
     await accessSettings(context),
     { method: context.req.method, localPreview: readsDevCatalog() },
   );
-  if (!decision.ok) return context.text("Unauthorized", 401, { "cache-control": "no-store" });
+  if (!decision.ok) {
+    const status = decision.status === 404 ? 404 : 401;
+    const body = status === 404 ? "Not found" : "Unauthorized";
+    return context.text(body, status, { "cache-control": "no-store" });
+  }
   await next();
 });

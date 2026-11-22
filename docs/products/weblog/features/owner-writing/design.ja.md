@@ -36,7 +36,7 @@ Access は、保護した経路のリクエストに `Cf-Access-Jwt-Assertion` �
 
 書き込みの流れは、次の順である。
 
-1. 入口が所有者かどうかを確認する。確認できなければ 401 を返し、保存しない。
+1. 入口が所有者かどうかを確認する。`/edit` または `/new` のブラウザ要求で確認できなければ 404 を返し、保存しない。それ以外の要求で確認できなければ 401 を返し、保存しない。
 2. 種類、タイトル、本文、公開状態、外部 URL を検証する。拒否なら 422 を返し、保存しない。
 3. タイトルを正規化し、本文から辺を抽出する。作成なら不変 ID を Worker 内で発行する。
 4. エントリ、辺、過去タイトル、閲覧用パス、移転を、一つの `batch()` に入れる。
@@ -115,6 +115,7 @@ sequenceDiagram
 - `gyazo`
 - `note-images`
 - `new`
+- `login`
 - `.well-known`
 - `manifest.webmanifest`
 
@@ -164,21 +165,21 @@ erDiagram
 
 ## API・インターフェース
 
-外部の書き込み API は `/entries` である。CLI はここを呼ぶ。編集画面は Access の背後にある `/edit` へ送り、Worker が JWT を確認したあと、同じドメイン処理を呼ぶ。`/entries` を Access の背後に置かない。CLI がログイン画面へ入るためである。Cookie が `/entries` へ必ず届くことにも依存しない。
+外部の書き込み API は `/entries` である。CLI はここを呼ぶ。編集画面は `/edit` へ送る。Worker は、`/login` のセッションが所有者を確認できたとき、その投稿を受け、同じドメイン処理を呼ぶ。`/entries` を Access の背後に置かない。CLI がログイン画面へ入るためである。Cookie が `/entries` へ必ず届くことにも依存しない。
 
 共通の処理は、createEntry、updateEntry、deleteEntry、getEntryForOwner、listEntriesForOwner、issueToken である。
 
 ### 編集画面
 
-GET `/edit` は、保存済み article の一覧を返す。note の一覧は別に返す。保存済み bookmark の一覧は別に返す。記事の作成フォーム、ブックマークの作成フォーム、note 欄は返さない。GET `/new` は、記事の作成フォーム、ブックマークの作成フォーム、note の作成フォームを返す。ローカルの開発サーバは Access の前に無いので、GET `/edit`、GET `/edit/*`、GET `/new` は JWT 無しで画面を返す。そのサーバの POST は、これまでどおり JWT を要する。記事、bookmark、note の作成フォームは、GET `/new` の一つのタブ一覧に並べる。最初の HTML は記事のタブを選び、ほかのパネルを隠す。タブを選ぶと、そのフォームを出し、ほかを隠す。URL は `/new` のままである。エントリは保存しない。隠したフォームに書いた文字は残る。GET `/new` は三つの一覧を返さない。記事のフォームは POST `/edit` へ送る。ブックマークのフォームは POST `/edit?bookmark` へ送る。note のフォームは `noteBody` と画像を多くて 1 枚、POST `/edit?note` へ送る。受け付けの規則は、トップの note 欄と同じである。保存に成功した note は、これまでどおり GET `/?posted={id}` へ移る。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は createdAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォーム、またはその bookmark のフォームを返す。note の ID と page の ID は 404 である。POST `/edit` は article を draft で作成する。保存済みの種類が article のとき、POST `/edit/{id}` はその article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。bookmark の ID は、下の bookmark の更新に従う。POST `/edit/tokens` はトークンを発行するか、再発行する。
+GET `/edit` は、保存済み article の一覧を返す。note の一覧は別に返す。保存済み bookmark の一覧は別に返す。記事の作成フォーム、ブックマークの作成フォーム、note 欄は返さない。GET `/new` は、記事の作成フォーム、ブックマークの作成フォーム、note の作成フォームを返す。ローカルの開発サーバは Access の前に無いので、GET `/edit`、GET `/edit/*`、GET `/new`、GET `/login` は JWT 無しで画面を返す。そのサーバで、所有者を確認できない POST は 404 であり、保存しない。記事、bookmark、note の作成フォームは、GET `/new` の一つのタブ一覧に並べる。最初の HTML は記事のタブを選び、ほかのパネルを隠す。タブを選ぶと、そのフォームを出し、ほかを隠す。URL は `/new` のままである。エントリは保存しない。隠したフォームに書いた文字は残る。GET `/new` は三つの一覧を返さない。記事のフォームは POST `/edit` へ送る。ブックマークのフォームは POST `/edit?bookmark` へ送る。note のフォームは `noteBody` と画像を多くて 1 枚、POST `/edit?note` へ送る。受け付けの規則は、トップの note 欄と同じである。保存に成功した note は、これまでどおり GET `/?posted={id}` へ移る。article の一覧は draft と public を含み、note、bookmark、page を含めない。article の各項目は GET `/edit/{id}` へ進む。順序は createdAt の新しい順で、同じ時刻なら id の降順である。GET `/edit/{id}` は、所有者ならその article のフォーム、またはその bookmark のフォームを返す。note の ID と page の ID は 404 である。POST `/edit` は article を draft で作成する。保存済みの種類が article のとき、POST `/edit/{id}` はその article の title、body、visibility を更新する。visibility は draft か public である。public で本文が空のときは保存せず、422 `empty_body` を返す。kind は article のままである。bookmark の ID は、下の bookmark の更新に従う。POST `/edit/tokens` はトークンを発行するか、再発行する。
 
-note 欄は GET `/` の先頭、ナビゲーションの直下に置く。`/edit` と同じ JWT の規則で所有者と確認できたときだけ含める。Access の対象は `/edit`、`/edit/*`、`/new` なので、GET `/` はログイン画面にしない。JWT が無い、または無効なとき、GET `/` は 200 のままで欄を出さない。Worker は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。配送対象の一覧は変えない。draft の本文は含めない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
+note 欄は GET `/` の先頭、ナビゲーションの直下に置く。`/edit` と同じ JWT の規則で所有者と確認できたときだけ含める。Access の対象は `/login` なので、GET `/` はログイン画面にしない。JWT が無い、または無効なとき、GET `/` は 200 のままで欄を出さない。Worker は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。配送対象の一覧は変えない。draft の本文は含めない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
 
 note 欄は本文を `noteBody` として、画像を多くて 1 枚、POST `/edit?note` へ送る。所有者は、ラベル `画像を添付` のファイル操作で選ぶか、欄へ画像を貼り付ける。画像を含まない貼り付けは、本文へ入る。受け付ける 2 枚目は、投稿前に 1 枚目と置き換わる。書いてある代替テキストは残る。画像を出しているあいだ、ラベル `代替テキスト` の入力を求める。この文は必須である。前後の空白は除く。空白だけは無いものとして扱う。Unicode スカラー値が 1500 を超える文は 422 `image_alt_length` で拒む。文が無いときは 422 `image_alt` で拒む。画像を外すと、画像は送らない。その文も保存しない。ホストが受け付けるのは、JPEG、PNG、GIF、WebP で、8 MiB 以下のバイト列だけである。受け付けないファイルは、既に出している画像を置き換えず、保存もしない。要求が画像を 2 枚以上含むときは保存しない。この投稿は、種類 note、空のタイトル、公開状態 public で保存する。本文は送った文字のままで、画像があるときの空文字も含む。`publishedAt` は確定時刻である。`view_path` は NULL のままである。本文が空で画像も無いときは保存せず、422 `empty_body` を返す。空白だけの本文は空にしない。画像のバイト列は、エントリ行を確定する前に R2 のバインディング `STORAGE` へ書く。その書き込みに失敗したときは、エントリを作らず、503 `store_unavailable` を返す。公開の画像 URL は `GET /note-images/{id}` であり、[公開閲覧](../public-reading/requirements.ja.md) が定める。成功は GET `/?posted={id}` へ 302 で移す。同じ要求が所有者であり、`{id}` が保存済みの公開 note であるときだけ、保存できたことと正規 URL `https://weblog.yamanoku.net/e/{id}` を出す。確認できていない GET `/?posted={id}` は、URL を出さない。欄も出さない。記事一覧には note を出さない。note の一覧には出る。`note` の付かない POST `/edit` は、これまでどおり draft の article を作る。`posted` は見ない。
 
 GET `/edit` の note 一覧は、draft と public の note を createdAt の新しい順、同じ時刻なら id の降順で返す。返信も含める。各項目は本文と visibility を示し、画像があるときはその画像も示す。GET `/edit/{id}` へは進まない。削除は `noteId` を POST `/edit?deleteNote` へ送る。保存済みの note だけを消す。消すときは、その source の辺、過去タイトル、パス移転、`note_images` の行、キー `notes/{entryId}` のオブジェクトも消す。`delivery_records` は消さない。記録があるときは `tombstones` に id と deleted_at を入れる。記録が無いときは tombstone を作らない。削除は、他の行の `in_reply_to_id` と `thread_root_id` を変えない。エントリ行は無く、tombstone がある。このとき公開の GET `/e/{id}` は 410 である。その応答は削除前の本文を含まない。note でない ID は 404 である。無い ID も 404 である。どちらの 404 も行を消さない。
 
-公開の note の GET `/e/{id}` は、note 欄と同じ JWT の規則で所有者と確認できたとき、並んでいる各 note に返信欄を出す。Access の対象は `/edit`、`/edit/*`、`/new` である。JWT が無い、または無効なとき、ページは 200 のままで返信欄を出さない。本文の並びは変えない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
+公開の note の GET `/e/{id}` は、note 欄と同じ JWT の規則で所有者と確認できたとき、並んでいる各 note に返信欄を出す。Access の対象は `/login` である。JWT が無い、または無効なとき、ページは 200 のままで返信欄を出さない。本文の並びは変えない。欄を含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、欄を含める。
 
 所有者として確認できた公開 article と公開 bookmark の閲覧用パス GET `/{title}` と正規 URL GET `/e/{id}` は、エントリのあとに edit リンクを出す。表示は `edit` である。href は、そのエントリの `/edit/{id}` である。GET `/{title}` は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。読む目的は、このリンクを出すか省くかだけである。article または bookmark の GET `/e/{id}` も、同じリンクのために同じ値を読む。JWT が無い、または無効なとき、ページは 200 のままでリンクを出さない。note と page はリンクを出さない。本文は変えない。リンクを含める応答は `Cache-Control: private, no-store` と `Vary: Cookie` を付ける。ローカルの開発サーバは Access の前に無いので、リンクを含める。
 
@@ -241,7 +242,7 @@ GET `/{比較キー}` は、固定パスのあとで判定する。
 
 ブラウザの所有者確認は、Cloudflare Access の Free プランである。契約条件は Requirements にある。この設計が追加するのは、検証の手順である。
 
-Access アプリケーションのパスは `/edit`、`/edit/*`、`/new` である。Worker は、その経路で `Cf-Access-Jwt-Assertion` を取る。そのヘッダが無いときだけ `CF_Authorization` Cookie を取る。署名は、JWT ヘッダの `kid` と一致するチームの証明書で検証する。`kid` が無い、または証明書集合に無い場合は所有者ではない。証明書の URL は `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/certs` である。iss はチームドメイン、aud は Access アプリケーションの AUD と一致させる。検証に通った JWT の email が、設定した所有者のメールと一致するときだけ所有者とする。大小文字の違いは無視する。email が無い、署名が違う、期限切れ、aud が違う場合は所有者ではない。
+Access アプリケーションのパスは `/login` である。Worker は `/login`、`/edit`、`/edit/*`、`/new`、`/new/*` で `Cf-Access-Jwt-Assertion` を取る。そのヘッダが無いときだけ `CF_Authorization` Cookie を取る。Access がヘッダを付けるのは `/login` である。`/edit` と `/new` には付けない。`/login` で付いた Cookie がそれらの経路へ送られるのは、Access の Cookie パス属性を切ったままにするからである。Cookie の範囲はホストになる。[Cloudflare の認可 Cookie](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/) は、この属性を有効にすると Cookie をアプリケーションのパスに限り、別のパスでは改めてログインが要ると説明している。署名は、JWT ヘッダの `kid` と一致するチームの証明書で検証する。`kid` が無い、または証明書集合に無い場合は所有者ではない。証明書の URL は `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/certs` である。iss はチームドメイン、aud は Access アプリケーションの AUD と一致させる。検証に通った JWT の email が、設定した所有者のメールと一致するときだけ所有者とする。大小文字の違いは無視する。email が無い、署名が違う、期限切れ、aud が違う場合は所有者ではない。
 
 証明書の取得はアダプタに閉じ、JWT の鍵集合は isolate 内にキャッシュする。ドメインはこの URL を知らない。検証ライブラリはアダプタだけが依存する。Cloudflare の Worker 例は `jose` を使っている。同じ例に合わせ、ドメインからは import しない。
 
@@ -265,9 +266,9 @@ CLI トークンは 32 バイトの乱数を base64url にした値である。�
 
 書き込み、削除、トークン発行、所有者向けの取得と一覧は、要求ごとに確認する。Access の背後に画面があることだけでは認めない。
 
-`/edit` と `/new` では JWT が所有者を示す必要がある。見るためだけの例外は、ローカルの開発サーバである。`vp dev` は Vite の `import.meta.env.DEV` を真にする。そのとき GET `/edit`、GET `/edit/*`、GET `/new` は、JWT 無しで画面を返す。draft と GET `/edit/images/{id}` を含む。それらのパスの POST と、それ以外のメソッドは 401 のままで、保存しない。`vp preview` とデプロイは `DEV` を偽のままにするので、JWT の確認は残る。`/entries` と `/tokens` では、Bearer のハッシュが `owner_token` と一致する必要がある。両方の資格が付いている場合は、少なくとも一方が所有者なら認める。どちらも確認できない場合は 401 である。HTTP 署名のヘッダは、この機能の資格として見ない。
+`/edit` と `/new` では JWT が所有者を示す必要がある。示さないときは 404 であり、保存しない。見るためだけの例外は、ローカルの開発サーバである。`vp dev` は Vite の `import.meta.env.DEV` を真にする。そのとき GET `/edit`、GET `/edit/*`、GET `/new`、GET `/login` は、JWT 無しで画面を返す。draft と GET `/edit/images/{id}` を含む。`/edit` と `/new` の POST と、それ以外のメソッドは 404 であり、保存しない。ローカルの GET でなく、確認もできない `/login` は 401 である。`vp preview` とデプロイは `DEV` を偽のままにするので、これらの確認は残る。`/entries` と `/tokens` では、Bearer のハッシュが `owner_token` と一致する必要がある。両方の資格が付いている場合は、少なくとも一方が所有者なら認める。どちらも確認できない場合は 401 である。HTTP 署名のヘッダは、この機能の資格として見ない。
 
-無効な Bearer は 401 である。Access が所有者を確認できないブラウザ要求も 401 である。発行済みトークンの照合は、Access を呼ばない。
+無効な Bearer は 401 である。Access が所有者を確認できない `/edit` または `/new` のブラウザ要求は 404 である。確認できないまま Worker に届いた `/login` は 401 である。発行済みトークンの照合は、Access を呼ばない。
 
 有効なトークンは一行だけである。再発行したあとの前のトークンは 401 になる。
 
@@ -287,9 +288,9 @@ draft の公開応答は、行が無いときと同じ 404 である。エラー
 
 初回は空の D1 に、この文書の表を作る。既存サイトからのデータ移行は無い。既にエントリがあるデータベースには、NULL を許す `in_reply_to_id` と `thread_root_id` を足す。既存の行は、両方を NULL のままにする。それらの note は配送対象のままである。
 
-Access の対象は `/edit`、`/edit/*`、`/new` にする。ホスト全体を Access の背後に置くと、未認証の正規 URL がログイン画面の背後に入る。その配置はこの機能の公開応答に反する。
+HTML のページの共通ヘッダーは、GET `/login` へリンクする。リンクの文字は「ログイン」である。所有者として確認できていなくても残す。GET `/login` では、そのリンクが現在のページである。Access の対象は `/login` にする。`/edit` と `/new` はそのアプリケーションに入れない。確認できない要求は、Worker が 404 にする。ホスト全体を Access の背後に置くと、未認証の正規 URL がログイン画面の背後に入る。その配置はこの機能の公開応答に反する。
 
-最初の CLI トークンは、所有者が `/edit` を開いてから発行する。発行前の CLI は書き込めない。
+最初の CLI トークンは、GET `/login` が確認したブラウザのセッションから発行する。要求は、これまでどおり POST `/edit/tokens` である。発行前の CLI は書き込めない。
 
 ## 検討した代替手段
 
@@ -319,7 +320,7 @@ CLI もログイン画面を通る。Requirements は、CLI がブラウザの�
 
 ### 保護していない `/entries` へ Cookie を転送する
 
-ブラウザがフォームを `/entries` へ直接送れる。Cloudflare は Cookie が必ず渡るとは書いておらず、ヘッダの検証を推奨している。note 欄の POST は `/edit` に残し、Access がヘッダを付ける経路で保存する。GET `/` が Cookie を読むのは、その欄を出すか省くかだけである。
+ブラウザがフォームを `/entries` へ直接送れる。Cloudflare は Cookie が必ず渡るとは書いておらず、ヘッダの検証を推奨している。note 欄の POST は `/edit` に残す。Worker はそこでセッションの Cookie を確認する。Access がヘッダを付けるのは `/login` であり、`/edit` ではない。GET `/` が Cookie を読むのは、その欄を出すか省くかだけである。
 
 ### 辺を一行ずつ INSERT する
 

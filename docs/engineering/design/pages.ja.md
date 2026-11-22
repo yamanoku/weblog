@@ -52,6 +52,7 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /` | 配送対象の HTML 一覧。所有者として確認できたとき、ナビゲーションの下に note 欄を出す。未確認の応答は出さない。続きは、この経路に `page` を付ける。2 ページ目は `/?page=2` である。 |
 | `GET /{タイトル}` | 公開エントリ。要件が空ページとするときは、空ページである。 |
 | `GET /e/{id}` | 正規 URL の HTML。下の Activity Streams の場合を除く。 |
+| `GET /login` | Cloudflare Access のログイン画面。確認できた応答は `/edit` と `/new` へ進むリンクを出し、draft の本文は含まない。 |
 | `GET /edit` | 保存済みの article、note、bookmark の一覧。作成フォームと note 欄は無い。 |
 | `GET /new` | 記事、bookmark、note の作成フォーム。タブは一つずつ出す。一覧は無い。 |
 | `GET /edit/{id}` | その article または bookmark の編集フォーム。note の ID と page の ID は 404。 |
@@ -108,7 +109,9 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 
 ## 認証認可に関する特記事項
 
-Access が覆うのは `/edit`、`/edit/*`、`/new` である。公開 HTML、フィード、WebFinger、どちらの inbox、`/entries` も、そのログインの外である。各経路の資格は、上の要件に残す。
+Access が覆うのは `/login` である。確認できない `/edit`、`/edit/*`、`/new`、`/new/*` は、Worker が 404 にする。公開 HTML、フィード、WebFinger、どちらの inbox、`/entries` も、そのログインの外である。各経路の資格は、上の要件に残す。
+
+HTML のページは、共通のヘッダーを使う。そのヘッダーは GET `/login` へリンクする。リンクの文字は「ログイン」である。GET `/login` では、そのリンクが現在のページである。
 
 ## セキュリティ上の留意事項
 

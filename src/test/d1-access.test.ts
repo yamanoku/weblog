@@ -263,6 +263,7 @@ test("edit access accepts only a verified owner JWT on /edit, /edit/*, and /new"
   assert.equal(accepted.ok, true);
   assert.equal((await editAccessDecision("/edit", token, settings(publicKey))).ok, true);
   assert.equal((await editAccessDecision("/new", token, settings(publicKey))).ok, true);
+  assert.equal((await editAccessDecision("/login", token, settings(publicKey))).ok, true);
   assert.equal(
     (await editAccessDecision("/edit/entry-morning-note", token, settings(publicKey))).ok,
     true,
@@ -299,8 +300,9 @@ test("edit access accepts only a verified owner JWT on /edit, /edit/*, and /new"
     ).status,
     401,
   );
-  assert.equal((await editAccessDecision("/edit", "", settings(publicKey))).status, 401);
-  assert.equal((await editAccessDecision("/new", "", settings(publicKey))).status, 401);
+  assert.equal((await editAccessDecision("/edit", "", settings(publicKey))).status, 404);
+  assert.equal((await editAccessDecision("/new", "", settings(publicKey))).status, 404);
+  assert.equal((await editAccessDecision("/login", "", settings(publicKey))).status, 401);
   assert.equal(localEditPreview({ method: "GET", localPreview: true }), true);
   assert.equal(
     (await editAccessDecision("/edit", "", settings(null), { method: "GET", localPreview: true })).ok,
@@ -311,9 +313,13 @@ test("edit access accepts only a verified owner JWT on /edit, /edit/*, and /new"
     true,
   );
   assert.equal(
+    (await editAccessDecision("/login", "", settings(null), { method: "GET", localPreview: true })).ok,
+    true,
+  );
+  assert.equal(
     (await editAccessDecision("/new", "", settings(null), { method: "POST", localPreview: true }))
       .status,
-    401,
+    404,
   );
   assert.equal(
     (
@@ -327,21 +333,26 @@ test("edit access accepts only a verified owner JWT on /edit, /edit/*, and /new"
   assert.equal(
     (await editAccessDecision("/edit", "", settings(null), { method: "POST", localPreview: true }))
       .status,
-    401,
+    404,
   );
   assert.equal(
     (await editAccessDecision("/edit/tokens", "", settings(null), { method: "POST", localPreview: true }))
+      .status,
+    404,
+  );
+  assert.equal(
+    (await editAccessDecision("/login", "", settings(null), { method: "POST", localPreview: true }))
       .status,
     401,
   );
   assert.equal(
     (await editAccessDecision("/edit", "", settings(null), { method: "GET", localPreview: false }))
       .status,
-    401,
+    404,
   );
   assert.equal(
     (await editAccessDecision("/edit/entry-morning-note", "", settings(publicKey))).status,
-    401,
+    404,
   );
 
   for (const path of [
@@ -351,6 +362,7 @@ test("edit access accepts only a verified owner JWT on /edit, /edit/*, and /new"
     "/entries",
     "/editor",
     "/newer",
+    "/log",
   ]) {
     const decision = await editAccessDecision(path, "", settings(null));
     assert.equal(decision.ok, true, path);

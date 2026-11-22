@@ -88,7 +88,7 @@ The files are static. A request does not write them and does not read D1 for the
 
 ## Authentication and authorization notes
 
-No credential is required. An Access header on these URLs does not switch the body to an edit document. GET `/edit` stays behind the existing edit gate.
+No credential is required. An Access header on these URLs does not switch the body to an edit document. An unverified GET `/edit` stays 404 from the edit gate.
 
 ## Security considerations
 

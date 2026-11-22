@@ -33,6 +33,14 @@ html[lang="ja"] body {
   padding-inline: clamp(calc(.5rem * 2), calc(1vw * 3), calc(.5rem * 4));
 }
 
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 1rem;
+}
+
 article {
   border-bottom: 1px dotted var(--color-neutral-solid-gray-200);
   padding-block-end: 1.75rem;
@@ -50,6 +58,14 @@ article {
 .site-brand svg {
   flex-shrink: 0;
   fill: currentcolor;
+}
+
+.site-nav {
+  margin-inline-start: auto;
+}
+
+.site-nav .dads-link[aria-current="page"] {
+  font-weight: 700;
 }
 
 .site-nav .dads-horizontal-menu {

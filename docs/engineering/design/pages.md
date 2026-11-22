@@ -52,6 +52,7 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /` | HTML list of deliverable entries. When the request is verified as the owner, the note field is under the navigation. An unverified response omits it. A later page sets `page` on this path. The second page is `/?page=2`. |
 | `GET /{title}` | Public entry HTML, or the empty page when the requirements say so. |
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. |
+| `GET /login` | The Cloudflare Access login page. A verified response links to `/edit` and `/new` and includes no draft body. |
 | `GET /edit` | Lists of stored articles, notes, and bookmarks. No create form and no note field. |
 | `GET /new` | Article, bookmark, and note create forms, one tab at a time. No lists. |
 | `GET /edit/{id}` | Edit form for that article or bookmark. A note ID or a page ID is 404. |
@@ -108,7 +109,9 @@ This design adds no stored record. A page receives props from its loader. It doe
 
 ## Authentication and authorization notes
 
-Access covers `/edit`, `/edit/*`, and `/new`. Public HTML, feeds, WebFinger, both inboxes, and `/entries` stay outside that login. The credentials for each path stay in the requirements linked above.
+Access covers `/login`. The Worker returns 404 for an unverified `/edit`, `/edit/*`, `/new`, or `/new/*`. Public HTML, feeds, WebFinger, both inboxes, and `/entries` stay outside that login. The credentials for each path stay in the requirements linked above.
+
+Every HTML page uses the shared header. That header links to GET `/login`. The link text is ログイン. On GET `/login` the link is the current page.
 
 ## Security considerations
 

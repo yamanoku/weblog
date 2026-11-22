@@ -15,7 +15,7 @@ export type AccessSettings = {
 
 export type AccessDecision = {
   ok: boolean;
-  status?: 401;
+  status?: 401 | 404;
   reason?: string;
   skipped?: true;
 };
@@ -42,6 +42,11 @@ type TokenClaims = {
 
 export function editPathNeedsAccess(path: string): boolean {
   return path === "/edit" || path.startsWith("/edit/") || path === "/new" || path.startsWith("/new/");
+}
+
+// Cloudflare Access sits on this path. /edit and /new are not Access paths.
+export function loginPathNeedsAccess(path: string): boolean {
+  return path === "/login";
 }
 
 export function accessAssertion(header: string, cookie: string): string {
@@ -243,9 +248,20 @@ export type EditAccessRequest = {
 };
 
 // Local `vp dev` has no Access in front of the process. GET is for looking.
-// Preview and deploy leave localPreview false. Writes stay behind the JWT.
+// Preview and deploy leave localPreview false. Other methods stay refused.
 export function localEditPreview(request: EditAccessRequest | undefined): boolean {
   return request?.localPreview === true && request.method === "GET";
+}
+
+async function ownerDecision(header: string, settings: AccessSettings): Promise<AccessDecision> {
+  return decideEditAccess({
+    header,
+    ownerEmail: settings.ownerEmail,
+    issuer: settings.issuer,
+    audience: settings.audience,
+    publicKey: settings.publicKey,
+    now: settings.now,
+  });
 }
 
 export async function editAccessDecision(
@@ -254,15 +270,14 @@ export async function editAccessDecision(
   settings: AccessSettings,
   request?: EditAccessRequest,
 ): Promise<AccessDecision> {
+  if (loginPathNeedsAccess(path)) {
+    if (localEditPreview(request)) return { ok: true };
+    const decision = await ownerDecision(header, settings);
+    return decision.ok ? { ok: true } : { ok: false, status: 401, reason: decision.reason };
+  }
   if (!editPathNeedsAccess(path)) return { ok: true, skipped: true };
   if (localEditPreview(request)) return { ok: true };
-  const decision = await decideEditAccess({
-    header,
-    ownerEmail: settings.ownerEmail,
-    issuer: settings.issuer,
-    audience: settings.audience,
-    publicKey: settings.publicKey,
-    now: settings.now,
-  });
-  return decision.ok ? { ok: true } : { ok: false, status: 401, reason: decision.reason };
+  const decision = await ownerDecision(header, settings);
+  // Hide the editing screens. A 401 would show that the path exists.
+  return decision.ok ? { ok: true } : { ok: false, status: 404, reason: decision.reason };
 }

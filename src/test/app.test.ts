@@ -74,7 +74,10 @@ test("the app manifest declares the Svelte Void packages", () => {
   for (const name of rejected) {
     assert.equal(names.includes(name), false, name);
   }
-  assert.match(readRoot("pages/layout.svelte"), /import ["']\.\.\/styles\/site\.css["']/);
+  const layout = readRoot("pages/layout.svelte");
+  assert.match(layout, /import ["']\.\.\/styles\/site\.css["']/);
+  assert.match(layout, /href="\/login"/);
+  assert.match(layout, /ログイン/);
 });
 
 test("Vite+ runs the app tasks and registers the Void Svelte plugins", () => {
@@ -166,6 +169,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     "gyazo",
     "note-images",
     "new",
+    "login",
     ".well-known",
     "manifest.webmanifest",
   ]);

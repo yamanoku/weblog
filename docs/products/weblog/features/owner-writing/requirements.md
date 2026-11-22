@@ -135,7 +135,37 @@ Scenario: The local dev server shows the edit screen and still refuses a write
 
 - Given: The process is the local dev server. Access is not in front of it. The request has no JWT. One draft article is stored.
 - When: The owner opens GET `/edit`.
-- Then: The response is the edit screen and includes that draft. GET `/edit/*` and GET `/new` on that process also open. POST `/edit`, POST `/edit/*`, and POST `/new` return 401 and store nothing. Preview and the deployed Worker still return 401 for those GETs when Access cannot verify the owner.
+- Then: The response is the edit screen and includes that draft. GET `/edit/*`, GET `/new`, and GET `/login` on that process also open. POST `/edit`, POST `/edit/*`, and POST `/new` return 404 and store nothing. Preview and the deployed Worker return 404 for those requests when Access cannot verify the owner.
+
+### Sign in at `/login`
+
+As the owner, I want GET `/login` to be the Cloudflare Access login, so that I can open the edit screen and the create screen after Access verifies me.
+
+**Acceptance criteria:**
+
+Scenario: Navigating to `/login` asks Access to verify the owner
+
+- Given: The request is not verified as the owner. Access is in front of GET `/login`.
+- When: The owner opens GET `/login`.
+- Then: Access asks the owner to authenticate. The Worker does not return the edit screen or a draft body.
+
+Scenario: After Access verifies the owner, GET `/login` returns the login page
+
+- Given: The request is verified as the owner.
+- When: The owner opens GET `/login`.
+- Then: The response is 200 HTML. It links to `/edit` and `/new`. It does not include a draft body.
+
+Scenario: An unverified edit or create request is 404
+
+- Given: The request is not verified as the owner. The process is not the local dev server's GET exception for looking.
+- When: The caller requests `/edit`, `/edit/*`, `/new`, or `/new/*`.
+- Then: The response is 404. It does not include a draft body. Nothing is stored.
+
+Scenario: The shared header links to login
+
+- Given: The response is an HTML page from this host.
+- When: The caller reads the header.
+- Then: The header links to GET `/login`. The link text is ログイン. The link is present whether or not the request is verified as the owner. On GET `/login`, that link is the current page.
 
 ### Post a note from the home page
 
@@ -525,7 +555,7 @@ Scenario: When an unverified request deletes an entry, the entry remains
 
 - Given: An entry exists. The request is not verified as the owner.
 - When: That request submits a delete.
-- Then: The response is 401. The entry, its edges, and its visibility stay unchanged.
+- Then: A request under `/edit` or `/new` returns 404. A request that is not on those paths returns 401. The entry, its edges, and its visibility stay unchanged.
 
 ### Issue a CLI token and write with it
 
@@ -646,7 +676,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated feeds and empty pages.
 
-GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. GET `/edit`, when the request is verified as the owner, returns a list of stored articles, a separate list of stored notes, and a separate list of stored bookmarks. It does not return the article create form, the bookmark create form, or the note field. GET `/new`, when the request is verified as the owner, returns the article create form, the bookmark create form, and the note create form. The three create forms share one tab list. The first response shows the article create form. The other two stay in the response and are hidden until the owner chooses their tab. Choosing a tab stores nothing and keeps text already typed in any form. GET `/new` does not return those lists. The article form posts to POST `/edit`. The bookmark form posts to POST `/edit?bookmark`. The note form posts to POST `/edit?note` and uses the same body and image rules as the home note field. A successful note save still redirects to GET `/?posted={id}`. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body, its visibility, and its image when it has one, and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The article form, the bookmark form, and GET `/edit/{id}` accept many images for that entry. Each image is JPEG, PNG, GIF, or WebP and at most 8 MiB. Alternative text is optional, surrounding whitespace is removed, and more than 1500 Unicode scalar values stores no change. Empty text is stored as empty. A public bookmark lists the images under the Markdown body. A public article does not list them there. A control labeled `本文に入れる` copies one image into the body as Markdown. Removing an image does not rewrite the body. A draft image is not on the public image URL. The CLI does not send these images. A reply and a page do not get them. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The local dev server is the exception: its GET `/edit`, GET `/edit/*`, and GET `/new` return the screens, including drafts, so the owner can look. POST from that process stays 401. Preview and the deployed Worker are not this exception. The note field does not submit a title. When it has a body or one image, the host stores kind note, an empty title, and visibility public. The body stays the submitted text. The response shows that the save succeeded and shows the canonical URL. An empty body with no image stores nothing. One image is at most 8 MiB and is JPEG, PNG, GIF, or WebP. The owner writes alternative text for that image. Without that text, or when the text is only whitespace, the host stores nothing. The stored text is at most 1500 Unicode scalar values, after surrounding whitespace is removed. Public pages use that text as the image alt. Deleting a note removes that note only, and a reader can no longer retrieve its image bytes. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only. A verified owner's view path and canonical page for a public article or a public bookmark include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits the link. A public note and a public page omit it. On the local dev server the link is included for those articles and bookmarks.
+GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. An unverified request for `/edit`, `/edit/*`, `/new`, or `/new/*` returns 404 and does not include a draft body. GET `/login` is the Cloudflare Access login. When that request is verified as the owner, it returns 200 HTML with links to `/edit` and `/new`, and no draft body. GET `/edit`, when the request is verified as the owner, returns a list of stored articles, a separate list of stored notes, and a separate list of stored bookmarks. It does not return the article create form, the bookmark create form, or the note field. GET `/new`, when the request is verified as the owner, returns the article create form, the bookmark create form, and the note create form. The three create forms share one tab list. The first response shows the article create form. The other two stay in the response and are hidden until the owner chooses their tab. Choosing a tab stores nothing and keeps text already typed in any form. GET `/new` does not return those lists. The article form posts to POST `/edit`. The bookmark form posts to POST `/edit?bookmark`. The note form posts to POST `/edit?note` and uses the same body and image rules as the home note field. A successful note save still redirects to GET `/?posted={id}`. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body, its visibility, and its image when it has one, and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The article form, the bookmark form, and GET `/edit/{id}` accept many images for that entry. Each image is JPEG, PNG, GIF, or WebP and at most 8 MiB. Alternative text is optional, surrounding whitespace is removed, and more than 1500 Unicode scalar values stores no change. Empty text is stored as empty. A public bookmark lists the images under the Markdown body. A public article does not list them there. A control labeled `本文に入れる` copies one image into the body as Markdown. Removing an image does not rewrite the body. A draft image is not on the public image URL. The CLI does not send these images. A reply and a page do not get them. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The local dev server is the exception: its GET `/edit`, GET `/edit/*`, and GET `/new` return the screens, including drafts, so the owner can look. POST from that process stays 401. Preview and the deployed Worker are not this exception. The note field does not submit a title. When it has a body or one image, the host stores kind note, an empty title, and visibility public. The body stays the submitted text. The response shows that the save succeeded and shows the canonical URL. An empty body with no image stores nothing. One image is at most 8 MiB and is JPEG, PNG, GIF, or WebP. The owner writes alternative text for that image. Without that text, or when the text is only whitespace, the host stores nothing. The stored text is at most 1500 Unicode scalar values, after surrounding whitespace is removed. Public pages use that text as the image alt. Deleting a note removes that note only, and a reader can no longer retrieve its image bytes. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only. A verified owner's view path and canonical page for a public article or a public bookmark include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits the link. A public note and a public page omit it. On the local dev server the link is included for those articles and bookmarks.
 
 ##### A store that is past the free allowance
 
@@ -656,7 +686,7 @@ When a store cannot commit because it is past the free allowance, the entry and 
 
 ##### An unverified request
 
-A write, delete, or token issuance that is not verified as the owner returns 401 and does not change the entry or its edges. A refusal for invalid input is not 401. Design chooses any status code other than 401, without colliding with 404, 410, or 301.
+A request under `/edit` or `/new` that is not verified as the owner returns 404 and does not change the entry or its edges. A write, delete, or token issuance on another path that is not verified returns 401 and does not change the entry or its edges. A refusal for invalid input is not 401. Design chooses any status code other than 401 for that input refusal, without colliding with 404, 410, or 301.
 
 ##### Canonical URL of a deleted entry
 
@@ -686,7 +716,7 @@ A request that presents an invalid token, or a token invalidated by reissue, ret
 
 ##### The browser authentication service cannot verify the owner
 
-When the browser authentication service cannot verify the owner, a browser write or issuance returns 401. Verification of an already issued CLI token does not use that service.
+When the browser authentication service cannot verify the owner, a request under `/edit` or `/new` returns 404 and stores nothing. GET `/login` is the Access login path. A request for `/login` that reaches the Worker without a verified owner returns 401. Verification of an already issued CLI token does not use that service. A missing or invalid CLI token still returns 401.
 
 ## Data requirements
 
@@ -728,7 +758,7 @@ Browser authentication of the owner, the CLI token, and server-to-server HTTP si
 
 Every write, delete, and token issuance verifies that the request is the owner's. Placing the browser editing screen behind the authentication service is not, by itself, enough to authorize a write.
 
-An unauthenticated response does not return a draft body. An unauthenticated response does not show whether a draft exists. The local dev server's GET `/edit`, GET `/edit/*`, and GET `/new` are the exception, and only so the owner can look. A write on that server still returns 401 when Access cannot verify the owner.
+An unauthenticated response does not return a draft body. An unauthenticated response does not show whether a draft exists. An unverified request for `/edit`, `/edit/*`, `/new`, or `/new/*` returns 404. The local dev server's GET `/edit`, GET `/edit/*`, GET `/new`, and GET `/login` are the exception, and only so the owner can look. A write on that server still returns 404 when Access cannot verify the owner.
 
 The CLI token value and the secrets used to verify browser authentication do not appear in public responses or in the repository. The token hash is the form that may be stored.
 
