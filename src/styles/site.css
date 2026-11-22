@@ -38,10 +38,6 @@ article {
   padding-block-end: 1.75rem;
 }
 
-article:last-child {
-  border-bottom: none;
-}
-
 .site-brand {
   display: flex;
   align-items: center;
@@ -173,6 +169,10 @@ ol.dads-breadcrumb__list {
 
 .entry-body :is(p, ul, pre) {
   margin: 0;
+}
+
+.entry-body:empty {
+  display: none;
 }
 
 .entry-body ul {

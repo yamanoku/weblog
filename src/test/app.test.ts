@@ -127,6 +127,14 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.equal(articles.length >= 12, true);
   assert.equal(articles.every((entry) => entry.kind === "article" && entry.visibility === "public"), true);
   assert.equal(articles.some((entry) => entry.title === "morning-note"), true);
+  for (const article of articles) {
+    for (const other of articles) {
+      if (other.id === article.id) continue;
+      const path = `/${other.title.replaceAll(" ", "_")}`;
+      assert.equal(article.body.includes(`[${other.title}](${path})`), true, article.title);
+      assert.equal(publicEntryByTitle(path.slice(1))?.id, other.id);
+    }
+  }
   const notes = publicEntries().filter((entry) => entry.kind === "note");
   const bookmarks = publicEntries().filter((entry) => entry.kind === "bookmark");
   assert.equal(notes.length >= 12, true);

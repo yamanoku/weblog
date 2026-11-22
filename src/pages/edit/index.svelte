@@ -66,7 +66,9 @@
       <ul class="dads-list" data-spacing="8">
         {#each notes as note (note.id)}
           <li>
-            <p style="white-space: pre-wrap">{note.body}</p>
+            {#if note.body.length > 0}
+              <p style="white-space: pre-wrap">{note.body}</p>
+            {/if}
             {#if note.imageHref}
               <img src={note.imageHref} alt={note.imageAlt ?? ""} />
             {/if}

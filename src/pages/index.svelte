@@ -236,7 +236,9 @@
           {entry.title}
         </p>
         {#if entry.kind === "note"}
-          <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
+          {#if entry.body.length > 0}
+            <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
+          {/if}
           {#if entry.imageHref}
             <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
           {/if}

@@ -33,7 +33,7 @@ const reserved = new Set<string>(reservedTitles);
 // Local `vp dev` sample. Newest updatedAt first. These rows set no separate updatedAt,
 // so the order follows publishedAt. Tokyo noon is 03:00Z, so a day holds
 // an article at 15:00 JST (06:00Z), a note at 12:00 JST (03:00Z), and a bookmark at 09:00 JST (00:00Z).
-const entries: CatalogEntry[] = [
+const sourceEntries: CatalogEntry[] = [
   {
     id: "entry-article-20261121",
     title: "見出しはページに一つ",
@@ -492,6 +492,24 @@ D1 の1日の書き込み上限に当たったら、その仕事は 00:00 UTC �
   },
 ];
 
+// Public articles link to every other public article. Spaces in a title are underscores on the path.
+function withMutualArticleLinks(rows: CatalogEntry[]): CatalogEntry[] {
+  const articles = rows.filter((row) => row.kind === "article" && row.visibility === "public");
+  return rows.map((row) => {
+    if (!articles.includes(row)) return row;
+    const links = articles
+      .filter((article) => article.id !== row.id)
+      .map((article) => `- [${article.title}](/${article.title.replaceAll(" ", "_")})`)
+      .join("\n");
+    return {
+      ...row,
+      body: `${row.body}\n\n## ほかの記事\n\n${links}`,
+    };
+  });
+}
+
+const entries = withMutualArticleLinks(sourceEntries);
+
 export function isReservedTitle(title: string): boolean {
   return reserved.has(title);
 }
@@ -517,7 +535,12 @@ export function publicArticles(): CatalogEntry[] {
 }
 
 export function publicEntryByTitle(title: string): CatalogEntry | null {
-  return publicEntries().find((entry) => entry.title === title) ?? null;
+  const visible = publicEntries();
+  return (
+    visible.find((entry) => entry.title === title) ??
+    visible.find((entry) => entry.title.replaceAll(" ", "_") === title) ??
+    null
+  );
 }
 
 export function entryById(id: string): CatalogEntry | null {
