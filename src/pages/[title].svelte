@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { Link } from "@void/svelte";
   import { markdownToHtml } from "../domain/markdown-html.ts";
   import { publicArticleHref } from "../domain/public-article.ts";
   import Breadcrumb from "../ui/breadcrumb.svelte";
   import EntryHeading from "../ui/entry-heading.svelte";
 
-  let { entry } = $props();
+  let { entry, owner = false } = $props();
 </script>
 
 <svelte:head>
@@ -34,6 +35,9 @@
       <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
     {/if}
   </article>
+  {#if owner && (entry.kind === "article" || entry.kind === "bookmark")}
+    <p><Link class="dads-link" href={`/edit/${entry.id}`}>edit</Link></p>
+  {/if}
 {:else}
   <p>Empty page</p>
 {/if}

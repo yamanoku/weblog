@@ -8,6 +8,15 @@ import { listPublicNoteThread } from "../../store/edit-note.ts";
 import { hasTombstone, readStoredEntry } from "../../store/entries.ts";
 import { readsDevCatalog } from "../../store/read-source.ts";
 
+function editableKind(kind: string | undefined): boolean {
+  return kind === "article" || kind === "bookmark";
+}
+
+function privateOwner(c: { header: (name: string, value: string) => void }) {
+  c.header("cache-control", "private, no-store");
+  c.header("vary", "Cookie");
+}
+
 export const loader = defineHandler(async (c) => {
   const id = c.req.param("id") ?? "";
   const owner = readsDevCatalog() || (await verifiedOwner(c));
@@ -15,8 +24,7 @@ export const loader = defineHandler(async (c) => {
   if (readsDevCatalog()) {
     const entry = entryById(id);
     if (entry?.kind === "note" && entry.visibility === "public") {
-      c.header("cache-control", "private, no-store");
-      c.header("vary", "Cookie");
+      privateOwner(c);
       return {
         entry: null,
         thread: [{ id: entry.id, body: entry.body, replyToId: null }],
@@ -24,14 +32,13 @@ export const loader = defineHandler(async (c) => {
         refused,
       };
     }
-    return { entry, thread: null, owner: false, refused: null };
+    const showEdit = owner && editableKind(entry?.kind);
+    if (showEdit) privateOwner(c);
+    return { entry, thread: null, owner: showEdit, refused: null };
   }
   const stored = await readStoredEntry(editArticleDatabase(), id);
   if (stored?.visibility === "public" && stored.kind === "note") {
-    if (owner) {
-      c.header("cache-control", "private, no-store");
-      c.header("vary", "Cookie");
-    }
+    if (owner) privateOwner(c);
     return {
       entry: null,
       thread: await listPublicNoteThread(editArticleDatabase(), id),
@@ -40,6 +47,8 @@ export const loader = defineHandler(async (c) => {
     };
   }
   if (stored?.visibility === "public") {
+    const showEdit = owner && editableKind(stored.kind);
+    if (showEdit) privateOwner(c);
     const images =
       stored.kind === "bookmark"
         ? ((await entryImageViews(editArticleDatabase(), [id])).get(id) ?? [])
@@ -54,7 +63,7 @@ export const loader = defineHandler(async (c) => {
         images,
       },
       thread: null,
-      owner: false,
+      owner: showEdit,
       refused: null,
     };
   }

@@ -77,6 +77,9 @@
       <p class="entry-body">{entry.body}</p>
     {/if}
   </article>
+  {#if owner && (entry.kind === "article" || entry.kind === "bookmark")}
+    <p><Link class="dads-link" href={`/edit/${entry.id}`}>edit</Link></p>
+  {/if}
 {:else}
   <p>No entry for this URL.</p>
 {/if}

@@ -59,6 +59,12 @@ Scenario: When the reader opens the canonical URL, the same public entry is retu
 - When: An unauthenticated client requests that URL and does not ask for Activity Streams.
 - Then: The response is 200 HTML for that entry. The canonical URL stays the one issued at creation.
 
+Scenario: A verified owner sees an edit link on a public article or bookmark
+
+- Given: The request is verified as the owner. One public article and one public bookmark each have a view path. One public note and one public page exist.
+- When: The owner opens each article and bookmark view path and canonical URL, and also opens the note's canonical URL and the page's view path and canonical URL. An unverified caller opens the article view path.
+- Then: Each article and bookmark response for the owner is 200 and, after the entry, includes a link whose text is `edit` and whose target is that entry's GET `/edit/{id}`. The note response and the page responses do not include that link. The unverified article response is 200 and does not include the link. The stored body is unchanged.
+
 ### Read the notes connected to a note
 
 As an unauthenticated reader, I want the canonical page of a note to list that note and the owner's replies together, oldest first, so that I can read the connected posts in one place.
@@ -289,6 +295,8 @@ Public HTML for an article or a bookmark renders the stored body as Markdown. It
 Public HTML for any other kind keeps the stored lines. Page edges become links to the target's view path. When the public target has no view path, the link uses the canonical URL. A link to a title with no public entry remains, so the empty page can be opened. External URLs become external links.
 
 On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body.
+
+When the request is verified as the owner, the view path and the canonical page of a public article or a public bookmark include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note and a public page omit it. The stored body does not change. Owner writing defines the edit screen that link opens.
 
 Icons, tables, formulas, and Cosense decoration stay source text. The order of HTML for those is decided when that rendering's requirements are written.
 

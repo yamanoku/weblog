@@ -295,6 +295,21 @@ test("public articles are listed for the home page and matched by the title path
   sqlite.close();
 });
 
+test("a public article or bookmark shows an edit link for the owner", () => {
+  for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
+    const page = readRoot(path);
+    assert.match(page, /owner && \(entry\.kind === "article" \|\| entry\.kind === "bookmark"\)/);
+    assert.match(page, /href=\{`\/edit\/\$\{entry\.id\}`\}>edit<\/Link>/);
+  }
+  const title = readRoot("pages/[title].server.ts");
+  assert.match(title, /verifiedOwner\(/);
+  assert.match(title, /private, no-store/);
+  assert.match(title, /vary", "Cookie"/);
+  const canonical = readRoot("pages/e/[id].server.ts");
+  assert.match(canonical, /editableKind\(stored\.kind\)/);
+  assert.match(canonical, /owner: showEdit/);
+});
+
 test("a bookmark page shows the stored URL beside the title", () => {
   assert.match(readRoot("pages/[title].svelte"), /kind === "bookmark" \? entry\.bookmarkUrl/);
   assert.match(readRoot("pages/e/[id].svelte"), /kind === "bookmark" \? entry\.bookmarkUrl/);
