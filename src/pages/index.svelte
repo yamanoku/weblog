@@ -232,9 +232,11 @@
   <section class="entry-list">
     {#each group.entries as entry (entry.id)}
       <article class="entry-list">
-        <p class="dads-u-std-18B-160">
-          {entry.title}
-        </p>
+        {#if entry.title.length > 0 }
+          <p class="dads-u-std-18B-160">
+            {entry.title}
+          </p>
+        {/if}
         {#if entry.kind === "note"}
           {#if entry.body.length > 0}
             <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
