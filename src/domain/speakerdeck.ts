@@ -126,11 +126,11 @@ export async function resolveSpeakerDeckPlayers(
   const players: Record<string, string> = {};
   await Promise.all(
     keys.map(async (key) => {
-      const cached = await rememberedPlayer(key);
+      const cached = fetchImpl === fetch ? await rememberedPlayer(key) : null;
       const src = cached ?? (await askSpeakerDeck(key, fetchImpl));
       if (!src) return;
       players[key] = src;
-      if (!cached) await rememberPlayer(key, src);
+      if (!cached && fetchImpl === fetch) await rememberPlayer(key, src);
     }),
   );
   return players;
