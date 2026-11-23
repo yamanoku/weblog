@@ -143,7 +143,6 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
     "kv_write_tally",
     "note_images",
     "owner_token",
-    "page_icons",
     "past_titles",
     "path_redirects",
     "queue_op_tally",
@@ -204,11 +203,6 @@ test("the shipped migration creates the database.md tables, keys, and indexes", 
   );
   assert.deepEqual(primaryKey(sqlite, "tombstones"), []);
   assert.deepEqual(primaryKey(sqlite, "gyazo_objects"), ["image_id", "extension"]);
-  assert.deepEqual(
-    columns(sqlite, "page_icons").map((column) => column.name),
-    ["title", "image_id"],
-  );
-  assert.deepEqual(primaryKey(sqlite, "page_icons"), ["title"]);
   assert.deepEqual(primaryKey(sqlite, "note_images"), ["id"]);
   assert.deepEqual(
     columns(sqlite, "note_images").map((column) => column.name),

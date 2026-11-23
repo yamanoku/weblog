@@ -1,6 +1,59 @@
 // A Cosense `[Title.icon]` bracket. The stored body stays that bracket.
 // The icon is the first Gyazo image in the one public entry of that title.
-// When no public entry has the title, the image id comes from page_icons.
+// When no public entry has the title, the image comes from archivedPageIcons.
+
+// Titles whose pages are not imported. The object key is the path inside gyazo-archives.
+export const archivedPageIcons: Readonly<
+  Record<string, { imageId: string; extension: string; objectKey: string }>
+> = {
+  Copilot: {
+    imageId: "81fa38a548179c43f8adb8e77d686803",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-25/81fa38a548179c43f8adb8e77d686803.png",
+  },
+  "ChatGPT 4o": {
+    imageId: "d14f6b33536ea71303c8425d06123295",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-40/d14f6b33536ea71303c8425d06123295.png",
+  },
+  Grok: {
+    imageId: "d477bc3a85f82618f1352027b043429d",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-39/d477bc3a85f82618f1352027b043429d.png",
+  },
+  DeepSRT: {
+    imageId: "5749f7d1cf3d11247ac3f1a4eddfb69c",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-37/5749f7d1cf3d11247ac3f1a4eddfb69c.png",
+  },
+  NotebookLM: {
+    imageId: "9f55e05a46d73bb4890352d2ff92e842",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-39/9f55e05a46d73bb4890352d2ff92e842.png",
+  },
+  Claude: {
+    imageId: "1a9b94668d997980d57f2288af039c19",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-43/1a9b94668d997980d57f2288af039c19.png",
+  },
+  Gemini: {
+    imageId: "517629f79a96128e064032c65cfff887",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-33/517629f79a96128e064032c65cfff887.png",
+  },
+  MCP: {
+    imageId: "a664a528df5e2cbfa6c3b0cda850b72d",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-45/a664a528df5e2cbfa6c3b0cda850b72d.png",
+  },
+};
+
+export function archivedPageIconKey(imageId: string, extension: string): string | null {
+  for (const icon of Object.values(archivedPageIcons)) {
+    if (icon.imageId === imageId && icon.extension === extension) return icon.objectKey;
+  }
+  return null;
+}
 
 import { gyazoPublicOrigin, parseGyazoUrl } from "./gyazo.ts";
 

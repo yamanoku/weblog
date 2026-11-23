@@ -1,5 +1,6 @@
 import { defineHandler } from "void";
 import { gyazoContentType, parseGyazoPath } from "../../domain/gyazo.ts";
+import { archivedPageIconKey } from "../../domain/page-icon.ts";
 import { editArticleDatabase } from "../../store/edit-article.ts";
 import { readGyazoObject } from "../../store/gyazo-objects.ts";
 
@@ -35,6 +36,10 @@ export const GET = defineHandler(async (c) => {
     row = await readGyazoObject(editArticleDatabase(), parsed.imageId, parsed.extension);
   } catch {
     return textResponse(503, "store_unavailable", "no-store");
+  }
+  if (!row) {
+    const objectKey = archivedPageIconKey(parsed.imageId, parsed.extension);
+    if (objectKey) row = { objectKey };
   }
   if (!row) return textResponse(404, "", "no-store");
   let object: Awaited<ReturnType<GyazoBucket["get"]>>;

@@ -323,15 +323,15 @@ Scenario: The named public entry's first image is one archived Gyazo still image
 - When: An unauthenticated client requests that entry's HTML.
 - Then: The HTML shows an image whose source is `https://weblog.yamanoku.net/gyazo/{imageId}.{extension}` and whose alt text is `Copilot`. The image is inside a link to that entry's view path when it has one, and otherwise to `/e/{id}`. The stored body still contains `[Copilot.icon]`. The host does not add an edge. The host does not read a draft body.
 
-Scenario: No public entry has the title, and a page icon row names one archived still image
+Scenario: No public entry has the title, and the shipped icon list names one archived still image
 
-- Given: The public body contains `[Copilot.icon]` outside inline code and fenced code. No public entry has the current title `Copilot`. A `page_icons` row for that title names a Gyazo image id. The Gyazo index can choose one still-image extension for that image id.
+- Given: The public body contains `[Copilot.icon]` outside inline code and fenced code. No public entry has the current title `Copilot`. The icon list shipped with the Worker names that title, a Gyazo image id, one still-image extension, and the object key in `gyazo-archives`.
 - When: An unauthenticated client requests that entry's HTML.
-- Then: The HTML shows an image whose source is `https://weblog.yamanoku.net/gyazo/{imageId}.{extension}` and whose alt text is `Copilot`. The image is inside a link to `/` plus the percent-encoded title, with each space written as `_`. The stored body still contains `[Copilot.icon]`. The host does not add an edge. The host does not write `page_icons` or `gyazo_objects`.
+- Then: The HTML shows an image whose source is `https://weblog.yamanoku.net/gyazo/{imageId}.{extension}` and whose alt text is `Copilot`. The image is inside a link to `/` plus the percent-encoded title, with each space written as `_`. The stored body still contains `[Copilot.icon]`. The host does not add an edge. The host does not write D1.
 
 Scenario: The icon cannot be chosen
 
-- Given: The public body contains `[Copilot.icon]`. More than one public entry has that current title, or the one public entry's first image is not a Gyazo URL, or no public entry has that title and `page_icons` has no row for it, or the index cannot choose one still-image extension.
+- Given: The public body contains `[Copilot.icon]`. More than one public entry has that current title, or the one public entry's first image is not a Gyazo URL, or no public entry has that title and the shipped icon list has no entry for it, or the index cannot choose one still-image extension.
 - When: An unauthenticated client requests that entry's HTML.
 - Then: The HTML shows the source text `[Copilot.icon]`. It shows no image for that bracket. The stored body stays the bracket.
 

@@ -1,7 +1,13 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { and, eq, inArray } from "void/db";
-import { entries, pageIcons } from "../db/schema.ts";
-import { firstGyazoIcon, iconTitles, pageIconSrc, type PageIcon } from "../domain/page-icon.ts";
+import { entries } from "../db/schema.ts";
+import {
+  archivedPageIcons,
+  firstGyazoIcon,
+  iconTitles,
+  pageIconSrc,
+  type PageIcon,
+} from "../domain/page-icon.ts";
 import { articlePathTitle } from "../domain/public-article.ts";
 import { gyazoExtensions } from "./gyazo-objects.ts";
 
@@ -43,7 +49,13 @@ export async function pageIconsForBody(
       rows.set(row.title, row);
     }
   }
-  const pending: { title: string; href: string; imageId: string; extension: string | null }[] = [];
+  const pending: {
+    title: string;
+    href: string;
+    imageId: string;
+    extension: string | null;
+    shipped: boolean;
+  }[] = [];
   for (const title of titles) {
     if (counts.get(title) !== 1) continue;
     const row = rows.get(title);
@@ -55,34 +67,30 @@ export async function pageIconsForBody(
       href: iconHref(row),
       imageId: image.imageId,
       extension: image.extension,
+      shipped: false,
     });
   }
-  const missing = titles.filter((title) => (counts.get(title) ?? 0) === 0);
-  for (let start = 0; start < missing.length; start += titleChunk) {
-    const chunk = missing.slice(start, start + titleChunk);
-    if (chunk.length === 0) continue;
-    const found = await database
-      .select({ title: pageIcons.title, imageId: pageIcons.imageId })
-      .from(pageIcons)
-      .where(inArray(pageIcons.title, chunk));
-    for (const row of found) {
-      pending.push({
-        title: row.title,
-        href: titleHref(row.title),
-        imageId: row.imageId,
-        extension: null,
-      });
-    }
+  for (const title of titles) {
+    if ((counts.get(title) ?? 0) !== 0) continue;
+    const icon = archivedPageIcons[title];
+    if (!icon) continue;
+    pending.push({
+      title,
+      href: titleHref(title),
+      imageId: icon.imageId,
+      extension: icon.extension,
+      shipped: true,
+    });
   }
   const extensions = await gyazoExtensions(
     database,
-    pending.map((item) => item.imageId),
+    pending.filter((item) => !item.shipped).map((item) => item.imageId),
   );
   const icons: Record<string, PageIcon> = {};
   for (const item of pending) {
     const src = pageIconSrc(
       { imageId: item.imageId, extension: item.extension },
-      extensions[item.imageId] ?? [],
+      item.shipped ? [item.extension ?? ""] : (extensions[item.imageId] ?? []),
     );
     if (!src) continue;
     icons[item.title] = { href: item.href, src };
