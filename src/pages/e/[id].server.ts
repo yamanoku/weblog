@@ -7,6 +7,7 @@ import { editArticleDatabase } from "../../store/edit-article.ts";
 import { entryImageViews } from "../../store/entry-images.ts";
 import { resolveSpeakerDeckPlayers } from "../../domain/speakerdeck.ts";
 import { gyazoIndexForBody } from "../../store/gyazo-objects.ts";
+import { pageIconsForBody } from "../../store/page-icons.ts";
 import { listPublicNoteThread } from "../../store/edit-note.ts";
 import { hasTombstone, readStoredEntry } from "../../store/entries.ts";
 import { readsDevCatalog } from "../../store/read-source.ts";
@@ -65,6 +66,7 @@ export const loader = defineHandler(async (c) => {
         ? ((await entryImageViews(editArticleDatabase(), [id])).get(id) ?? [])
         : [];
     const gyazo = await gyazoIndexForBody(editArticleDatabase(), stored.body);
+    const icons = await pageIconsForBody(editArticleDatabase(), stored.body);
     const speakerdeck = await resolveSpeakerDeckPlayers([stored.body, stored.bookmarkUrl ?? ""]);
     return {
       entry: {
@@ -75,6 +77,7 @@ export const loader = defineHandler(async (c) => {
         bookmarkUrl: stored.bookmarkUrl,
         images,
         gyazo,
+        icons,
         speakerdeck,
       },
       thread: null,

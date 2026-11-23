@@ -7,6 +7,7 @@ import { editArticleDatabase } from "../store/edit-article.ts";
 import { entryImageViews } from "../store/entry-images.ts";
 import { resolveSpeakerDeckPlayers } from "../domain/speakerdeck.ts";
 import { gyazoIndexForBody } from "../store/gyazo-objects.ts";
+import { pageIconsForBody } from "../store/page-icons.ts";
 import { readPublicEntryByPath } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
@@ -51,12 +52,13 @@ export const loader = defineHandler(async (c) => {
       ? ((await entryImageViews(editArticleDatabase(), [entry.id])).get(entry.id) ?? [])
       : [];
   const gyazo = await gyazoIndexForBody(editArticleDatabase(), entry.body);
+  const icons = entry.kind === "note" ? {} : await pageIconsForBody(editArticleDatabase(), entry.body);
   const speakerdeck =
     entry.kind === "note"
       ? {}
       : await resolveSpeakerDeckPlayers([entry.body, entry.bookmarkUrl ?? ""]);
   return {
-    entry: { ...entry, images, gyazo, speakerdeck },
+    entry: { ...entry, images, gyazo, speakerdeck, icons },
     owner,
     headTitle: publicDocumentTitle(entry),
   };

@@ -83,7 +83,7 @@ test("public article pages render markdown and the edit form keeps the source", 
     const page = readFileSync(join(rootDir, path), "utf8");
     assert.match(
       page,
-      /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}\)/,
+      /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}, entry\.icons \?\? \{\}\)/,
     );
     assert.match(page, /\{@html/);
     assert.match(

@@ -23,7 +23,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Write rules are i
 - The ActivityPub actor, Follow, signatures, sending activities, and Activity Streams for a live entry
 - WebFinger, the outbox, followers, and the inbox
 - Bulk import from Cosense
-- The order of turning formulas, icons, and lines that start with `$` or `%` that remain in the body into HTML other than that source text
+- The order of turning formulas and lines that start with `$` or `%` that remain in the body into HTML other than that source text
 - The ORM
 - The owner's write API and the owner's list of 50 entries
 
@@ -311,6 +311,30 @@ Scenario: When the written URL does not identify one object, the HTML keeps the 
 - When: An unauthenticated client requests the entry HTML.
 - Then: The HTML keeps that original URL. It does not choose one of the objects.
 
+### Read a page icon
+
+As an unauthenticated reader, I want a `[Title.icon]` bracket in a public article, bookmark, or page to show that page's icon image. The bytes come from the existing Gyazo archive, and the stored body stays the bracket.
+
+**Acceptance criteria:**
+
+Scenario: The named public entry's first image is one archived Gyazo still image
+
+- Given: The public body contains `[Copilot.icon]` outside inline code and fenced code. Exactly one public entry has the current title `Copilot`. The first image in that entry's stored body is a Gyazo URL. The Gyazo index can choose one still-image extension for that image id. `png`, `jpg`, `jpeg`, `gif`, and `webp` are still images. An `mp4` row is not that choice.
+- When: An unauthenticated client requests that entry's HTML.
+- Then: The HTML shows an image whose source is `https://weblog.yamanoku.net/gyazo/{imageId}.{extension}` and whose alt text is `Copilot`. The image is inside a link to that entry's view path when it has one, and otherwise to `/e/{id}`. The stored body still contains `[Copilot.icon]`. The host does not add an edge. The host does not read a draft body.
+
+Scenario: The icon cannot be chosen
+
+- Given: The public body contains `[Copilot.icon]`. No single public entry has that current title, or that entry's first image is not a Gyazo URL, or the index cannot choose one still-image extension.
+- When: An unauthenticated client requests that entry's HTML.
+- Then: The HTML shows the source text `[Copilot.icon]`. It shows no image for that bracket. The stored body stays the bracket.
+
+Scenario: The bracket is inside code, or the entry is a note
+
+- Given: `[Copilot.icon]` is inside inline code or fenced code, or the public entry is a note.
+- When: An unauthenticated client requests that entry's HTML.
+- Then: The HTML shows that bracket as source text. A note keeps the stored lines.
+
 ## KPIs
 
 ### No numeric target
@@ -370,7 +394,7 @@ On a bookmark's view path and canonical page, the external URL is shown beside t
 
 When the request is verified as the owner, the view path and the canonical page of a public article, a public bookmark, or a public page include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note omits it. The stored body does not change. Owner writing defines the edit screen that link opens.
 
-A stored bracket `[/project]` or `[/project/page title]` is a link to `https://scrapbox.io/project` or `https://scrapbox.io/project/` plus the percent-encoded page title. The link text is the page title, or the project name when the bracket has no page. The project name is the first path segment. This link is not an edge on this host. Icons, formulas, and lines that start with `$` or `%` that remain in the body stay source text. The order of HTML for those is decided when that rendering's requirements are written.
+A stored bracket `[/project]` or `[/project/page title]` is a link to `https://scrapbox.io/project` or `https://scrapbox.io/project/` plus the percent-encoded page title. The link text is the page title, or the project name when the bracket has no page. The project name is the first path segment. This link is not an edge on this host. A bracket `[Title.icon]` outside inline code and fenced code is that page's icon, as the page-icon story says. Formulas and lines that start with `$` or `%` that remain in the body stay source text. The order of HTML for those is decided when that rendering's requirements are written.
 
 A `i.gyazo.com` or `gyazo.com` URL uses the image rule below. A bracket that holds only that URL and one other `http` or `https` URL shows the image or video inside a link to the other URL. When the Gyazo URL does not identify one image or video, that bracket shows both URLs as links and shows no image. A `scrapbox.io/files` URL stays the original URL string. This feature does not copy that file.
 
@@ -497,6 +521,6 @@ The image route returns one object's bytes. It does not list the bucket.
 
 None that block Design for this feature.
 
-Article Markdown is rendered as the body HTML section says. The order for rendering icons, tables, formulas, and Cosense decoration is decided by the owner when that rendering's requirements are written. Until then, this feature shows that source text. Changing that order does not change the stored body or the edge rules.
+Article Markdown is rendered as the body HTML section says. A `[Title.icon]` bracket follows the page-icon story. The order for rendering formulas, lines that start with `$` or `%`, and the remaining Cosense decoration is decided by the owner when that rendering's requirements are written. Until then, this feature shows that source text. Changing that order does not change the stored body or the edge rules.
 
 The billed size of bucket `gyazo-archives` is unmeasured. The 26.3 GiB figure above is the local expansion, not a bill. No billed size is written until the owner measures it. This gap does not change the image URL. Storage beyond 10 GB a month stays outside the zero-yen target.

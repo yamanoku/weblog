@@ -295,6 +295,20 @@ ol.dads-breadcrumb__list {
   max-height: 350px;
 }
 
+.site-main img.page-icon {
+  width: 1.25em;
+  height: 1.25em;
+  max-width: 1.25em;
+  max-height: 1.25em;
+  vertical-align: -0.2em;
+  object-fit: contain;
+}
+
+.entry-body a:has(img.page-icon) {
+  text-decoration: none;
+  background: none;
+}
+
 .preview {
   display: grid;
   gap: 0.75rem;

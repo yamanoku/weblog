@@ -62,7 +62,7 @@ test("a youtube or spotify link becomes an embed and the source url stays out of
   for (const page of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const source = readFileSync(join(rootDir, page), "utf8");
     assert.match(source, /speakerdeck=\{entry\.speakerdeck \?\? \{\}\}/);
-    assert.match(source, /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}\)/);
+    assert.match(source, /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}, entry\.icons \?\? \{\}\)/);
   }
 });
 
