@@ -280,7 +280,7 @@ function renderList(
       html = renderInline(parsed.text, decks, true, icons);
     }
     const next = listItem(lines[cursor.index] ?? "");
-    if (next && next.level > level) html += renderList(lines, cursor, next.level, decks);
+    if (next && next.level > level) html += renderList(lines, cursor, next.level, decks, icons);
     items.push(`<li>${html}</li>`);
   }
   return `<ul>${items.join("")}</ul>`;

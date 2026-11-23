@@ -61,6 +61,8 @@ test("a resolved page icon is an image from the gyazo archive", () => {
   assert.match(markdownToHtml("[Missing.icon]", {}, {}, icons), /\[Missing\.icon\]/);
   assert.equal(markdownToHtml("```\n[Copilot.icon]\n```", {}, {}, icons).includes("page-icon"), false);
   assert.match(markdownToHtml("`[Copilot.icon]`", {}, {}, icons), /<code>\[Copilot\.icon\]<\/code>/);
+  const nested = markdownToHtml("- parent\n  - [Copilot.icon]\n", {}, {}, icons);
+  assert.match(nested, /<ul><li>parent<ul><li><a href="\/Copilot"><img class="page-icon"/);
 });
 
 test("a public page icon uses the first gyazo image and the archive index", async () => {
