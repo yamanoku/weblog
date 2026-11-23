@@ -72,6 +72,24 @@ function lineAt(text: string, index: number): { line: string; next: number } {
   return { line: text.slice(index, newline), next: newline + 1 };
 }
 
+// A Cosense bracket of a Gyazo URL and one other URL. The image links to that other URL.
+function gyazoLinkBracket(rest: string): { gyazo: string; link: string; gyazoFirst: boolean; raw: string } | null {
+  const match = /^\[([^\]\n]+)\]/.exec(rest);
+  const inner = match?.[1];
+  if (!match || inner === undefined || rest[match[0].length] === "(") return null;
+  const tokens = inner.trim().split(/\s+/).filter((token) => token.length > 0);
+  const first = tokens[0];
+  const second = tokens[1];
+  if (tokens.length !== 2 || !first || !second) return null;
+  if (!/^https?:\/\//i.test(first) || !/^https?:\/\//i.test(second)) return null;
+  const firstGyazo = parseGyazoUrl(first) !== null;
+  const secondGyazo = parseGyazoUrl(second) !== null;
+  if (firstGyazo === secondGyazo) return null;
+  return firstGyazo
+    ? { gyazo: first, link: second, gyazoFirst: true, raw: match[0] }
+    : { gyazo: second, link: first, gyazoFirst: false, raw: match[0] };
+}
+
 // Fenced code and inline code stay source text. A kept Gyazo URL becomes an external link.
 function replaceGyazoUrls(source: string, replace: (url: string) => string | null): string {
   const text = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
@@ -114,6 +132,18 @@ function replaceGyazoUrls(source: string, replace: (url: string) => string | nul
     if (link?.[2] && parseGyazoUrl(link[2])) {
       result += replace(link[2]) ?? link[0];
       index += link[0].length;
+      continue;
+    }
+    const pair = gyazoLinkBracket(rest);
+    if (pair) {
+      const media = replace(pair.gyazo) ?? `[${pair.gyazo}](${pair.gyazo})`;
+      const other = `[${pair.link}](${pair.link})`;
+      result += media.startsWith("![")
+        ? `[${media}](${pair.link})`
+        : pair.gyazoFirst
+          ? `${media}${other}`
+          : `${other}${media}`;
+      index += pair.raw.length;
       continue;
     }
     const bracket = /^\[(\s*https?:\/\/[^\]\s]+\s*)\]/.exec(rest);

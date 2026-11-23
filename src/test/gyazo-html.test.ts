@@ -37,6 +37,42 @@ test("a gyazo url with one indexed extension becomes an image on this host", () 
   assert.match(named, /alt="https:\/\/i\.gyazo\.com\/abc\.PNG"/);
 });
 
+test("a gyazo url beside another url in one bracket is an image link", () => {
+  const source =
+    "- [https://gyazo.com/1982f3707b54fa255e42122b0f618578 https://x.com/bunjavascript/status/1909887663500619940]";
+  const html = markdownToHtml(source, { "1982f3707b54fa255e42122b0f618578": ["png"] });
+  assert.equal(
+    html,
+    `<ul><li><a href="https://x.com/bunjavascript/status/1909887663500619940"><img src="${gyazoPublicOrigin}/gyazo/1982f3707b54fa255e42122b0f618578.png" alt="https://gyazo.com/1982f3707b54fa255e42122b0f618578"></a></li></ul>`,
+  );
+  assert.equal(source.includes("!["), false);
+
+  const reversed = markdownToHtml(
+    "[https://x.com/bunjavascript/status/1909887663500619940 https://gyazo.com/abc]",
+    one,
+  );
+  assert.equal(
+    reversed,
+    `<p><a href="https://x.com/bunjavascript/status/1909887663500619940"><img src="${gyazoPublicOrigin}/gyazo/abc.png" alt="https://gyazo.com/abc"></a></p>`,
+  );
+
+  const video = markdownToHtml("[https://gyazo.com/abc https://example.com/watch]", { abc: ["mp4"] });
+  assert.match(video, /^<p><a href="https:\/\/example.com\/watch"><video controls src="/);
+
+  const missing = markdownToHtml(source, {});
+  assert.equal(missing.includes("<img"), false);
+  assert.equal(missing.includes("!["), false);
+  assert.match(missing, /<a href="https:\/\/gyazo\.com\/1982f3707b54fa255e42122b0f618578">/);
+  assert.match(missing, /<a href="https:\/\/x\.com\/bunjavascript\/status\/1909887663500619940">/);
+
+  assert.deepEqual(
+    gyazoImageIds(
+      "[https://gyazo.com/1982f3707b54fa255e42122b0f618578 https://x.com/bunjavascript/status/1909887663500619940]",
+    ),
+    ["1982f3707b54fa255e42122b0f618578"],
+  );
+});
+
 test("an unknown or ambiguous gyazo url stays an external link", () => {
   const missing = markdownToHtml("[https://gyazo.com/abc]", {});
   assert.equal(missing, '<p><a href="https://gyazo.com/abc">https://gyazo.com/abc</a></p>');

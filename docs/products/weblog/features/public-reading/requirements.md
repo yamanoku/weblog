@@ -251,6 +251,18 @@ Scenario: When the written URL identifies one object, public HTML refers to this
 - When: An unauthenticated client requests the entry HTML.
 - Then: The HTML refers to `https://weblog.yamanoku.net/gyazo/{imageId}.{extension}`. The stored body still contains the original URL.
 
+Scenario: When one bracket holds a Gyazo URL and another URL, the image links there
+
+- Given: A public body contains a bracket whose text is only a Gyazo URL and one other `http` or `https` URL. The index can select one image or video extension for that image id.
+- When: An unauthenticated client requests the entry HTML.
+- Then: The HTML shows that image or video inside a link to the other URL. The image alt is the original Gyazo URL. The stored body still contains the original bracket.
+
+Scenario: When that bracket does not identify one image or video, both URLs are links
+
+- Given: A public body contains that same bracket. The index cannot select one image or video extension for that image id.
+- When: An unauthenticated client requests the entry HTML.
+- Then: The HTML shows no image and no video for that bracket. Both URLs are links. A Gyazo URL with one non-image extension links to this host. Any other Gyazo URL stays the original URL.
+
 Scenario: When the written URL does not identify one object, the HTML keeps the original URL
 
 - Given: A public body contains a Gyazo URL with no extension. The index has more than one object key for that image id.
@@ -302,7 +314,7 @@ An old path of a public entry redirects with 301 to the current view path. When 
 
 The stored body stays plain text. Public HTML does not replace that string.
 
-Public HTML for an article, a bookmark, or a page renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, and two leading spaces per nested list level, lines that start with `>`, a list item whose text starts with `>` (consecutive items of that form at the same level are one quotation), `*` and `**` emphasis, `***` for bold and italic, `~~` strikethrough, inline code in backticks, fenced code, `[label](URL)` links, and `![text](URL)` images into HTML. A pipe table becomes a table with a header and a body. A `Table: name` line immediately before it is that table's caption. A link or image URL is only `http`, `https`, or a path on this host. The image alt is the text between the brackets, and it may be empty. Raw HTML in the body is escaped and is not executed. A bookmark also lists every stored image under the body, in stored order, even when the Markdown already contains it. An article and a page do not add that list. An article or page image appears in the HTML only where the Markdown places it. The image source is `/note-images/{id}` for that image. For a note, that id is the note id. Links in a page are the Markdown links stored in the body. Rendering does not walk Cosense brackets again.
+Public HTML for an article, a bookmark, or a page renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, and two leading spaces per nested list level, lines that start with `>`, a list item whose text starts with `>` (consecutive items of that form at the same level are one quotation), `*` and `**` emphasis, `***` for bold and italic, `~~` strikethrough, inline code in backticks, fenced code, `[label](URL)` links, and `![text](URL)` images into HTML. A pipe table becomes a table with a header and a body. A `Table: name` line immediately before it is that table's caption. A link or image URL is only `http`, `https`, or a path on this host. The image alt is the text between the brackets, and it may be empty. Raw HTML in the body is escaped and is not executed. A bookmark also lists every stored image under the body, in stored order, even when the Markdown already contains it. An article and a page do not add that list. An article or page image appears in the HTML only where the Markdown places it. The image source is `/note-images/{id}` for that image. For a note, that id is the note id. Links in a page are the Markdown links stored in the body. Rendering does not walk Cosense brackets again, except a bracket that is only a Gyazo URL and one other `http` or `https` URL.
 
 Public HTML for a note keeps the stored lines.
 
@@ -312,7 +324,7 @@ When the request is verified as the owner, the view path and the canonical page 
 
 Icons, formulas, lines that start with `$` or `%`, and links to another project that remain in the body stay source text. The order of HTML for those is decided when that rendering's requirements are written.
 
-A `i.gyazo.com` or `gyazo.com` URL uses the image rule below. A `scrapbox.io/files` URL stays the original URL string. This feature does not copy that file.
+A `i.gyazo.com` or `gyazo.com` URL uses the image rule below. A bracket that holds only that URL and one other `http` or `https` URL shows the image or video inside a link to the other URL. When the Gyazo URL does not identify one image or video, that bracket shows both URLs as links and shows no image. A `scrapbox.io/files` URL stays the original URL string. This feature does not copy that file.
 
 ##### Note thread
 

@@ -70,6 +70,20 @@ function renderInline(source: string): string {
         continue;
       }
     }
+    if (source.startsWith("[![", index)) {
+      const linked = /^\[!\[([^\]]*)\]\(([^)\s]+)\)\]\(([^)\s]+)\)/.exec(source.slice(index));
+      const src = linked?.[2] ? safeUrl(linked[2]) : null;
+      const href = linked?.[3] ? safeUrl(linked[3]) : null;
+      if (linked && src && href) {
+        const alt = linked[1] ?? "";
+        const media = isMp4(src)
+          ? `<video controls src="${escapeHtml(src)}"></video>`
+          : `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}">`;
+        html += `<a href="${escapeHtml(href)}">${media}</a>`;
+        index += linked[0].length;
+        continue;
+      }
+    }
     if (source.startsWith("![", index)) {
       const labelEnd = source.indexOf("]", index + 2);
       if (labelEnd !== -1 && source[labelEnd + 1] === "(") {

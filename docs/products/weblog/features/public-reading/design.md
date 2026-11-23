@@ -198,7 +198,7 @@ Both parameters are required together. `before_id` is a lowercase UUID. `before`
 
 ### Shared HTML
 
-One function renders public HTML. An article, a bookmark, and a page render the stored body as Markdown: headings, paragraphs, nested lists, quotations, emphasis, strikethrough, inline code, fenced code, links, images, and a table with a caption. Raw HTML in that text is escaped, and the stored string is never inserted as HTML. A note keeps the stored lines, escaped. Links in a page are the Markdown links the import stored. Rendering does not walk Cosense brackets again. Icons, formulas, lines that start with `$` or `%`, and links to another project stay the strings left in the body.
+One function renders public HTML. An article, a bookmark, and a page render the stored body as Markdown: headings, paragraphs, nested lists, quotations, emphasis, strikethrough, inline code, fenced code, links, images, and a table with a caption. Raw HTML in that text is escaped, and the stored string is never inserted as HTML. A note keeps the stored lines, escaped. Links in a page are the Markdown links the import stored. Rendering does not walk Cosense brackets again, except a bracket that is only a Gyazo URL and one other `http` or `https` URL. Icons, formulas, lines that start with `$` or `%`, and links to another project stay the strings left in the body.
 
 The href of a link in the body is the URL written in that Markdown. A generated href is only `http`, `https`, or a path on this host. Any other scheme is escaped text. Inbound edges shown on an empty page are the stored edges. Rendering does not extract them from the body again.
 
@@ -228,6 +228,8 @@ Media for a rewritten URL:
 - `png`, `jpg`, `jpeg`, `gif`, `webp`: an `img`. The alt text is the original URL.
 - `mp4`: a `video` with `controls`.
 - Any other extension: an anchor to the host URL.
+
+A bracket whose text is only a Gyazo URL and one other `http` or `https` URL uses that same choice. An `img` or a `video` is wrapped in a link to the other URL. The alt text is the original Gyazo URL. When the choice is not an image or a video, the bracket becomes two links in the written order. The Gyazo link is the host URL when one non-image extension is selected, and the original URL otherwise. The stored body remains the bracket.
 
 The ids are loaded with `WHERE image_id IN (...)`, chunked at 80, in the same batch as title resolution.
 
