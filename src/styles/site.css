@@ -144,6 +144,8 @@ ol.dads-breadcrumb__list {
 .entry-article {
   display: grid;
   gap: 1.5rem;
+  /* Grid items default to min-content, so one long URL widens the page. */
+  min-inline-size: 0;
 }
 
 .entry-heading {
@@ -163,8 +165,10 @@ ol.dads-breadcrumb__list {
 }
 
 .media-embed {
-  display: inline-block;
+  display: block;
   inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   border: 0;
 }
 
@@ -192,10 +196,26 @@ ol.dads-breadcrumb__list {
 .entry-body {
   display: grid;
   gap: 1rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   color: var(--color-neutral-solid-gray-900);
   font-size: 1rem;
   line-height: 1.7;
   letter-spacing: 0.02em;
+}
+
+.entry-body > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.entry-article :where(img, video, iframe) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.entry-body :where(a, code) {
+  overflow-wrap: anywhere;
 }
 
 .entry-body :is(h1, h2, h3, h4, h5, h6) {
@@ -223,19 +243,21 @@ ol.dads-breadcrumb__list {
 }
 
 .entry-body blockquote {
-  padding-left: 1rem;
-  border-left: 2px solid var(--color-neutral-solid-gray-200);
+  padding-inline: 1rem;
+  background-color: var(--color-neutral-solid-gray-50);
+  padding-block: 0.5rem;
+  border-radius: .5rem;
 }
 
 .entry-body .table-scroll {
   overflow: auto;
   max-inline-size: 100%;
+  overscroll-behavior: contain;
 }
 
 .entry-body table {
   border-collapse: collapse;
   width: max-content;
-  max-inline-size: 100%;
 }
 
 .entry-body caption {
@@ -252,9 +274,14 @@ ol.dads-breadcrumb__list {
 
 .entry-body pre {
   overflow-x: auto;
+  overscroll-behavior: contain;
   padding: 1rem;
   border-radius: 0.5rem;
   background: var(--color-neutral-solid-gray-50);
+}
+
+.entry-body pre code {
+  overflow-wrap: normal;
 }
 
 .entry-body code {
