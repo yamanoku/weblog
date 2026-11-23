@@ -42,6 +42,10 @@ test("each home page holds ten entries and the last page keeps the remainder", (
 test("the home page links the next ten entries", () => {
   const page = readFileSync(join(rootDir, "pages/index.svelte"), "utf8");
   const loader = readFileSync(join(rootDir, "pages/index.server.ts"), "utf8");
+  assert.match(page, /class="entry-grid"/);
+  assert.match(page, /class="entry-card"/);
+  assert.equal(page.includes("groupByUpdatedDay"), false);
+  assert.equal(page.includes("entry-list__date"), false);
   assert.match(page, /aria-label="ページ"/);
   assert.match(page, /rel="prev">前へ/);
   assert.match(page, /rel="next">次へ/);

@@ -159,7 +159,7 @@ Scenario: When deliverable entries exist, the first page lists ten of them
 
 - Given: More than ten deliverable entries exist. A page is public and is not deliverable.
 - When: An unauthenticated client requests `GET /`, `GET /feed.xml`, or `GET /feed.json`.
-- Then: The response lists ten deliverable entries. Order is `updatedAt` descending, then the immutable id descending. The public page is absent. Each item includes the body. The item id is the canonical URL. The HTML for `GET /` places those items in one section per calendar date of `updatedAt` in `Asia/Tokyo`. The later date comes first. The section heading shows that date as `2026年11月20日`, and the `time` element's `datetime` is `YYYY-MM-DD`. Entries that share a date are inside that section. The feeds are not grouped.
+- Then: The response lists ten deliverable entries. Order is `updatedAt` descending, then the immutable id descending. The public page is absent. Each item includes the body. On the `GET /` card, that body shows at most 100 characters. A longer body shows those 100 characters followed by `…`. The title and the images are outside that count. A feed still includes the full body. The item id is the canonical URL. The HTML for `GET /` places those items in one wrapping grid of cards. The column count follows the width of the list. The list does not divide items by date. The feeds are not divided by date.
 
 Scenario: When more than ten deliverable entries exist, the response offers the next page
 

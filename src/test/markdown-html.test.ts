@@ -45,7 +45,14 @@ test("article markdown becomes html and raw html stays text", () => {
 });
 
 test("public article pages render markdown and the edit form keeps the source", () => {
-  for (const path of ["pages/index.svelte", "pages/[title].svelte", "pages/e/[id].svelte"]) {
+  const home = readFileSync(join(rootDir, "pages/index.svelte"), "utf8");
+  assert.match(home, /cardBodyExcerpt\(entry\.body, entry\.kind\)/);
+  assert.equal(home.includes("{@html"), false);
+  assert.match(
+    home,
+    /\{#if entry\.kind === "bookmark"\}\s*\{#each entry\.images \?\? \[\] as image \(image\.href\)\}/,
+  );
+  for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const page = readFileSync(join(rootDir, path), "utf8");
     assert.match(page, /markdownToHtml\(entry\.body\)/);
     assert.match(page, /\{@html/);

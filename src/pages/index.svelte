@@ -1,12 +1,10 @@
 <script lang="ts">
   import { Form, Link, useForm } from "@void/svelte";
+  import { cardBodyExcerpt } from "../domain/card-excerpt.ts";
   import { homePageHref, homePageNumbers } from "../domain/home-page.ts";
-  import { markdownToHtml } from "../domain/markdown-html.ts";
-  import { groupByUpdatedDay } from "../domain/published-day.ts";
   import { acceptNoteImage, encodeNoteImage, noteImageAltLimit } from "../domain/note-image.ts";
 
   let { entries, owner = false, postedNote = null, page = 1, pageCount = 1 } = $props();
-  const dayGroups = $derived(groupByUpdatedDay(entries));
   const pageNumbers = $derived(homePageNumbers(page, pageCount));
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
   let attachedBase64 = "";
@@ -228,37 +226,30 @@
 </div>
 {/if}
 
-{#each dayGroups as group (group.date || group.entries[0].id)}
-  <section class="entry-list">
-    {#each group.entries as entry (entry.id)}
-      <article class="entry-list">
-        {#if entry.title.length > 0 }
-          <p class="dads-u-std-18B-160">
-            {entry.title}
-          </p>
-        {/if}
-        {#if entry.kind === "note"}
-          {#if entry.body.length > 0}
-            <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
-          {/if}
-          {#if entry.imageHref}
-            <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
-          {/if}
-        {:else}
-          <div class="entry-body">
-            {@html markdownToHtml(entry.body)}
-          </div>
-          {#if entry.kind === "bookmark"}
-            {#each entry.images ?? [] as image (image.href)}
-              <img src={image.href} alt={image.alt} />
-            {/each}
-          {/if}
-        {/if}
+<div class="entry-grid">
+  {#each entries as entry (entry.id)}
+    {@const excerpt = cardBodyExcerpt(entry.body, entry.kind)}
+    <article class="entry-card">
+      {#if entry.title.length > 0 }
+        <h2 class="entry-card__title dads-u-std-18B-160">{entry.title}</h2>
+      {/if}
+      {#if excerpt}
+        <p class="entry-body">{excerpt}</p>
+      {/if}
+      {#if entry.kind === "note" && entry.imageHref}
+        <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
+      {/if}
+      {#if entry.kind === "bookmark"}
+        {#each entry.images ?? [] as image (image.href)}
+          <img src={image.href} alt={image.alt} />
+        {/each}
+      {/if}
+      <footer>
         <p><Link class="dads-link" href={`/e/${entry.id}`}>permalink</Link></p>
-      </article>
-    {/each}
-  </section>
-{/each}
+      </footer>
+    </article>
+  {/each}
+</div>
 
 {#if pageCount > 1}
   <nav class="home-pages" aria-label="ページ">
@@ -293,15 +284,56 @@
     overflow-wrap: anywhere;
   }
 
-  .entry-list__heading {
-    border-top: 1px solid var(--color-neutral-solid-gray-200);
-    margin-block: 0.5lh;
+  :global(main.site-main):has(.entry-grid) {
+    max-inline-size: 72rem;
+  }
+
+  .post-note {
+    max-inline-size: 40rem;
+  }
+
+  .entry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem;
+  }
+
+  .entry-card {
     display: flex;
-    height: 0;
-    align-items: center;
-    justify-content: center;
-    z-index: 1;
-    pointer-events: none;
+    flex-direction: column;
+    gap: 1rem;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--color-neutral-solid-gray-200);
+    border-radius: 0.5rem;
+    background-color: var(--color-neutral-white);
+    box-sizing: border-box;
+  }
+
+  .entry-card__title {
+    margin: 0;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  .entry-card .entry-body {
+    text-wrap: pretty;
+  }
+
+  .entry-card > img {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+
+  .entry-card footer {
+    margin-block-start: auto;
+    padding-inline: 0;
+  }
+
+  .entry-card footer p {
+    margin: 0;
   }
 
   .home-pages {
@@ -324,14 +356,9 @@
     font-weight: 700;
   }
 
-  .entry-list__date {
-    display: block;
-    flex: 0 0 auto;
-    font-weight: normal;
-    font-size: 0.875rem;
-    margin-block-start: -0.25lh;
-    padding-inline: 0.5lh;
-    background-color: white;
-    pointer-events: none;
+  @media (forced-colors: active) {
+    .entry-card {
+      border-color: CanvasText;
+    }
   }
 </style>
