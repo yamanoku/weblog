@@ -273,3 +273,76 @@ ol.dads-breadcrumb__list {
   gap: 0.75rem;
   justify-items: start;
 }
+
+/* http(s) anchors. A path on this host stays a solid underline. */
+a[href^="http://" i],
+a[href^="https://" i],
+a.dads-link[href^="http://" i],
+a.dads-link[href^="https://" i] {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: calc(2 / 16 * 1rem);
+  text-underline-offset: calc(3 / 16 * 1rem);
+  background-color: var(--color-primitive-yellow-100);
+  box-decoration-break: clone;
+}
+
+a[href^="http://" i]:focus-visible,
+a[href^="https://" i]:focus-visible,
+a.dads-link[href^="http://" i]:focus-visible,
+a.dads-link[href^="https://" i]:focus-visible {
+  background-color: var(--color-primitive-yellow-300);
+}
+
+@media (hover: hover) {
+  a.dads-link[href^="http://" i]:hover,
+  a.dads-link[href^="https://" i]:hover {
+    text-decoration-thickness: calc(3 / 16 * 1rem);
+  }
+}
+
+a[href^="http://" i]:active,
+a[href^="https://" i]:active,
+a.dads-link[href^="http://" i]:active,
+a.dads-link[href^="https://" i]:active {
+  text-decoration-thickness: calc(1 / 16 * 1rem);
+  /* Orange press text needs a lighter yellow than yellow-100 to stay at 4.5:1. */
+  background-color: color-mix(in oklab, var(--color-primitive-yellow-100) 55%, white);
+}
+
+a.dads-utility-link[href^="http://" i] .dads-utility-link__label,
+a.dads-utility-link[href^="https://" i] .dads-utility-link__label {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: calc(2 / 16 * 1rem);
+  background-color: var(--color-primitive-yellow-100);
+  box-decoration-break: clone;
+}
+
+a.dads-utility-link[href^="http://" i]:focus-visible .dads-utility-link__label,
+a.dads-utility-link[href^="https://" i]:focus-visible .dads-utility-link__label {
+  background-color: transparent;
+}
+
+@media (hover: hover) {
+  a.dads-utility-link[href^="http://" i]:hover .dads-utility-link__label,
+  a.dads-utility-link[href^="https://" i]:hover .dads-utility-link__label {
+    text-decoration-thickness: calc(3 / 16 * 1rem);
+  }
+}
+
+a.dads-utility-link[href^="http://" i]:active .dads-utility-link__label,
+a.dads-utility-link[href^="https://" i]:active .dads-utility-link__label {
+  text-decoration-thickness: calc(1 / 16 * 1rem);
+}
+
+a[href^="http://" i]:has(:is(img, video)),
+a[href^="https://" i]:has(:is(img, video)) {
+  text-decoration: none;
+}
+
+a[href^="http://" i]:has(:is(img, video)) :is(img, video),
+a[href^="https://" i]:has(:is(img, video)) :is(img, video) {
+  outline: calc(2 / 16 * 1rem) dotted currentColor;
+  outline-offset: calc(2 / 16 * 1rem);
+}

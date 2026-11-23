@@ -63,12 +63,13 @@
     <EntryHeading
       title={entry.title}
       bookmarkUrl={entry.kind === "bookmark" ? entry.bookmarkUrl : null}
+      speakerdeck={entry.speakerdeck ?? {}}
     />
     {#if entry.kind === "note"}
       <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
     {:else}
       <div class="entry-body">
-        {@html markdownToHtml(entry.body, entry.gyazo ?? {})}
+        {@html markdownToHtml(entry.body, entry.gyazo ?? {}, entry.speakerdeck ?? {})}
       </div>
       {#if entry.kind === "bookmark"}
         {#each entry.images ?? [] as image (image.href)}

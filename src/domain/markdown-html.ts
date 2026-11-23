@@ -1,6 +1,6 @@
 import { cosenseProjectLink } from "./cosense-project-link.ts";
 import { gyazoMarkdown, type GyazoIndex } from "./gyazo.ts";
-import { mediaEmbedHtml } from "./media-embed.ts";
+import { mediaEmbedHtml, type SpeakerDeckPlayers } from "./media-embed.ts";
 
 // Renders a stored article body as HTML. The stored string stays unchanged.
 
@@ -28,14 +28,14 @@ function isMp4(url: string): boolean {
   }
 }
 
-function renderInline(source: string): string {
+function renderInline(source: string, decks: SpeakerDeckPlayers = {}): string {
   let html = "";
   let index = 0;
   while (index < source.length) {
     if (source.startsWith("~~", index)) {
       const end = source.indexOf("~~", index + 2);
       if (end !== -1) {
-        html += `<del>${renderInline(source.slice(index + 2, end))}</del>`;
+        html += `<del>${renderInline(source.slice(index + 2, end), decks)}</del>`;
         index = end + 2;
         continue;
       }
@@ -43,7 +43,7 @@ function renderInline(source: string): string {
     if (source.startsWith("***", index)) {
       const end = source.indexOf("***", index + 3);
       if (end !== -1) {
-        html += `<strong><em>${renderInline(source.slice(index + 3, end))}</em></strong>`;
+        html += `<strong><em>${renderInline(source.slice(index + 3, end), decks)}</em></strong>`;
         index = end + 3;
         continue;
       }
@@ -59,7 +59,7 @@ function renderInline(source: string): string {
     if (source.startsWith("**", index)) {
       const end = source.indexOf("**", index + 2);
       if (end !== -1) {
-        html += `<strong>${renderInline(source.slice(index + 2, end))}</strong>`;
+        html += `<strong>${renderInline(source.slice(index + 2, end), decks)}</strong>`;
         index = end + 2;
         continue;
       }
@@ -67,7 +67,7 @@ function renderInline(source: string): string {
     if (source[index] === "*") {
       const end = source.indexOf("*", index + 1);
       if (end > index + 1) {
-        html += `<em>${renderInline(source.slice(index + 1, end))}</em>`;
+        html += `<em>${renderInline(source.slice(index + 1, end), decks)}</em>`;
         index = end + 1;
         continue;
       }
@@ -111,8 +111,8 @@ function renderInline(source: string): string {
           const url = safeUrl(source.slice(labelEnd + 2, urlEnd));
           if (url) {
             const label = source.slice(index + 1, labelEnd);
-            const embed = mediaEmbedHtml(url, label);
-            html += embed ?? `<a href="${escapeHtml(url)}">${renderInline(label)}</a>`;
+            const embed = mediaEmbedHtml(url, label, decks);
+            html += embed ?? `<a href="${escapeHtml(url)}">${renderInline(label, decks)}</a>`;
             index = urlEnd + 1;
             continue;
           }
@@ -129,7 +129,7 @@ function renderInline(source: string): string {
     const bare = /^https?:\/\/[^\s<>)\]]+/.exec(source.slice(index));
     if (bare?.[0]) {
       const trimmed = bare[0].replace(/[.,;:]+$/, "");
-      const embed = mediaEmbedHtml(trimmed, null);
+      const embed = mediaEmbedHtml(trimmed, null, decks);
       if (embed) {
         html += embed;
         index += trimmed.length;
@@ -194,13 +194,13 @@ function isBlockStart(lines: string[], index: number): boolean {
   return false;
 }
 
-function renderList(lines: string[], cursor: { index: number }, level: number): string {
+function renderList(lines: string[], cursor: { index: number }, level: number, decks: SpeakerDeckPlayers): string {
   const items: string[] = [];
   while (cursor.index < lines.length) {
     const parsed = listItem(lines[cursor.index] ?? "");
     if (!parsed || parsed.level < level) break;
     if (parsed.level > level) {
-      const child = renderList(lines, cursor, parsed.level);
+      const child = renderList(lines, cursor, parsed.level, decks);
       if (items.length === 0) items.push(`<li>${child}</li>`);
       else items[items.length - 1] = `${items[items.length - 1]?.slice(0, -5) ?? ""}${child}</li>`;
       continue;
@@ -208,25 +208,31 @@ function renderList(lines: string[], cursor: { index: number }, level: number): 
     cursor.index += 1;
     let html = "";
     if (parsed.text.startsWith(">")) {
-      const quotes = [renderInline(parsed.text.replace(/^>\s?/, ""))];
+      const quotes = [renderInline(parsed.text.replace(/^>\s?/, ""), decks)];
       while (cursor.index < lines.length) {
         const quoted = listItem(lines[cursor.index] ?? "");
         if (!quoted || quoted.level !== level || !quoted.text.startsWith(">")) break;
-        quotes.push(renderInline(quoted.text.replace(/^>\s?/, "")));
+        quotes.push(renderInline(quoted.text.replace(/^>\s?/, ""), decks));
         cursor.index += 1;
       }
       html = `<blockquote>${quotes.map((quote) => `<p>${quote}</p>`).join("")}</blockquote>`;
     } else {
-      html = renderInline(parsed.text);
+      html = renderInline(parsed.text, decks);
     }
     const next = listItem(lines[cursor.index] ?? "");
-    if (next && next.level > level) html += renderList(lines, cursor, next.level);
+    if (next && next.level > level) html += renderList(lines, cursor, next.level, decks);
     items.push(`<li>${html}</li>`);
   }
   return `<ul>${items.join("")}</ul>`;
 }
 
-function renderTable(lines: string[], cursor: { index: number }, caption: string, tableId: number): string {
+function renderTable(
+  lines: string[],
+  cursor: { index: number },
+  caption: string,
+  tableId: number,
+  decks: SpeakerDeckPlayers,
+): string {
   const header = splitCells(lines[cursor.index] ?? "");
   cursor.index += 2;
   const rows: string[][] = [];
@@ -241,16 +247,16 @@ function renderTable(lines: string[], cursor: { index: number }, caption: string
     ? `<caption id="${captionId}">${escapeHtml(caption)}</caption>`
     : "";
   const label = caption ? ` aria-labelledby="${captionId}"` : ` aria-label="表"`;
-  const head = `<thead><tr>${header.map((cell) => `<th scope="col">${renderInline(cell)}</th>`).join("")}</tr></thead>`;
+  const head = `<thead><tr>${header.map((cell) => `<th scope="col">${renderInline(cell, decks)}</th>`).join("")}</tr></thead>`;
   const body = `<tbody>${rows
-    .map((row) => `<tr>${row.map((cell) => `<td>${renderInline(cell)}</td>`).join("")}</tr>`)
+    .map((row) => `<tr>${row.map((cell) => `<td>${renderInline(cell, decks)}</td>`).join("")}</tr>`)
     .join("")}</tbody>`;
   return `<div class="table-scroll" tabindex="0" role="region"${label}><table>${captionHtml}${head}${body}</table></div>`;
 }
 
 let tableSerial = 0;
 
-export function markdownToHtml(source: string, gyazo?: GyazoIndex): string {
+export function markdownToHtml(source: string, gyazo?: GyazoIndex, decks: SpeakerDeckPlayers = {}): string {
   const lines = (gyazo ? gyazoMarkdown(source, gyazo) : source)
     .replaceAll("\r\n", "\n")
     .replaceAll("\r", "\n")
@@ -281,18 +287,18 @@ export function markdownToHtml(source: string, gyazo?: GyazoIndex): string {
     const heading = /^(#{1,6}) (.+)$/.exec(line);
     if (heading?.[1] && heading[2]) {
       const level = heading[1].length;
-      blocks.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
+      blocks.push(`<h${level}>${renderInline(heading[2], decks)}</h${level}>`);
       cursor.index += 1;
       continue;
     }
     if (listItem(line)) {
-      blocks.push(renderList(lines, cursor, listItem(line)?.level ?? 0));
+      blocks.push(renderList(lines, cursor, listItem(line)?.level ?? 0, decks));
       continue;
     }
     if (line.startsWith(">")) {
       const quotes: string[] = [];
       while (cursor.index < lines.length && (lines[cursor.index] ?? "").startsWith(">")) {
-        quotes.push(renderInline((lines[cursor.index] ?? "").replace(/^>\s?/, "")));
+        quotes.push(renderInline((lines[cursor.index] ?? "").replace(/^>\s?/, ""), decks));
         cursor.index += 1;
       }
       blocks.push(`<blockquote>${quotes.map((quote) => `<p>${quote}</p>`).join("")}</blockquote>`);
@@ -302,12 +308,12 @@ export function markdownToHtml(source: string, gyazo?: GyazoIndex): string {
     if (caption && isTableAt(lines, cursor.index + 1)) {
       cursor.index += 1;
       tableSerial += 1;
-      blocks.push(renderTable(lines, cursor, caption, tableSerial));
+      blocks.push(renderTable(lines, cursor, caption, tableSerial, decks));
       continue;
     }
     if (isTableAt(lines, cursor.index)) {
       tableSerial += 1;
-      blocks.push(renderTable(lines, cursor, "", tableSerial));
+      blocks.push(renderTable(lines, cursor, "", tableSerial, decks));
       continue;
     }
     const paragraph: string[] = [];
@@ -319,7 +325,7 @@ export function markdownToHtml(source: string, gyazo?: GyazoIndex): string {
       paragraph.push(lines[cursor.index] ?? "");
       cursor.index += 1;
     }
-    blocks.push(`<p>${renderInline(paragraph.join(" "))}</p>`);
+    blocks.push(`<p>${renderInline(paragraph.join(" "), decks)}</p>`);
   }
   return blocks.join("\n");
 }

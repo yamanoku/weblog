@@ -1,4 +1,6 @@
-// Public HTML for a YouTube or Spotify link. The stored text stays the original URL.
+// Public HTML for a YouTube, Spotify, or Speaker Deck link. The stored text stays the original URL.
+
+import { speakerDeckRef, type SpeakerDeckPlayers } from "./speakerdeck.ts";
 
 export type MediaEmbed = {
   src: string;
@@ -7,6 +9,8 @@ export type MediaEmbed = {
   width: number;
   height: number;
 };
+
+export type { SpeakerDeckPlayers };
 
 const youtubeHosts = new Set([
   "youtube.com",
@@ -108,10 +112,23 @@ function spotifyFrom(url: URL): MediaEmbed | null {
   };
 }
 
-export function mediaEmbed(value: string): MediaEmbed | null {
+function speakerDeckSrc(base: string | undefined, slide: string | null): string | null {
+  if (!base || !/^https:\/\/speakerdeck\.com\/player\/[a-f0-9]{32}$/.test(base)) return null;
+  return slide ? `${base}?slide=${slide}` : base;
+}
+
+function speakerDeckFrom(value: string, players: SpeakerDeckPlayers): MediaEmbed | null {
+  const ref = speakerDeckRef(value);
+  if (!ref) return null;
+  const src = ref.kind === "player" ? ref.src : speakerDeckSrc(players[ref.key], ref.slide);
+  if (!src) return null;
+  return { src, title: "Speaker Deck", shape: "video", width: 710, height: 399 };
+}
+
+export function mediaEmbed(value: string, players: SpeakerDeckPlayers = {}): MediaEmbed | null {
   const url = httpUrl(value.trim());
   if (!url) return null;
-  return youtubeFrom(url) ?? spotifyFrom(url);
+  return youtubeFrom(url) ?? spotifyFrom(url) ?? speakerDeckFrom(value.trim(), players);
 }
 
 function escapeHtml(value: string): string {
@@ -122,12 +139,17 @@ function escapeHtml(value: string): string {
     .replaceAll('"', "&quot;");
 }
 
-export function mediaEmbedHtml(value: string, label: string | null): string | null {
-  const embed = mediaEmbed(value);
+export function mediaEmbedHtml(
+  value: string,
+  label: string | null,
+  players: SpeakerDeckPlayers = {},
+  loading: "lazy" | "eager" = "lazy",
+): string | null {
+  const embed = mediaEmbed(value, players);
   if (!embed) return null;
   const visible = label?.trim() ?? "";
   const titled = visible.length > 0 && !/^https?:\/\//i.test(visible);
   const title = titled ? visible : embed.title;
   const caption = titled ? `<span class="media-embed__label">${escapeHtml(visible)}</span>` : "";
-  return `${caption}<iframe class="media-embed" data-shape="${embed.shape}" src="${escapeHtml(embed.src)}" title="${escapeHtml(title)}" width="${embed.width}" height="${embed.height}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>`;
+  return `${caption}<iframe class="media-embed" data-shape="${embed.shape}" src="${escapeHtml(embed.src)}" title="${escapeHtml(title)}" width="${embed.width}" height="${embed.height}" loading="${loading}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>`;
 }

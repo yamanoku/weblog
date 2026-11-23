@@ -1,10 +1,14 @@
 <script lang="ts">
-  import { mediaEmbedHtml } from "../domain/media-embed.ts";
+  import { mediaEmbedHtml, type SpeakerDeckPlayers } from "../domain/media-embed.ts";
   import { externalBookmarkHref } from "../domain/public-article.ts";
 
-  let { title, bookmarkUrl = null }: { title: string; bookmarkUrl?: string | null } = $props();
+  let {
+    title,
+    bookmarkUrl = null,
+    speakerdeck = {},
+  }: { title: string; bookmarkUrl?: string | null; speakerdeck?: SpeakerDeckPlayers } = $props();
   const href = $derived(externalBookmarkHref(bookmarkUrl));
-  const embed = $derived(href ? mediaEmbedHtml(href, null) : null);
+  const embed = $derived(href ? mediaEmbedHtml(href, null, speakerdeck, "eager") : null);
 </script>
 
 <div class="entry-heading">

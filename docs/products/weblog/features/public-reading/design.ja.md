@@ -204,7 +204,7 @@ Worker は、タイトルより前に次のパスを一致させる。比較キ�
 
 公開 HTML を描く関数は一つである。article、bookmark、page は、保存された本文を Markdown として描く。見出し、段落、ネストした箇条書き、引用、強調、打ち消し、インラインコード、フェンス、リンク、画像、キャプション付きの表を HTML にする。生の HTML はエスケープし、保存された文字列を HTML としては挿入しない。note は、保存された行をエスケープして残す。page のリンクは、取り込みが保存した Markdown のリンクである。描画時に Cosense のブラケットをもう一度は辿らない。例外は、Gyazo の URL と、もう一つの `http` または `https` の URL だけを書いたブラケットと、`/プロジェクト` または `/プロジェクト/ページ` のブラケットである。そのプロジェクトのブラケットは、取り込みの規則にある scrapbox.io へのリンクである。アイコン、数式、行頭の `$` と `%` は、本文に残った文字列のままである。
 
-本文中のリンクの href は、その Markdown に書いた URL である。生成する href は `http`、`https`、またはこのホストのパスだけである。他のスキームはエスケープしたテキストにする。YouTube または Spotify のメディアリンクは、そのアンカーにしない。描画は、動画 id、プレイリスト id、または Spotify の種類と id から iframe の `src` を組み立てる。書いた URL をフレームへはコピーしない。YouTube の `src` は `https://www.youtube-nocookie.com/embed/{id}` または `.../embed/videoseries?list={id}` である。Spotify の `src` は `https://open.spotify.com/embed/{type}/{id}` である。空ページに出す内向きの辺は、保存済みの辺であり、描画時に本文から抽出し直さない。
+本文中のリンクの href は、その Markdown に書いた URL である。生成する href は `http`、`https`、またはこのホストのパスだけである。他のスキームはエスケープしたテキストにする。公開ページのスタイルシートは、`a` 要素のうち href が `http://` または `https://` で始まるものを、大小文字を無視して選ぶ。下線の種類を点線にし、太さは `2/16 rem` にする。背景色は `--color-primitive-yellow-100` である。フォーカス中の背景は、部品が使う `--color-primitive-yellow-300` のままである。押しているあいだの文字はオレンジなので、背景は同じ黄色を白と混ぜて明るくする。オレンジの文字が白い背景で満たす 4.5:1 を、この黄色の上でも下回らないようにするためである。強制色モードでは、ブラウザがこの背景色を置き換える。点線は残る。描画はクラスを足さない。フィードの断片は同じ HTML のままなので、フィードリーダーはその点線を出さない。アンカーが `img` または `video` を含むときは下線を消す。点線の下線は絵を横切るからである。代わりに、そのメディアへ `2/16 rem` の点線の outline を付ける。実線を太くする案は採らない。既存のリンク部品が、ホバーで実線を太くしているからである。YouTube または Spotify のメディアリンクは、そのアンカーにしない。描画は、動画 id、プレイリスト id、または Spotify の種類と id から iframe の `src` を組み立てる。書いた URL をフレームへはコピーしない。YouTube の `src` は `https://www.youtube-nocookie.com/embed/{id}` または `.../embed/videoseries?list={id}` である。Spotify の `src` は `https://open.spotify.com/embed/{type}/{id}` である。Speaker Deck のデッキも、プレーヤーのアドレスが分かっているときは、そのアンカーにしない。公開 URL `https://speakerdeck.com/{user}/{slug}` は、プレーヤー id を含まない。描画の前に、本文と bookmark の URL にある別々のデッキ URL を、最大 20 件、`https://speakerdeck.com/oembed.json` へ尋ねる。読むのは、`https://speakerdeck.com/player/` に 16 進 32 文字を足した iframe の src だけである。返った HTML は挿入しない。`slide` が正の整数で桁が四つまでなら、その src へ足す。既にそのプレーヤーの URL であるものは、尋ねずに埋め込む。プロフィールの URL、失敗した応答、プレーヤーが無い URL は、アンカーのままである。ページは 200 のままである。プレーヤーのアドレスが取れたときは、約 30 日それを再利用する。note とホーム一覧は尋ねない。iframe の title は、リンクの文字が URL そのものでないときはその文字であり、それ以外は `Speaker Deck` である。タイトルの横にある YouTube、Spotify、Speaker Deck のフレームは `loading="eager"` である。本文の中のフレームは `loading="lazy"` である。空ページに出す内向きの辺は、保存済みの辺であり、描画時に本文から抽出し直さない。
 
 次の解決は、空ページがリンク元を出すときに、保存済みの辺のタイトルへ使う。エントリ本文に保存した Markdown の href は書き換えない。
 
@@ -237,12 +237,12 @@ href は、次のように決める。
 
 id の読取は `WHERE image_id IN (...)` である。80 個ずつに分け、タイトル解決と同じ batch に入れる。
 
-閲覧用パスと正規 URL の HTML では、bookmark の外部 URL を `h1` の横に描く。YouTube または Spotify のメディア URL は、本文のリンクと同じ埋め込みである。それ以外の `http` または `https` は、テキストをその URL とした外部アンカーにする。それ以外の空でない値は、エスケープしたテキストにする。所有者の書き込みは、スキームを検証しないからである。保存された本文は書き換えない。article、note、page は、そのアンカーを描かない。ホーム一覧では、bookmark のタイトルを外部 URL へのリンクのままにする。
+閲覧用パスと正規 URL の HTML では、bookmark の外部 URL を `h1` の横に描く。YouTube または Spotify のメディア URL、またはプレーヤーが分かっている Speaker Deck の URL は、本文のリンクと同じ埋め込みである。それ以外の `http` または `https` は、テキストをその URL とした外部アンカーにする。それ以外の空でない値は、エスケープしたテキストにする。所有者の書き込みは、スキームを検証しないからである。保存された本文は書き換えない。article、note、page は、そのアンカーを描かない。ホーム一覧では、bookmark のタイトルを外部 URL へのリンクのままにする。
 
 文書の応答は `text/html; charset=utf-8` と `Cache-Control: no-cache` を使う。Content-Security-Policy の値は、次のとおりである。
 
 ```text
-default-src 'none'; img-src 'self'; media-src 'self'; frame-src https://www.youtube-nocookie.com https://open.spotify.com; base-uri 'none'; form-action 'none'
+default-src 'none'; img-src 'self'; media-src 'self'; frame-src https://www.youtube-nocookie.com https://open.spotify.com https://speakerdeck.com; base-uri 'none'; form-action 'none'
 ```
 
 GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこのホストの `/edit` である。他の文書応答は `form-action 'none'` のままである。

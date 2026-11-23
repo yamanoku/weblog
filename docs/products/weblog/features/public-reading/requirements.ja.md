@@ -115,7 +115,7 @@ Scenario: 配送済みのエントリを削除した場合、HTML に削除前�
 
 Scenario: 公開ブックマークの場合、HTML はタイトルの横に外部 URL を含める
 
-- Given: 公開の bookmark に外部 URL がある。その URL は、後の規則にある YouTube または Spotify のメディア URL ではない。本文が他の URL に触れていてもよい。公開の article もある。
+- Given: 公開の bookmark に外部 URL がある。その URL は、後の規則にある YouTube、Spotify、または Speaker Deck のメディア URL ではない。本文が他の URL に触れていてもよい。公開の article もある。
 - When: 未認証のクライアントが、Activity Streams を求めずに、その bookmark の閲覧用パスと正規 URL を要求する。article の閲覧用パスも要求する。
 - Then: bookmark の閲覧用パスと正規 URL では、HTML がその URL をタイトルの横に出す。URL が `http://` または `https://` で始まるときは、テキストをその URL とした外部リンクである。それ以外の空でない値は、リンクではないテキストである。タイトルの文字は、保存されたタイトルのままである。保存された本文は変えない。article のページは、bookmark の URL を出さない。
 
@@ -136,6 +136,30 @@ Scenario: bookmark の URL が YouTube または Spotify の URL である場合
 - Given: 公開の bookmark の外部 URL が、それらのメディア URL の一つである。閲覧用パスもある。
 - When: 未認証のクライアントが、その bookmark の閲覧用パスと正規 URL を要求し、`GET /` も開く。
 - Then: タイトルの横は、その埋め込みである。テキストをその URL としたアンカーは出さない。ホーム一覧のタイトルは、外部 URL へのリンクのままである。保存された bookmark の URL は変えない。
+
+Scenario: 本文のリンクが Speaker Deck の URL である場合、ページは埋め込みを出す
+
+- Given: 公開の article、bookmark、または page が、`https://speakerdeck.com/{user}/{slug}` への Markdown リンクか、裸の `http` または `https` の URL を含む。その一つは `?slide=` と正の整数を持つ。同じ URL がコードブロックの中にもある。公開の note の本文にも、その URL がある。Speaker Deck がそのデッキのプレーヤーを名指しする。
+- When: 未認証のクライアントが、それぞれのエントリの HTML を要求する。
+- Then: article、bookmark、page は、src が `https://speakerdeck.com/player/` に Speaker Deck が名指ししたプレーヤー id を足した iframe を出す。その src には、正の `slide` が付く。保存された本文は変えない。コードブロックはテキストのままである。note は保存されたテキストを出し、iframe は出さない。iframe の title は、リンクの文字が URL そのものでないときはその文字であり、それ以外は `Speaker Deck` である。
+
+Scenario: Speaker Deck がプレーヤーを名指ししない場合、デッキの URL はリンクのままである
+
+- Given: 公開の page が Speaker Deck のデッキ URL を含む。Speaker Deck は、そのプレーヤーを名指ししない。
+- When: 未認証のクライアントが、その page の HTML を要求する。
+- Then: 応答は 200 である。その URL はアンカーである。その iframe は出さない。保存された本文は変えない。
+
+Scenario: bookmark の URL が Speaker Deck の URL である場合、タイトルの横にその埋め込みを出す
+
+- Given: 公開の bookmark の外部 URL が Speaker Deck のデッキ URL である。Speaker Deck がそのプレーヤーを名指しする。閲覧用パスもある。
+- When: 未認証のクライアントが、その bookmark の閲覧用パスと正規 URL を要求し、`GET /` も開く。
+- Then: タイトルの横は、その埋め込みである。テキストをその URL としたアンカーは出さない。ホーム一覧のタイトルは、外部 URL へのリンクのままである。保存された bookmark の URL は変えない。
+
+Scenario: リンクの href が http または https の場合、下線を点線にし、背景を黄色にする
+
+- Given: 公開 HTML に、href が `https://example.com/a` のアンカーと、href がこのホストのパスであるアンカーがある。別のアンカーの href は `HTTPS://example.com/b` であり、画像を含む。
+- When: 未認証のクライアントが、その公開 HTML を開く。
+- Then: `https://example.com/a` の下線は点線であり、背景は黄色である。パスのアンカーの下線は実線であり、黄色の背景は無い。文字の色は、これまでと同じリンクの色である。`https://example.com/a` は、新しい閲覧コンテキストを開かない。href と表示の文字は変えない。`HTTPS://example.com/b` は下線を持たず、背景は黄色であり、その画像の周りが点線である。動画を含むアンカーも同じである。フィードの HTML 断片と保存された本文は変えない。
 
 ### note の画像を読む
 
@@ -330,9 +354,13 @@ article、bookmark、page の公開 HTML は、保存された本文を Markdown
 
 article、bookmark、page にある YouTube または Spotify のリンクは、埋め込みになる。保存された文字は、リンクのままである。YouTube の形は、`/watch`、`/shorts`、`/live`、`/embed`、`youtu.be` の動画と、プレイリストである。フレームのオリジンは `https://www.youtube-nocookie.com` である。`t` または `start` の再生開始は残す。Spotify の形は、トラック、アルバム、プレイリスト、エピソード、番組、アーティストであり、`intl-` の接頭辞を含んでよい。フレームのオリジンは `https://open.spotify.com` である。共有用のパラメータは、フレームへコピーしない。iframe の title は、リンクの文字が URL そのものでないときはその文字であり、それ以外は `YouTube` または `Spotify` である。インラインコードとコードブロックの中の URL は、テキストのままである。それ以外のリンクはアンカーのままである。note は埋め込まない。
 
+article、bookmark、page にある Speaker Deck のリンクは、Speaker Deck がプレーヤーを名指ししたときに埋め込みになる。公開の形は `https://speakerdeck.com/{user}/{slug}` である。フレームのオリジンは `https://speakerdeck.com` である。src は `https://speakerdeck.com/player/` にプレーヤー id を足したものである。`slide` が正の整数で、桁は四つまでなら残す。それ以外のクエリはコピーしない。既にそのプレーヤーの URL であるものも、同じ埋め込みである。パスが一段のプロフィール URL は、アンカーのままである。Speaker Deck がプレーヤーを名指ししないとき、その URL はアンカーのままで、ページは 200 のままである。iframe の title は、リンクの文字が URL そのものでないときはその文字であり、それ以外は `Speaker Deck` である。インラインコードとコードブロックの中の URL は、テキストのままである。note は埋め込まない。保存された文字は、リンクのままである。1 ページで尋ねるデッキは、別々のもの 20 件までである。それを超えたデッキの URL は、アンカーのままである。
+
+公開 HTML のページでは、href が `http://` または `https://` で始まるアンカーの下線を点線にし、背景を黄色にする。比較は大小文字を無視する。このホストの絶対 URL も、そのスキームなら点線で、背景は黄色である。href がこのホストのパスであるアンカーの下線は実線のままである。背景は付けない。文字の色は変えない。新しい閲覧コンテキストは開かない。href と表示の文字は変えない。アンカーが画像または動画を含むときは、下線を付けず、その画像または動画の周りを点線で囲む。そのアンカーの背景も黄色である。フィードの HTML 断片はクラスを足さない。保存された本文も変えない。
+
 note の公開 HTML は、保存された行を残す。
 
-bookmark の閲覧用パスと正規 URL では、外部 URL をタイトルの横に出す。値が上の規則の YouTube または Spotify のメディア URL である `http` または `https` なら、その埋め込みであり、アンカーではない。それ以外の `http` または `https` は、テキストをその URL とした外部リンクである。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。bookmark のホーム一覧のタイトルは、外部 URL を開く。
+bookmark の閲覧用パスと正規 URL では、外部 URL をタイトルの横に出す。値が上の規則の YouTube または Spotify のメディア URL である `http` または `https`、またはプレーヤーが分かっている Speaker Deck の URL なら、その埋め込みであり、アンカーではない。それ以外の `http` または `https` は、テキストをその URL とした外部リンクである。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。bookmark のホーム一覧のタイトルは、外部 URL を開く。
 
 所有者として確認できた要求では、公開 article、公開 bookmark、公開 page の閲覧用パスと正規 URL が、エントリのあとにリンクを出す。表示は `edit` である。行き先は、そのエントリの GET `/edit/{id}` である。確認できていない要求は、そのリンクを出さない。公開の note は出さない。保存された本文は変えない。リンク先の編集画面は、所有者の書き込みが定める。
 

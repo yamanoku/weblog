@@ -115,7 +115,7 @@ Scenario: When a delivered entry was deleted, the HTML does not include the dele
 
 Scenario: When a bookmark is public, the HTML includes its external URL beside the title
 
-- Given: A public bookmark has an external URL that is not a YouTube or Spotify media URL from the later rule. The body may also mention other URLs. A public article exists.
+- Given: A public bookmark has an external URL that is not a YouTube, Spotify, or Speaker Deck media URL from the later rules. The body may also mention other URLs. A public article exists.
 - When: An unauthenticated client requests the bookmark's view path and its canonical URL, and does not ask for Activity Streams. The client also requests the article's view path.
 - Then: On the bookmark's view path and canonical URL, the HTML shows that URL beside the title. When the URL starts with `http://` or `https://`, it is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The title text stays the stored title. The stored body is unchanged. The article page does not show a bookmark URL.
 
@@ -136,6 +136,30 @@ Scenario: When a bookmark URL is a YouTube or Spotify URL, the page shows that e
 - Given: A public bookmark's external URL is one of those media URLs. The bookmark also has a view path.
 - When: An unauthenticated client requests the bookmark's view path and its canonical URL, and also opens GET `/`.
 - Then: Beside the title, the HTML shows that embed and does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
+
+Scenario: When a body link is a Speaker Deck URL, the page shows an embed
+
+- Given: A public article, bookmark, or page contains a Markdown link, or a bare `http` or `https` URL, for `https://speakerdeck.com/{user}/{slug}`. One of those URLs has `?slide=` and a positive integer. The same URL also appears in fenced code. A public note contains that URL. Speaker Deck names a player for the deck.
+- When: An unauthenticated client requests each entry's HTML.
+- Then: The article, bookmark, or page shows an iframe whose src is `https://speakerdeck.com/player/` plus the player id Speaker Deck named. The positive `slide` value is on that src. The stored body is unchanged. The fenced code stays text. The note shows the stored text and does not show an iframe. The iframe title is the link text when that text is not itself a URL, and otherwise `Speaker Deck`.
+
+Scenario: When Speaker Deck does not name a player, the deck URL stays a link
+
+- Given: A public page contains a Speaker Deck deck URL. Speaker Deck does not name a player for it.
+- When: An unauthenticated client requests that page's HTML.
+- Then: The response is 200. That URL is an anchor. The page does not show an iframe for it. The stored body is unchanged.
+
+Scenario: When a bookmark URL is a Speaker Deck URL, the page shows that embed beside the title
+
+- Given: A public bookmark's external URL is a Speaker Deck deck URL. Speaker Deck names a player for it. The bookmark also has a view path.
+- When: An unauthenticated client requests the bookmark's view path and its canonical URL, and also opens GET `/`.
+- Then: Beside the title, the HTML shows that embed and does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
+
+Scenario: When a link href is http or https, its underline is dotted and its background is yellow
+
+- Given: Public HTML has an anchor whose href is `https://example.com/a` and an anchor whose href is a path on this host. Another anchor has the href `HTTPS://example.com/b` and contains an image.
+- When: An unauthenticated client opens that public HTML.
+- Then: The underline of `https://example.com/a` is dotted, and its background is yellow. The path anchor's underline is solid, and it has no yellow background. Both keep the link text color they already had. `https://example.com/a` does not open a new browsing context. The href and the visible text stay unchanged. `HTTPS://example.com/b` has no underline, its background is yellow, and a dotted line surrounds its image. An anchor that contains a video is the same. The feed HTML fragment and the stored body stay unchanged.
 
 ### Read a note image
 
@@ -330,9 +354,13 @@ Public HTML for an article, a bookmark, or a page renders the stored body as Mar
 
 A YouTube or Spotify link in an article, a bookmark, or a page becomes an embed. The stored characters stay the link. The YouTube forms are a video in `/watch`, `/shorts`, `/live`, `/embed`, or `youtu.be`, and a playlist. The frame origin is `https://www.youtube-nocookie.com`. A `t` or `start` time is kept. The Spotify forms are a track, album, playlist, episode, show, or artist, including an `intl-` prefix. The frame origin is `https://open.spotify.com`. Share parameters are not copied into the frame. The iframe title is the link text when that text is not itself a URL, and otherwise `YouTube` or `Spotify`. A URL inside inline code or fenced code stays text. Any other link stays an anchor. A note does not embed.
 
+A Speaker Deck link in an article, a bookmark, or a page becomes an embed when Speaker Deck names a player. The public form is `https://speakerdeck.com/{user}/{slug}`. The frame origin is `https://speakerdeck.com`. The src is `https://speakerdeck.com/player/` plus the player id. A `slide` query that is a positive integer of at most four digits is kept. Other query parameters are not copied. A URL that is already that player address is the same embed. A profile URL, one path segment, stays an anchor. When Speaker Deck does not name a player, the URL stays an anchor and the page stays 200. The iframe title is the link text when that text is not itself a URL, and otherwise `Speaker Deck`. A URL inside inline code or fenced code stays text. A note does not embed. The stored characters stay the link. At most 20 distinct decks on one page are asked. Any further deck URL stays an anchor.
+
+On a public HTML page, an anchor whose href starts with `http://` or `https://` has a dotted underline and a yellow background. The comparison ignores case. An absolute URL on this host is dotted, with a yellow background, when it uses that scheme. An anchor whose href is a path on this host keeps a solid underline and has no yellow background. The text color stays unchanged. The page does not open a new browsing context. The href and the visible text stay unchanged. When the anchor contains an image or a video, it has no underline, its background is yellow, and a dotted line surrounds that image or video. The feed HTML fragment gains no class for this mark. The stored body stays unchanged.
+
 Public HTML for a note keeps the stored lines.
 
-On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value that is a YouTube or Spotify media URL from the rule above is that embed, not an anchor. Any other `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body. The home list title of a bookmark still opens the external URL.
+On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value that is a YouTube or Spotify media URL from the rule above, or a Speaker Deck URL whose player is known, is that embed, not an anchor. Any other `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body. The home list title of a bookmark still opens the external URL.
 
 When the request is verified as the owner, the view path and the canonical page of a public article, a public bookmark, or a public page include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note omits it. The stored body does not change. Owner writing defines the edit screen that link opens.
 
