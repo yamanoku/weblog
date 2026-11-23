@@ -28,14 +28,34 @@ function isMp4(url: string): boolean {
   }
 }
 
-function renderInline(source: string, decks: SpeakerDeckPlayers = {}): string {
+function markdownLinkAt(
+  source: string,
+  index: number,
+): { label: string; url: string; end: number } | null {
+  if (source[index] !== "[") return null;
+  let depth = 1;
+  let cursor = index + 1;
+  while (cursor < source.length && depth > 0) {
+    if (source[cursor] === "[") depth += 1;
+    else if (source[cursor] === "]") depth -= 1;
+    if (depth > 0) cursor += 1;
+  }
+  if (depth !== 0 || source[cursor + 1] !== "(") return null;
+  const urlEnd = source.indexOf(")", cursor + 2);
+  if (urlEnd === -1) return null;
+  const url = safeUrl(source.slice(cursor + 2, urlEnd));
+  if (!url) return null;
+  return { label: source.slice(index + 1, cursor), url, end: urlEnd + 1 };
+}
+
+function renderInline(source: string, decks: SpeakerDeckPlayers = {}, links = true): string {
   let html = "";
   let index = 0;
   while (index < source.length) {
     if (source.startsWith("~~", index)) {
       const end = source.indexOf("~~", index + 2);
       if (end !== -1) {
-        html += `<del>${renderInline(source.slice(index + 2, end), decks)}</del>`;
+        html += `<del>${renderInline(source.slice(index + 2, end), decks, links)}</del>`;
         index = end + 2;
         continue;
       }
@@ -43,7 +63,7 @@ function renderInline(source: string, decks: SpeakerDeckPlayers = {}): string {
     if (source.startsWith("***", index)) {
       const end = source.indexOf("***", index + 3);
       if (end !== -1) {
-        html += `<strong><em>${renderInline(source.slice(index + 3, end), decks)}</em></strong>`;
+        html += `<strong><em>${renderInline(source.slice(index + 3, end), decks, links)}</em></strong>`;
         index = end + 3;
         continue;
       }
@@ -59,7 +79,7 @@ function renderInline(source: string, decks: SpeakerDeckPlayers = {}): string {
     if (source.startsWith("**", index)) {
       const end = source.indexOf("**", index + 2);
       if (end !== -1) {
-        html += `<strong>${renderInline(source.slice(index + 2, end), decks)}</strong>`;
+        html += `<strong>${renderInline(source.slice(index + 2, end), decks, links)}</strong>`;
         index = end + 2;
         continue;
       }
@@ -67,7 +87,7 @@ function renderInline(source: string, decks: SpeakerDeckPlayers = {}): string {
     if (source[index] === "*") {
       const end = source.indexOf("*", index + 1);
       if (end > index + 1) {
-        html += `<em>${renderInline(source.slice(index + 1, end), decks)}</em>`;
+        html += `<em>${renderInline(source.slice(index + 1, end), decks, links)}</em>`;
         index = end + 1;
         continue;
       }
@@ -104,29 +124,32 @@ function renderInline(source: string, decks: SpeakerDeckPlayers = {}): string {
       }
     }
     if (source[index] === "[") {
-      const labelEnd = source.indexOf("]", index + 1);
-      if (labelEnd !== -1 && source[labelEnd + 1] === "(") {
-        const urlEnd = source.indexOf(")", labelEnd + 2);
-        if (urlEnd !== -1) {
-          const url = safeUrl(source.slice(labelEnd + 2, urlEnd));
-          if (url) {
-            const label = source.slice(index + 1, labelEnd);
-            const embed = mediaEmbedHtml(url, label, decks);
-            html += embed ?? `<a href="${escapeHtml(url)}">${renderInline(label, decks)}</a>`;
-            index = urlEnd + 1;
-            continue;
-          }
+      const matched = markdownLinkAt(source, index);
+      if (matched) {
+        const text = renderInline(matched.label, decks, false);
+        if (links) {
+          const embed = mediaEmbedHtml(matched.url, matched.label, decks);
+          html += embed ?? `<a href="${escapeHtml(matched.url)}">${text}</a>`;
+        } else {
+          html += text;
         }
+        index = matched.end;
+        continue;
       }
       const rawProject = /^\[(\/[^\]\n]*)\]/.exec(source.slice(index));
       const project = rawProject?.[1] ? cosenseProjectLink(rawProject[1]) : null;
-      if (rawProject && project) {
+      if (rawProject && project && links) {
         html += `<a href="${escapeHtml(project.href)}">${escapeHtml(project.label)}</a>`;
         index += rawProject[0].length;
         continue;
       }
+      if (rawProject && project) {
+        html += escapeHtml(project.label);
+        index += rawProject[0].length;
+        continue;
+      }
     }
-    const bare = /^https?:\/\/[^\s<>)\]]+/.exec(source.slice(index));
+    const bare = links ? /^https?:\/\/[^\s<>)\]]+/.exec(source.slice(index)) : null;
     if (bare?.[0]) {
       const trimmed = bare[0].replace(/[.,;:]+$/, "");
       const embed = mediaEmbedHtml(trimmed, null, decks);
@@ -194,7 +217,12 @@ function isBlockStart(lines: string[], index: number): boolean {
   return false;
 }
 
-function renderList(lines: string[], cursor: { index: number }, level: number, decks: SpeakerDeckPlayers): string {
+function renderList(
+  lines: string[],
+  cursor: { index: number },
+  level: number,
+  decks: SpeakerDeckPlayers,
+): string {
   const items: string[] = [];
   while (cursor.index < lines.length) {
     const parsed = listItem(lines[cursor.index] ?? "");
@@ -236,16 +264,18 @@ function renderTable(
   const header = splitCells(lines[cursor.index] ?? "");
   cursor.index += 2;
   const rows: string[][] = [];
-  while (cursor.index < lines.length && (lines[cursor.index] ?? "").includes("|") && !isSeparator(lines[cursor.index] ?? "")) {
+  while (
+    cursor.index < lines.length &&
+    (lines[cursor.index] ?? "").includes("|") &&
+    !isSeparator(lines[cursor.index] ?? "")
+  ) {
     const line = lines[cursor.index] ?? "";
     if (line.trim() === "" || isBlockStart(lines, cursor.index)) break;
     rows.push(splitCells(line));
     cursor.index += 1;
   }
   const captionId = `md-table-${tableId}`;
-  const captionHtml = caption
-    ? `<caption id="${captionId}">${escapeHtml(caption)}</caption>`
-    : "";
+  const captionHtml = caption ? `<caption id="${captionId}">${escapeHtml(caption)}</caption>` : "";
   const label = caption ? ` aria-labelledby="${captionId}"` : ` aria-label="表"`;
   const head = `<thead><tr>${header.map((cell) => `<th scope="col">${renderInline(cell, decks)}</th>`).join("")}</tr></thead>`;
   const body = `<tbody>${rows
@@ -256,7 +286,11 @@ function renderTable(
 
 let tableSerial = 0;
 
-export function markdownToHtml(source: string, gyazo?: GyazoIndex, decks: SpeakerDeckPlayers = {}): string {
+export function markdownToHtml(
+  source: string,
+  gyazo?: GyazoIndex,
+  decks: SpeakerDeckPlayers = {},
+): string {
   const lines = (gyazo ? gyazoMarkdown(source, gyazo) : source)
     .replaceAll("\r\n", "\n")
     .replaceAll("\r", "\n")

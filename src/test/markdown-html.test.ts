@@ -43,6 +43,28 @@ test("article markdown becomes html and raw html stays text", () => {
   assert.match(image, /<img src="\/note-images\/abc" alt="pixel">/);
   assert.equal(image.includes('src="javascript:'), false);
 
+  const titled = markdownToHtml(
+    "[Astroの内部で使われるかもしれない Hono JSX の可能性 by ケンジ/kenji | プロポーザル | Hono Conference 2025 [honoconf](/honoconf) - fortee.jp](https://fortee.jp/honoconf-2025/proposal/1a516dd7-8f53-4b29-95df-d400bc553812)",
+  );
+  assert.match(
+    titled,
+    /<a href="https:\/\/fortee\.jp\/honoconf-2025\/proposal\/1a516dd7-8f53-4b29-95df-d400bc553812">Astroの内部で使われるかもしれない Hono JSX の可能性 by ケンジ\/kenji \| プロポーザル \| Hono Conference 2025 honoconf - fortee\.jp<\/a>/,
+  );
+  assert.equal(titled.includes('href="/honoconf"'), false);
+  assert.equal(titled.includes("](https://fortee.jp"), false);
+
+  const discussion = markdownToHtml(
+    "[Support JSX syntax for Astro components · withastro roadmap · Discussion [716](/716) · GitHub](https://github.com/withastro/roadmap/discussions/716#discussioncomment-14062964)",
+  );
+  assert.match(
+    discussion,
+    /<a href="https:\/\/github\.com\/withastro\/roadmap\/discussions\/716#discussioncomment-14062964">Support JSX syntax for Astro components · withastro roadmap · Discussion 716 · GitHub<\/a>/,
+  );
+  assert.equal(discussion.includes('href="/716"'), false);
+
+  const brackets = markdownToHtml("[see [note] here](https://example.com/a)");
+  assert.match(brackets, /<a href="https:\/\/example\.com\/a">see \[note\] here<\/a>/);
+
   const nested = markdownToHtml("- outer\n  - inner\n\n> quoted\n\n~~gone~~");
   assert.match(nested, /<ul><li>outer<ul><li>inner<\/li><\/ul><\/li><\/ul>/);
   assert.match(nested, /<blockquote><p>quoted<\/p><\/blockquote>/);
@@ -59,7 +81,10 @@ test("public article pages render markdown and the edit form keeps the source", 
   );
   for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const page = readFileSync(join(rootDir, path), "utf8");
-    assert.match(page, /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}\)/);
+    assert.match(
+      page,
+      /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}\)/,
+    );
     assert.match(page, /\{@html/);
     assert.match(
       page,
