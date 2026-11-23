@@ -319,6 +319,7 @@
 
   .entry-card .entry-body {
     text-wrap: pretty;
+    overflow-wrap: anywhere;
   }
 
   .entry-card > img {
