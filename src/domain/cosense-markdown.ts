@@ -148,6 +148,10 @@ function indentOf(line: string): number {
   return /^[ \t]*/.exec(line)?.[0].length ?? 0;
 }
 
+function codeIndent(line: string): number {
+  return /^[ \t\u3000]*/.exec(line)?.[0].length ?? 0;
+}
+
 function fence(info: string, body: string[]): string {
   const longest = body.reduce((size, line) => {
     const match = /^(`+)/.exec(line);
@@ -212,7 +216,7 @@ export function cosenseTextToMarkdown(source: string): string {
   }
   while (index < lines.length) {
     const line = lines[index] ?? "";
-    const code = /^(\s*)code:(.*)$/.exec(line);
+    const code = /^([ \t\u3000]*)code:(.*)$/.exec(line);
     if (code) {
       const depth = code[1]?.length ?? 0;
       const info = (code[2] ?? "").trim();
@@ -220,7 +224,7 @@ export function cosenseTextToMarkdown(source: string): string {
       index += 1;
       while (index < lines.length) {
         const current = lines[index] ?? "";
-        if (current === "" || indentOf(current) <= depth) break;
+        if (current === "" || codeIndent(current) <= depth) break;
         body.push(current.slice(depth + 1));
         index += 1;
       }

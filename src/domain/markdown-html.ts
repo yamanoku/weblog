@@ -267,7 +267,7 @@ function listCode(lines: string[], cursor: { index: number }, level: number, tex
     }
     return `<pre><code>${escapeHtml(body.join("\n"))}</code></pre>`;
   }
-  if (!/^code:\S*$/.test(text)) return null;
+  if (!/^code:(\S.*)?$/.test(text)) return null;
   const upcoming = listItem(lines[cursor.index] ?? "");
   if (!upcoming || upcoming.level <= level) return null;
   const body: string[] = [];

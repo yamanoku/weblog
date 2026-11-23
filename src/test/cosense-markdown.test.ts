@@ -185,3 +185,41 @@ test("a stored list of code lines still renders as one code block", () => {
     `<ul><li>いまだと指定になりそう<ul><li><pre><code>${code}</code></pre></li></ul></li><li>次</li></ul>`,
   );
 });
+
+test("code:css and a spaced info string stay inside the list", () => {
+  const source = [
+    "day",
+    "\tなるほど",
+    "\t\tcode:css",
+    "\t\t div.page-list {",
+    "\t\t   display: none",
+    "\t\t }",
+    "\tcode:template strings.js",
+    "\t const name = \"ada\"",
+    "\u3000code:html",
+    "\u3000 <p>ok</p>",
+  ].join("\n");
+  const html = markdownToHtml(cosenseTextToMarkdown(source));
+  assert.equal(html.includes("<li><pre><code>div.page-list {\n  display: none\n}</code></pre></li>"), true);
+  assert.equal(html.includes("<li><pre><code>const name = &quot;ada&quot;</code></pre></li>"), true);
+  assert.equal(html.includes("<li><pre><code>&lt;p&gt;ok&lt;/p&gt;</code></pre></li>"), true);
+  assert.equal(html.includes("code:css"), false);
+  assert.equal(html.includes("code:html"), false);
+
+  const stored = markdownToHtml(
+    [
+      "- なるほど",
+      "  - code:css",
+      "    - div.page-list li[data-page-title^=\"202\"](/data-page-title%5E%3D%22202%22) {",
+      "      - display: none",
+      "    - }",
+      "  - code:template strings.js",
+      "    - const name = \"ada\"",
+    ].join("\n"),
+  );
+  const blocks = stored.match(/<pre><code>[\s\S]*?<\/code><\/pre>/g) ?? [];
+  assert.equal(blocks.length, 2);
+  assert.equal(blocks.some((block) => block.includes("<a ")), false);
+  assert.match(blocks[0] ?? "", /display: none/);
+  assert.match(blocks[1] ?? "", /const name = &quot;ada&quot;/);
+});
