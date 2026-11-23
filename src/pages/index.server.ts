@@ -1,5 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import { deliverableEntries } from "../domain/catalog.ts";
+import { homeEntries } from "../domain/catalog.ts";
 import { postedNoteUrl } from "../domain/edit-note.ts";
 import {
   homePageCount,
@@ -13,7 +13,7 @@ import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
 import { entryImageViews } from "../store/entry-images.ts";
 import { noteImageViews } from "../store/edit-note.ts";
-import { listDeliverableEntryPage, readStoredEntry } from "../store/entries.ts";
+import { listHomeEntryPage, readStoredEntry } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
 function homeEntry(
@@ -73,7 +73,7 @@ export const loader = defineHandler(async (c) => {
       : await readStoredEntry(editArticleDatabase(), postedId);
   const postedNote = postedNoteUrl(postedEntry);
   if (readsDevCatalog()) {
-    const stored = deliverableEntries();
+    const stored = homeEntries();
     const pageCount = homePageCount(stored.length);
     if (page > pageCount) throw new HTTPException(404, { message: "Not a page" });
     return {
@@ -85,7 +85,7 @@ export const loader = defineHandler(async (c) => {
     };
   }
   const database = editArticleDatabase();
-  const listed = await listDeliverableEntryPage(database, page, homePageSize);
+  const listed = await listHomeEntryPage(database, page, homePageSize);
   const pageCount = homePageCount(listed.total);
   if (page > pageCount) throw new HTTPException(404, { message: "Not a page" });
   const images = await noteImageViews(

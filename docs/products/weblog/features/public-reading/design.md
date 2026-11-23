@@ -44,7 +44,7 @@ The read flow is as follows.
 
 1. The Worker matches a fixed route before a title path.
 2. The domain reads only public rows. A store error becomes 503 `store_unavailable` and stops the response.
-3. For an entry or a feed item, the domain runs the same replaceable extract function owner writing uses, then renders anchors from that result.
+3. For an entry or a feed item, the domain renders the stored Markdown and the anchors come from that Markdown. Inbound edges used to decide an empty page are the edges stored when the body was written.
 4. Title targets are resolved again from public rows. The stored `target_id` is not the public href, because that id can point at a draft.
 5. The Worker returns one HTML document, one feed document, one empty page, or the image bytes.
 
@@ -176,11 +176,11 @@ A title URL is one path segment. The segment is percent-decoded to the compariso
 
 #### Home list
 
-The first page of `GET /` has no query. `page=1` lists the same twelve entries. A later page sets `page` to the 1-based page number, so the second page is `/?page=2`. Each page holds twelve deliverable entries. The last page may be shorter. The offset is `(page - 1) * 12`. Order stays `updated_at` descending, then `id` descending. The response counts the deliverable rows, then reads that page with `LIMIT` and `OFFSET`.
+The first page of `GET /` has no query. `page=1` lists the same twelve entries. A later page sets `page` to the 1-based page number, so the second page is `/?page=2`. Each page holds twelve entries from the deliverable entries and the public pages together. The last page may be shorter. The offset is `(page - 1) * 12`. A public page with `source_updated_at` uses that Unix second. Every other row uses `updated_at` converted to Unix seconds. Newer seconds come first, and an equal second breaks the tie by `id` descending. The response counts those rows, then reads that page with `LIMIT` and `OFFSET`. The feeds do not use this list.
 
 `page` is omitted, empty, or a decimal integer of at least 1 with no leading zero and no sign. Any other value is 400 `invalid_page`. The body is `text/plain; charset=utf-8` and `Cache-Control` is `no-store`. A 400 is not an empty list.
 
-When no deliverable entry exists, page 1 is 200 and the list is empty. A page number greater than the number of pages is 404. Zero entries make one empty page, so `/?page=2` is 404.
+When no deliverable entry and no public page exist, page 1 is 200 and the list is empty. When only public pages exist, the list shows those pages. A page number greater than the number of pages is 404. Zero entries make one empty page, so `/?page=2` is 404.
 
 When more than one page exists, the HTML includes a `nav` whose accessible name is `ページ`. One page omits that nav. `前へ` is present when a previous page exists, with `rel="prev"`. `次へ` is present when a next page exists, with `rel="next"`. The first page's href is `/`. A later page's href is `/?page=` plus the number. The current page is text with `aria-current="page"` and is not a link. When there are more than seven pages, the numbers are the first page, the last page, and the current page plus its neighbors. A skipped run is the text `…` and is not a link. The document head has `link rel="prev"` and `link rel="next"` for those same URLs.
 
@@ -198,9 +198,11 @@ Both parameters are required together. `before_id` is a lowercase UUID. `before`
 
 ### Shared HTML
 
-One function renders public HTML. For an article, it renders the stored plain text as Markdown: headings, paragraphs, unordered lists, emphasis, inline code, fenced code, and links. It escapes raw HTML in that text and never inserts the stored string as HTML. For every other kind, it escapes the stored text, then inserts only anchors and media the renderer created. Lines inside a `code:` or `table:` block stay escaped source text. Icons, tables, formulas, and Cosense decoration stay source text except where a link span sits inside them.
+One function renders public HTML. An article, a bookmark, and a page render the stored body as Markdown: headings, paragraphs, nested lists, quotations, emphasis, strikethrough, inline code, fenced code, links, images, and a table with a caption. Raw HTML in that text is escaped, and the stored string is never inserted as HTML. A note keeps the stored lines, escaped. Links in a page are the Markdown links the import stored. Rendering does not walk Cosense brackets again. Icons, formulas, lines that start with `$` or `%`, and links to another project stay the strings left in the body.
 
-Page-edge spans come from the shared extract function. An external URL is an `http://` or `https://` run outside a code or table block, ending at whitespace, `[`, or `]`. Generated hrefs are only `http` or `https`. Any other scheme is escaped text.
+The href of a link in the body is the URL written in that Markdown. A generated href is only `http`, `https`, or a path on this host. Any other scheme is escaped text. Inbound edges shown on an empty page are the stored edges. Rendering does not extract them from the body again.
+
+The list below resolves the title of a stored edge when an empty page lists its sources. It does not rewrite a Markdown href already stored in an entry body.
 
 Public resolution of a page-edge title:
 
@@ -249,7 +251,7 @@ A public note's GET `/e/{id}` lists the thread. The thread root is that note's `
 
 A feed row is `visibility = 'public'`, `published_at` is not null, `in_reply_to_id` is null, and `kind` is `article`, `note`, or `bookmark`. Order is `updated_at` descending, then `id` descending. Text comparison of the lowercase UUID is the tie-break. A public page is excluded. A kind feed adds `kind = ?`. There is no per-kind JSON Feed.
 
-`GET /` is the HTML timeline. Each item has a heading link, the card body, and the bookmark line when the kind is bookmark. The card body is the entry body cut to 100 characters. The count is Unicode code points after consecutive whitespace becomes one space. For an article or a bookmark, the count uses the words the Markdown render would show, without the marks or the link URL. A note counts the stored text. When the text is longer, the card shows the 100 characters and then `…`. The stored body is unchanged. The entry page and the feeds still render the full body. For a bookmark whose external URL starts with `http://` or `https://`, the heading link is that URL. For every other item, the heading link uses the view path when one exists, and otherwise the canonical URL. The items on that page are cards in one wrapping grid. The column count follows the width of the list. The list does not divide them by date. Order stays `updated_at` descending, then `id` descending. Feeds are not divided by date.
+`GET /` is the HTML timeline. Each item has a heading link, the card body, and the bookmark line when the kind is bookmark. The card body is the entry body cut to 100 characters. The count is Unicode code points after consecutive whitespace becomes one space. For an article, a bookmark, or a page, the count uses the words the Markdown render would show, without the marks or the link URL. A note counts the stored text. When the text is longer, the card shows the 100 characters and then `…`. The stored body is unchanged. The entry page and the feeds still render the full body. For a bookmark whose external URL starts with `http://` or `https://`, the heading link is that URL. For every other item, the heading link uses the view path when one exists, and otherwise the canonical URL. The items on that page are cards in one wrapping grid. The column count follows the width of the list. The list does not divide them by date. Order stays `updated_at` descending, then `id` descending. Feeds are not divided by date.
 
 `GET /feed.xml` and the three kind feeds are Atom. The media type is `application/atom+xml; charset=utf-8`. The feed `id` is the absolute URL of that feed without a query. The feed title is `weblog.yamanoku.net` for `/feed.xml`, and `記事`, `ノート`, or `ブックマーク` for the kind feeds. `link rel="self"` is the absolute URL of this page, including the query when one is present. `link rel="alternate"` points at `GET /`. `link rel="next"` is present only when a next page exists. Each entry `id` is the canonical URL. For a bookmark whose external URL starts with `http://` or `https://`, the entry `link rel="alternate"` is that URL. For every other entry, it is the view path or the canonical URL. `published` is the stored `published_at`. `updated` is the stored `updated_at`. The feed order is `updated_at` descending, then `id` descending. The entry `title` is the stored title. When the title is empty, the Atom title is the canonical URL. `content type="html"` is the same body fragment as the entry page. For a bookmark, that content also includes the external URL. The entry page shows that URL beside the title. An empty feed is 200 and has no entry elements. Its feed `updated` is `1970-01-01T00:00:00Z`.
 
@@ -321,7 +323,7 @@ None of these routes check a credential to choose a draft or a different entry l
 
 ## Security considerations
 
-Public HTML escapes stored text before it inserts generated `http` and `https` anchors. The content security policy refuses scripts and refuses images from other hosts. A rewritten image is loaded from this host. An original Gyazo URL that this feature keeps is an anchor, so the policy does not fetch it as an image.
+Public HTML escapes stored text before it inserts a generated anchor whose URL is `http`, `https`, or a path on this host. The content security policy refuses scripts and refuses images from other hosts. A rewritten image is loaded from this host. An original Gyazo URL that this feature keeps is an anchor, so the policy does not fetch it as an image.
 
 Responses on these routes do not include a draft body. GET `/` for a verified owner also sends `Cache-Control: private, no-store` and `Vary: Cookie`, so a shared cache does not store the note field. A verified owner's GET `/e/{id}` for a public note sends the same two headers, so a shared cache does not store the reply fields. A verified owner's GET `/{title}` or GET `/e/{id}` for a public article or bookmark sends the same two headers when the edit link is included, so a shared cache does not store that link. Other responses do not vary on a cookie. A deleted body is not selected. The image route returns one object's bytes. A path that is not the image route does not return archive bytes and does not list the bucket.
 
@@ -361,4 +363,4 @@ The owner could open a draft at its view path. A cache that varies on the cookie
 
 None that block implementation.
 
-Article Markdown is rendered by one function, as the body HTML requirement says. Icons, tables, formulas, and Cosense decoration stay with the requirements of that rendering. Until those requirements exist, this feature shows that source text. The CPU time of this HTML render is unmeasured. That measurement does not change the routes above.
+Markdown for an article, a bookmark, and a page is rendered by one function, as the body HTML requirement says. Icons, formulas, lines that start with `$` or `%`, and links to another project that remain in the body stay with the requirements of that rendering. Until those requirements exist, this feature shows that source text. The CPU time of this HTML render is unmeasured. That measurement does not change the routes above.

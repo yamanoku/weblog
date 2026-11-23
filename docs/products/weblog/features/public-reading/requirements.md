@@ -23,7 +23,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Write rules are i
 - The ActivityPub actor, Follow, signatures, sending activities, and Activity Streams for a live entry
 - WebFinger, the outbox, followers, and the inbox
 - Bulk import from Cosense
-- The order of rendering Cosense notation other than links. This feature shows that notation as source text
+- The order of turning formulas, icons, lines that start with `$` or `%`, and links to another project that remain in the body into HTML other than that source text
 - The ORM
 - The owner's write API and the owner's list of 50 entries
 
@@ -159,7 +159,7 @@ Scenario: When deliverable entries exist, the first home page lists twelve of th
 
 - Given: More than twelve deliverable entries exist. A page is public and is not deliverable.
 - When: An unauthenticated client requests `GET /`, `GET /feed.xml`, or `GET /feed.json`.
-- Then: `GET /` lists twelve deliverable entries. `GET /feed.xml` and `GET /feed.json` list ten. Order is `updatedAt` descending, then the immutable id descending. The public page is absent. Each item includes the body. On the `GET /` card, that body shows at most 100 characters. A longer body shows those 100 characters followed by `…`. The title and the images are outside that count. A feed still includes the full body. The item id is the canonical URL. The HTML for `GET /` places those items in one wrapping grid of cards. The column count follows the width of the list. The list does not divide items by date. The feeds are not divided by date.
+- Then: `GET /` lists twelve entries from the deliverable entries and the public pages together. On the home list, a public page with a source updated time uses that time, and every other entry uses `updatedAt`, newest first. An equal time breaks the tie by the immutable id descending. `GET /feed.xml` and `GET /feed.json` list ten deliverable entries. Feed order is `updatedAt` descending, then the immutable id descending. A public page is absent from the feeds. Each item includes the body. On the `GET /` card, that body shows at most 100 characters. A longer body shows those 100 characters followed by `…`. The title and the images are outside that count. A page card counts the words a reader would see, the same way an article card does. A feed still includes the full body. The item id is the canonical URL. The HTML for `GET /` places those items in one wrapping grid of cards. The column count follows the width of the list. The list does not divide items by date. The feeds are not divided by date.
 
 Scenario: When more than ten deliverable entries exist, the response offers the next page
 
@@ -187,9 +187,15 @@ Scenario: When `page` is past the last home page
 
 Scenario: When no deliverable entry exists, the feed is an empty success
 
-- Given: No deliverable entry exists. A public page may exist.
+- Given: No deliverable entry exists. No public page exists.
 - When: An unauthenticated client requests `GET /`.
 - Then: The response is 200. The list is empty. The response is not 404.
+
+Scenario: When no deliverable entry exists and a public page does, the home list shows that page
+
+- Given: No deliverable entry exists. One public page exists.
+- When: An unauthenticated client requests `GET /`.
+- Then: The response is 200. The list includes that page. The response is not 404. The feeds omit that page.
 
 Scenario: When the reader asks for one kind, the Atom feed contains only that kind
 
@@ -290,15 +296,15 @@ An old path of a public entry redirects with 301 to the current view path. When 
 
 The stored body stays plain text. Public HTML does not replace that string.
 
-Public HTML for an article or a bookmark renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, `*` and `**` emphasis, inline code in backticks, fenced code, `[label](URL)` links, and `![text](URL)` images into HTML. A link or image URL is only `http`, `https`, or a path on this host. The image alt is the text between the brackets, and it may be empty. Raw HTML in the body is escaped and is not executed. A bookmark also lists every stored image under the body, in stored order, even when the Markdown already contains it. An article does not add that list. An article image appears in the HTML only where the Markdown places it. The image source is `/note-images/{id}` for that image. For a note, that id is the note id.
+Public HTML for an article, a bookmark, or a page renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, and two leading spaces per nested list level, lines that start with `>`, a list item whose text starts with `>` (consecutive items of that form at the same level are one quotation), `*` and `**` emphasis, `***` for bold and italic, `~~` strikethrough, inline code in backticks, fenced code, `[label](URL)` links, and `![text](URL)` images into HTML. A pipe table becomes a table with a header and a body. A `Table: name` line immediately before it is that table's caption. A link or image URL is only `http`, `https`, or a path on this host. The image alt is the text between the brackets, and it may be empty. Raw HTML in the body is escaped and is not executed. A bookmark also lists every stored image under the body, in stored order, even when the Markdown already contains it. An article does not add that list. An article image appears in the HTML only where the Markdown places it. The image source is `/note-images/{id}` for that image. For a note, that id is the note id. Links in a page are the Markdown links stored in the body. Rendering does not walk Cosense brackets again.
 
-Public HTML for any other kind keeps the stored lines. Page edges become links to the target's view path. When the public target has no view path, the link uses the canonical URL. A link to a title with no public entry remains, so the empty page can be opened. External URLs become external links.
+Public HTML for a note keeps the stored lines.
 
 On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body.
 
 When the request is verified as the owner, the view path and the canonical page of a public article or a public bookmark include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note and a public page omit it. The stored body does not change. Owner writing defines the edit screen that link opens.
 
-Icons, tables, formulas, and Cosense decoration stay source text. The order of HTML for those is decided when that rendering's requirements are written.
+Icons, formulas, lines that start with `$` or `%`, and links to another project that remain in the body stay source text. The order of HTML for those is decided when that rendering's requirements are written.
 
 A `i.gyazo.com` or `gyazo.com` URL uses the image rule below. A `scrapbox.io/files` URL stays the original URL string. This feature does not copy that file.
 
@@ -331,11 +337,11 @@ When no public entry has the title and no public inbound edge points at it, the 
 
 ##### Feeds
 
-`GET /` is HTML. `GET /feed.xml` is Atom. `GET /feed.json` is JSON Feed. The three responses list the same deliverable entries. Atom is required. JSON Feed is an additional representation of the same items.
+`GET /` is HTML. `GET /feed.xml` is Atom. `GET /feed.json` is JSON Feed. The two feeds list the same deliverable entries. Atom is required. JSON Feed is an additional representation of the same items. The home HTML adds public pages to those deliverable entries.
 
 `GET /feed/articles.xml`, `GET /feed/notes.xml`, and `GET /feed/bookmarks.xml` are Atom feeds for that kind only. There is no per-kind JSON Feed.
 
-A feed includes only deliverable entries, ordered by `updatedAt` descending. When `updatedAt` is equal, the immutable id descending breaks the tie. A page is excluded. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. An imported page stays out of the feed until the owner changes its kind. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
+A feed includes only deliverable entries, ordered by `updatedAt` descending. When `updatedAt` is equal, the immutable id descending breaks the tie. A page is excluded from the feeds. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. An imported page stays out of the feed until the owner changes its kind. `GET /` adds public pages to the deliverable entries. On that list, a public page with a source updated time uses that time, and every other entry uses `updatedAt`, newest first. An equal time breaks the tie by the immutable id descending. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
 
 The owner's API list of 50 entries is a different list. It is not this page size.
 

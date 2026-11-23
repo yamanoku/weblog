@@ -658,17 +658,13 @@ An edge has the source immutable ID, the title written in the body, and the targ
 
 This write does not change another entry's body. The title string stored on an edge changes only when the owner rewrites the body of that edge's source. A rename alone does not change the title strings on other entries' edges.
 
-Link extraction applies these rules to the line text.
+Link extraction applies these rules to the stored body.
 
-- A line that starts with `code:` or `table:`, and the immediately following lines whose first character is whitespace, are not edge sources.
-- Outside those lines, the tag title runs from immediately after `#` until before a space, `[`, `]`, or the end of the line.
-- An empty tag title is not an edge. The edge title of `#2016 年にリメイクした` is `2016` only.
-- Only the inside of a `[` and its matching `]`, containing no line break, is a page-edge candidate.
-- When the inside starts with `http://` or `https://`, it is an external URL and not an edge.
-- When any whitespace-separated part starts with `http://` or `https://`, it is not an edge.
-- When the inside ends with `.icon`, it is an icon and not an edge.
-- When the inside starts with `*`, `**`, `***`, or `-`, it is decoration and not an edge.
-- Any other inside is a page title, normalized the same way as a title, and becomes an edge.
+- The inside of a fenced code block is not an edge.
+- The inside of a pipe table is not an edge.
+- A `[label](URL)` whose URL starts with `http://` or `https://` is not an edge.
+- A URL that starts with `/` and does not start with `//` is an edge. The edge title is the label before the parentheses, normalized the same way as a title. Spaces in the label are not turned back from `_` in the path.
+- Any other bracket, `#`, icon, or formula is not an edge.
 
 An unauthenticated resolution target is only a public entry whose current title matches. When no entry uses that string as its current title, and a public entry records it as a past title, the target is that entry. A draft resolves only in the owner's view. An edge with no matching public entry remains. Reading does not create an entry.
 

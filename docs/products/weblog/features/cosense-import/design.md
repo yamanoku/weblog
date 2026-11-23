@@ -74,7 +74,7 @@ The page route decides again. A stale plan cannot overwrite a local edit. An omi
 
 A create post includes integer `sourceCreatedAt`. The value is the page list's `created` and is not stored. When the value is missing, or when it is greater than 1793661527, the Worker writes nothing. The response is 200 `outside_target`. The CLI does not report that page and does not record it as completed. A non-integer value is 422 `invalid_source_time`, and the CLI stops without moving the cursor. A replace of a page that already has an entry does not use this check.
 
-A create sets kind to page and visibility to public, leaves the bookmark URL empty, issues a new lowercase UUID with `crypto.randomUUID()` before the batch, and stores the page ID. The body is the text response unchanged, including a first line equal to the title. `published_at` is NULL. The batch does not insert `delivery_records` and does not enqueue an activity.
+A create sets kind to page and visibility to public, leaves the bookmark URL empty, issues a new lowercase UUID with `crypto.randomUUID()` before the batch, and stores the page ID. The body is the text the CLI converted to Markdown, including the converted first line when it equals the title. `published_at` is NULL. The batch does not insert `delivery_records` and does not enqueue an activity.
 
 A replace writes the fetched title and body, rebuilds edges, and updates the view path and past titles by the owner-writing rules. It leaves kind, visibility, bookmark URL, page ID, immutable ID, and `published_at` as they are. It does not enqueue an activity. Entry `created_at` and `updated_at` are the commit times. The list's `updated` number is stored separately as `source_updated_at`.
 
@@ -168,7 +168,7 @@ The CLI calls these URLs with no credential. The project is public. The CLI disc
 - The same path with `?followingId=` set to a non-empty `X-Following-Id`
 - `GET https://scrapbox.io/api/pages/yamanoku/{title}/text`
 
-The page-list fields used are `id` and `created`. A `search/titles` element has no `created`. The source is [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles), which says that response does not include the creation time. Each walk element used by this feature has `id`, `title`, and `updated`. The element has no body lines. The `links` array is not the edge list. Edges are extracted from the stored plain text by the owner-writing rules. The text response is `text/plain` and is stored unchanged. The CLI does not request `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files`.
+The page-list fields used are `id` and `created`. A `search/titles` element has no `created`. The source is [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles), which says that response does not include the creation time. Each walk element used by this feature has `id`, `title`, and `updated`. The element has no body lines. The `links` array is not the edge list. Edges are extracted from the stored Markdown by the owner-writing rules. The text response is `text/plain`. Before it posts, the CLI converts that text with `cosenseTextToMarkdown` in `src/domain/cosense-markdown.ts`. The Worker stores the body it receives and does not read Cosense notation again. The CLI does not request `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files`.
 
 The measured count URL, `https://scrapbox.io/api/pages/yamanoku?limit=1`, is not the walk. That response has no `X-Following-Id` continuation.
 

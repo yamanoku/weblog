@@ -183,7 +183,7 @@ ol.dads-breadcrumb__list {
 .entry-body h3 { font-size: 1.25rem; }
 .entry-body :is(h4, h5, h6) { font-size: 1.125rem; } */
 
-.entry-body :is(p, ul, pre) {
+.entry-body :is(p, ul, pre, blockquote) {
   margin: 0;
 }
 
@@ -193,6 +193,34 @@ ol.dads-breadcrumb__list {
 
 .entry-body ul {
   padding-left: 2rem;
+}
+
+.entry-body blockquote {
+  padding-left: 1rem;
+  border-left: 2px solid var(--color-neutral-solid-gray-200);
+}
+
+.entry-body .table-scroll {
+  overflow: auto;
+  max-inline-size: 100%;
+}
+
+.entry-body table {
+  border-collapse: collapse;
+  width: max-content;
+  max-inline-size: 100%;
+}
+
+.entry-body caption {
+  caption-side: top;
+  text-align: start;
+}
+
+.entry-body :is(th, td) {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-neutral-solid-gray-200);
+  text-align: start;
+  white-space: nowrap;
 }
 
 .entry-body pre {

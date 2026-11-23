@@ -442,13 +442,13 @@ D1 の1日の書き込み上限に当たったら、その仕事は 00:00 UTC �
     id: "entry-article-20261110",
     title: "ページは配信しない",
     kind: "article",
-    body: `kind が page の公開エントリは、ホームに出しません。配信対象は article、note、bookmark で、\`publishedAt\` があるものだけです。
+    body: `kind が page の公開エントリは、ホームの一覧に出ます。フィードと配送には出しません。配信対象は article、note、bookmark で、\`publishedAt\` があるものだけです。
 
 下書きも公開面には出ません。オーナーは \`/edit\` で読みます。
 
 ## サンプルに残しているもの
 
-- \`index-only\` は公開の page で、配信しません
+- \`index-only\` は公開の page で、ホームには出て、配信はしません
 - \`draft-thought\` は下書きの note で、公開一覧に入りません`,
     visibility: "public",
     deliverable: true,
@@ -525,6 +525,13 @@ function byUpdatedThenId(left: CatalogEntry, right: CatalogEntry): number {
 
 export function deliverableEntries(): CatalogEntry[] {
   return entries.filter((entry) => entry.deliverable).sort(byUpdatedThenId);
+}
+
+// The local home list. Public pages join the deliverable entries. Feeds do not.
+export function homeEntries(): CatalogEntry[] {
+  return entries
+    .filter((entry) => entry.visibility === "public" && (entry.deliverable || entry.kind === "page"))
+    .sort(byUpdatedThenId);
 }
 
 export function publicEntries(): CatalogEntry[] {

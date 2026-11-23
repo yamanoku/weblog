@@ -28,7 +28,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Writes use the va
 - Two-way sync back to Cosense
 - A Cosense page created after the 2026-11-03 migration set
 - A link target that is not in the page list. The link text stays in the body
-- The order of rendering Cosense notation other than the edges owner writing already extracts
+- Formulas, icons, lines that start with `$` or `%`, and links to another project. Those stay the fetched strings in the body. Edge extraction is defined by owner writing
 - The UI framework and the ORM
 - A procedure that adopts a newer Cosense body over a local edit. The local-edit section records that this feature does not do that
 
@@ -44,7 +44,7 @@ Scenario: When the page is not stored yet, the host creates one public page
 
 - Given: The CLI token is valid. The page is in the migration set. The public project has a page ID, a title, and line text for it. No entry stores that page ID. The fetched body is not empty.
 - When: The owner runs the import.
-- Then: One entry exists. Its kind is page and its visibility is public. The immutable ID is new and is not the Cosense page ID. The canonical URL is `https://weblog.yamanoku.net/e/{id}`. The Cosense page ID is stored on that entry. The body is the fetched plain text, and the first line remains even when it equals the title. Bracket characters are unchanged. The entry is not deliverable. This run does not send an activity.
+- Then: One entry exists. Its kind is page and its visibility is public. The immutable ID is new and is not the Cosense page ID. The canonical URL is `https://weblog.yamanoku.net/e/{id}`. The Cosense page ID is stored on that entry. The body is the fetched line text converted to Markdown by the rules in the later section. The converted first line remains even when it equals the title. The entry is not deliverable. This run does not send an activity.
 
 Scenario: A page created after the migration set is not stored
 
@@ -110,7 +110,7 @@ Scenario: When the body still matches and the source is newer, the host replaces
 
 - Given: The current body equals the last imported body. The source updated time is newer. The fetched body is not empty. The owner may already have changed the entry's kind or visibility.
 - When: The owner runs the import.
-- Then: The title and body become the fetched title and plain text. Edges are rebuilt from that body in the same update. Kind, visibility, the bookmark URL, the Cosense page ID, and the immutable ID stay as they were. The last imported body becomes the body just stored. The source updated time stored for the comparison becomes the source time just read. The page ID is not reported as a local edit.
+- Then: The title and body become the fetched title and the body converted to Markdown by the same rules. Edges are rebuilt from that body in the same update. Kind, visibility, the bookmark URL, the Cosense page ID, and the immutable ID stay as they were. The last imported body becomes the Markdown just stored. The source updated time stored for the comparison becomes the source time just read. The page ID is not reported as a local edit.
 
 Scenario: When a public import has an empty body, that page is refused and the walk continues
 
@@ -161,7 +161,7 @@ The parent product sets no percentage target for availability or delivery succes
 
 ##### Which project and which text
 
-The only source is the public project `https://scrapbox.io/yamanoku/`. Whether a page exists, and its `created` time, come from `https://scrapbox.io/api/pages/yamanoku`. Walk order follows `search/titles`, in the later section. Neither list's elements include the body lines. The body is the plain text from `https://scrapbox.io/api/pages/yamanoku/{title}/text`. The import does not convert brackets.
+The only source is the public project `https://scrapbox.io/yamanoku/`. Whether a page exists, and its `created` time, come from `https://scrapbox.io/api/pages/yamanoku`. Walk order follows `search/titles`, in the later section. Neither list's elements include the body lines. The fetch reads the plain text from `https://scrapbox.io/api/pages/yamanoku/{title}/text`. The stored body is that text converted to Markdown.
 
 The migration set is the 7655 pages that were in that project list on 2026-11-03. On that day, `https://scrapbox.io/api/pages/yamanoku?limit=1` reported `count` 7655. That `count` excludes pages with no content. The source is [api/pages/:projectname](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname). On that same list, all 7655 pages had a line count and a character count of at least 1. A page's `created` value is Unix seconds. The maximum was 1793661527, which is 2026-11-02T23:18:47Z. A page whose `created` value is later than that integer is not in the migration set. A title that is not in the page list is not in the set either. These 7655 pages are the pages to move. The number is not the daily row-write cap. The whole project is not imported inside one request to this host. Each stored page is its own committed write.
 
@@ -171,11 +171,27 @@ After the move, the owner does not update the public project. The replace rules 
 
 ##### Fields a create sets
 
-A create sets kind to page and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched line text, including a first line that equals the title. The bookmark URL is empty. The entry is not deliverable, so it has no publishedAt and this feature does not send an activity.
+A create sets kind to page and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched lines converted to Markdown, including the converted first line when it equals the title. The bookmark URL is empty. The entry is not deliverable, so it has no publishedAt and this feature does not send an activity. The home HTML list includes it. The human-readable feeds do not. Public reading states that rule.
 
 The entry's created time is the time the create commits. The entry's updated time is the time a later write commits. Those times are not replaced by the Cosense timestamps. The source updated time is stored beside them and is used only to decide whether a later source copy is newer.
 
-The last imported body is the line text of the last write this feature committed for that page.
+The last imported body is the Markdown of the last write this feature committed for that page. The fetched lines themselves are not stored.
+
+##### The body becomes Markdown
+
+Before the host stores the page, it converts the fetched lines to Markdown. A blank line separates the surrounding blocks. The conversions below do not run inside a code block or a table.
+
+- One leading space or tab is one list level. A line with no leading space or tab is not a list item. Consecutive list lines become one list.
+- A `>` at the start of the line, after that indent is removed, is a quotation. Consecutive quotation lines become one quotation. An indented quotation stays a list item at that level.
+- A span wrapped in `` ` `` stays inline code.
+- A line that starts with `code:` and the following lines that start with whitespace and end at a blank line become a fenced code block. The text after `code:` is the fence's info string.
+- A line that starts with `table:` and the following tab-separated lines become a pipe table. The first row is the header. The name after `table:` is that table's caption.
+- `[[text]]`, `[* text]`, `[** text]`, `[*** text]`, and `[**** text]` become bold. In Cosense the number of asterisks is the size of the text, and the outline of a page is the indent. Markdown on this host has no text size.
+- `[/ text]` becomes italic. `[/* text]` becomes bold and italic. `[- text]` becomes strikethrough.
+- `[page title]` becomes `[page title](/path)`. The path is the view path: spaces in the title become `_`, then the title is percent-encoded. A `#tag` uses the same shape. The link text of `#2016 年にリメイクした` is `2016` only.
+- A bare `http` or `https` URL, `[URL title]`, and `[title URL]` become a Markdown link. An image URL becomes `![](URL)`. When one bracket holds both a link and an image, the image is wrapped in that link.
+- A URL on `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files` stays the fetched bracket or URL string.
+- `[name.icon]`, `[$ formula]`, a line that starts with `$` or `%`, and a link to another project that starts with `/` stay the fetched string.
 
 ##### Fields a later import keeps
 

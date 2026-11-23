@@ -20,7 +20,7 @@ function decodeText(value: string): string {
 function markdownText(source: string): string {
   const html = markdownToHtml(source)
     .replace(/<img\b[^>]*\balt="([^"]*)"[^>]*>/g, "$1")
-    .replace(/<\/(?:h[1-6]|p|li|ul|pre)>/g, " ")
+    .replace(/<\/(?:h[1-6]|p|li|ul|pre|blockquote|caption|td|th|tr)>/g, " ")
     .replace(/<[^>]+>/g, "");
   return collapse(decodeText(html));
 }

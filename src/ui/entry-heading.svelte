@@ -9,7 +9,9 @@
   <div class="dads-heading" data-size="32">
     <h1 class="dads-heading__heading">{title}</h1>
     {#if href}
-      <a class="dads-link entry-heading__link" href={href} rel="external">{href}</a>
+      <p class="entry-heading__bookmark-url">
+        <a class="dads-link entry-heading__link" href={href} rel="external">{href}</a>
+      </p>
     {/if}
   </div>
 </div>

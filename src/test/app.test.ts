@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "vitest";
 import {
   deliverableEntries,
+  homeEntries,
   entryById,
   isReservedTitle,
   publicArticles,
@@ -123,6 +124,10 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     deliverable.some((entry) => entry.title === "index-only"),
     false,
   );
+  assert.equal(
+    homeEntries().some((entry) => entry.title === "index-only"),
+    true,
+  );
   const titles = publicEntries().map((entry) => entry.title);
   assert.equal(titles.includes("index-only"), true);
   assert.equal(titles.includes("draft-thought"), false);
@@ -185,7 +190,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.match(titlePage, /Empty page/);
   assert.match(titlePage, /entry\.body/);
   const homeLoader = readRoot("pages/index.server.ts");
-  assert.match(homeLoader, /deliverableEntries/);
+  assert.match(homeLoader, /homeEntries/);
   assert.match(homeLoader, /readsDevCatalog\(/);
   assert.equal(existsSync(join(rootDir, "pages/pages.svelte")), false);
   assert.equal(existsSync(join(rootDir, "pages/pages.server.ts")), false);

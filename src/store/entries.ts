@@ -1,5 +1,5 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, count, desc, eq, isNotNull, isNull, or } from "void/db";
+import { and, count, desc, eq, isNotNull, isNull, or, sql } from "void/db";
 import { entries, tombstones } from "../db/schema.ts";
 import { homePageCount } from "../domain/home-page.ts";
 
@@ -114,6 +114,11 @@ const deliverableWhere = and(
   deliverableKind,
 );
 
+// The home list adds public pages. A page with a source time uses that time.
+// Other rows keep updated_at. Feeds stay on deliverableWhere.
+const homeWhere = or(deliverableWhere, and(eq(entries.visibility, "public"), eq(entries.kind, "page")));
+const homeMoment = sql`CASE WHEN ${entries.kind} = 'page' AND ${entries.sourceUpdatedAt} IS NOT NULL THEN ${entries.sourceUpdatedAt} ELSE CAST(strftime('%s', ${entries.updatedAt}) AS INTEGER) END`;
+
 function publicEntryRow(row: {
   id: string;
   title: string;
@@ -160,6 +165,25 @@ export async function listDeliverableEntryPage(
     .from(entries)
     .where(deliverableWhere)
     .orderBy(desc(entries.updatedAt), desc(entries.id))
+    .limit(size)
+    .offset((page - 1) * size);
+  return { total, rows: rows.map(publicEntryRow) };
+}
+
+// Home HTML. Deliverable entries plus public pages. Feeds do not use this list.
+export async function listHomeEntryPage(
+  database: BetterSQLite3Database,
+  page: number,
+  size: number,
+): Promise<{ rows: PublicEntryRow[]; total: number }> {
+  const counted = await database.select({ total: count() }).from(entries).where(homeWhere);
+  const total = Number(counted[0]?.total ?? 0);
+  if (page > homePageCount(total, size)) return { rows: [], total };
+  const rows = await database
+    .select()
+    .from(entries)
+    .where(homeWhere)
+    .orderBy(desc(homeMoment), desc(entries.id))
     .limit(size)
     .offset((page - 1) * size);
   return { total, rows: rows.map(publicEntryRow) };

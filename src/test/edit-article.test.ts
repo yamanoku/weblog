@@ -17,6 +17,7 @@ import {
   commitEntry,
   listDeliverableEntries,
   listDeliverableEntryPage,
+  listHomeEntryPage,
   readPublicEntryByPath,
   readStoredEntry,
 } from "../store/entries.ts";
@@ -284,8 +285,8 @@ test("public articles are listed for the home page and matched by the title path
   assert.equal(home.includes("void/db"), false);
   assert.equal(title.includes("void/db"), false);
   assert.match(home, /readsDevCatalog\(/);
-  assert.match(home, /listDeliverableEntryPage\(/);
-  assert.match(home, /deliverableEntries/);
+  assert.match(home, /listHomeEntryPage\(/);
+  assert.match(home, /homeEntries/);
   assert.match(title, /readsDevCatalog\(/);
   assert.match(title, /readPublicEntryByPath\(/);
   assert.match(title, /publicEntryByTitle\(/);
@@ -477,6 +478,57 @@ test("the home list orders a later update before a later publish", async () => {
   const past = await listDeliverableEntryPage(database, 3, 2);
   assert.deepEqual(past.rows, []);
   assert.equal(past.total, 3);
+  sqlite.close();
+});
+
+test("the home list includes a public page at its source time and leaves feeds unchanged", async () => {
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  await commitEntry(database, {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
+    kind: "article",
+    title: "Edited",
+    body: "later update",
+    visibility: "public",
+    publishedAt: "2026-11-07T01:00:00.000Z",
+    createdAt: "2026-11-07T01:00:00.000Z",
+    updatedAt: "2026-11-07T06:00:00.000Z",
+    viewPath: "Edited",
+  });
+  await commitEntry(database, {
+    id: "dddddddd-dddd-4ddd-8ddd-ddddddddddd4",
+    kind: "page",
+    title: "2025-12-31",
+    body: "2025-12-31\n[大晦日]",
+    visibility: "public",
+    publishedAt: null,
+    createdAt: "2026-11-23T04:00:00.000Z",
+    updatedAt: "2026-11-23T04:00:00.000Z",
+    sourceUpdatedAt: 1_767_200_000,
+    viewPath: "2025-12-31",
+  });
+  await commitEntry(database, {
+    id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee5",
+    kind: "page",
+    title: "draft-page",
+    body: "hidden",
+    visibility: "draft",
+    publishedAt: null,
+    createdAt: "2026-11-23T04:00:00.000Z",
+    updatedAt: "2026-11-23T04:00:00.000Z",
+    sourceUpdatedAt: 1_800_000_000,
+  });
+  const deliverable = await listDeliverableEntries(database);
+  assert.deepEqual(
+    deliverable.map((entry) => entry.id),
+    ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"],
+  );
+  const home = await listHomeEntryPage(database, 1, 12);
+  assert.equal(home.total, 2);
+  assert.deepEqual(
+    home.rows.map((entry) => entry.id),
+    ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1", "dddddddd-dddd-4ddd-8ddd-ddddddddddd4"],
+  );
   sqlite.close();
 });
 

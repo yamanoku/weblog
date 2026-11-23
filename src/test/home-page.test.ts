@@ -52,7 +52,7 @@ test("the home page links the next twelve entries", () => {
   assert.match(page, /aria-current="page"/);
   assert.match(page, /homePageHref/);
   assert.match(loader, /parseHomePage/);
-  assert.match(loader, /listDeliverableEntryPage/);
+  assert.match(loader, /listHomeEntryPage/);
   assert.match(loader, /invalid_page/);
   assert.match(loader, /Not a page/);
 });

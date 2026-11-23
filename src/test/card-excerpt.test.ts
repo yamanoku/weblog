@@ -16,6 +16,9 @@ test("a home card keeps at most 100 characters of the body", () => {
   assert.equal(article.includes("https://"), false);
   assert.equal(article.includes("**"), false);
 
+  const page = cardBodyExcerpt("2025-01-01\n[大晦日](/大晦日) と [https://gyazo.com/abc]", "page");
+  assert.equal(page, "2025-01-01 大晦日 と [https://gyazo.com/abc]");
+
   const image = cardBodyExcerpt("![画素](/note-images/abc)\n\n本文", "bookmark");
   assert.equal(image, "画素 本文");
   assert.equal(cardBodyExcerpt("   \n", "note"), "");

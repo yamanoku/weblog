@@ -74,7 +74,7 @@ CLI は `search/titles` を先頭から読む。`X-Following-Id` が空でなく
 
 作成の投稿は、整数の `sourceCreatedAt` を含む。値は、ページ一覧の `created` である。保存はしない。値が無いときは、Worker が書かない。1793661527 より大きいときも、Worker が書かない。応答は 200 の `outside_target` である。CLI は、そのページを報告しない。完了にもしない。整数でない値は 422 `invalid_source_time` である。CLI はカーソルを動かさずに停止する。既にエントリがあるページの置き換えは、この判定を使わない。
 
-作成は種類を page、公開状態を public にする。bookmark の URL は空にする。batch の前に `crypto.randomUUID()` で小文字の UUID を発行する。ページ ID を保存する。本文は text 応答のままである。先頭行がタイトルと一致しても残す。`published_at` は NULL である。batch は `delivery_records` を挿入しない。活動も積まない。
+作成は種類を page、公開状態を public にする。bookmark の URL は空にする。batch の前に `crypto.randomUUID()` で小文字の UUID を発行する。ページ ID を保存する。本文は、CLI が Markdown にしたテキストである。先頭行がタイトルと一致しても、変換した先頭行は残す。`published_at` は NULL である。batch は `delivery_records` を挿入しない。活動も積まない。
 
 置き換えは、取得したタイトルと本文を書き、辺を作り直す。閲覧パスと過去タイトルは、所有者の書き込みの規則で更新する。種類、公開状態、bookmark の URL、ページ ID、不変 ID、`published_at` は維持する。活動は積まない。エントリの `created_at` と `updated_at` は、確定した時刻である。一覧の `updated` は、別に `source_updated_at` として保存する。
 
@@ -168,7 +168,7 @@ CLI は次の URL を、資格情報なしの HTTPS GET で呼ぶ。プロジェ
 - 空でない `X-Following-Id` を `followingId` にした、同じパス
 - `GET https://scrapbox.io/api/pages/yamanoku/{title}/text`
 
-ページ一覧から使う項目は `id` と `created` である。`search/titles` の要素に `created` は無い。出典は [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles) である。そのページは、作成日時を返さないと書く。走査で使う要素は `id`、`title`、`updated` である。要素に本文の行は無い。`links` 配列は辺の一覧ではない。辺は、保存したプレーンテキストから、所有者の書き込みの規則で抽出する。text 応答は `text/plain` であり、そのまま保存する。CLI は `i.gyazo.com`、`gyazo.com`、`scrapbox.io/files` を要求しない。
+ページ一覧から使う項目は `id` と `created` である。`search/titles` の要素に `created` は無い。出典は [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles) である。そのページは、作成日時を返さないと書く。走査で使う要素は `id`、`title`、`updated` である。要素に本文の行は無い。`links` 配列は辺の一覧ではない。辺は、保存した Markdown から、所有者の書き込みの規則で抽出する。text 応答は `text/plain` である。CLI は、投稿する前に `src/domain/cosense-markdown.ts` の `cosenseTextToMarkdown` で Markdown へ変える。Worker は、受け取った本文をそのまま保存する。Worker は Cosense の記法を読み直さない。CLI は `i.gyazo.com`、`gyazo.com`、`scrapbox.io/files` を要求しない。
 
 件数を測った URL `https://scrapbox.io/api/pages/yamanoku?limit=1` は、走査には使わない。あの応答には、`X-Following-Id` による続きが無い。
 

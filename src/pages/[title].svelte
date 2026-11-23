@@ -22,7 +22,9 @@
       title={entry.title}
       bookmarkUrl={entry.kind === "bookmark" ? entry.bookmarkUrl : null}
     />
-    {#if entry.kind === "article" || entry.kind === "bookmark"}
+    {#if entry.kind === "note"}
+      <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
+    {:else}
       <div class="entry-body">
         {@html markdownToHtml(entry.body)}
       </div>
@@ -31,8 +33,6 @@
           <img src={image.href} alt={image.alt} />
         {/each}
       {/if}
-    {:else}
-      <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
     {/if}
   </article>
   {#if owner && (entry.kind === "article" || entry.kind === "bookmark")}

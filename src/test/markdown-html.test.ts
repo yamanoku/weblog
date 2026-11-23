@@ -42,6 +42,11 @@ test("article markdown becomes html and raw html stays text", () => {
   const image = markdownToHtml("![pixel](/note-images/abc)\n\n![](javascript:alert(1))");
   assert.match(image, /<img src="\/note-images\/abc" alt="pixel">/);
   assert.equal(image.includes('src="javascript:'), false);
+
+  const nested = markdownToHtml("- outer\n  - inner\n\n> quoted\n\n~~gone~~");
+  assert.match(nested, /<ul><li>outer<ul><li>inner<\/li><\/ul><\/li><\/ul>/);
+  assert.match(nested, /<blockquote><p>quoted<\/p><\/blockquote>/);
+  assert.match(nested, /<del>gone<\/del>/);
 });
 
 test("public article pages render markdown and the edit form keeps the source", () => {
