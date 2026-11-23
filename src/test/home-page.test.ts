@@ -27,19 +27,19 @@ test("a home page number is a positive integer, and the first page omits it", ()
   assert.equal(homePageHref(2), "/?page=2");
 });
 
-test("each home page holds ten entries and the last page keeps the remainder", () => {
-  const entries = Array.from({ length: 21 }, (_, index) => index);
-  assert.equal(homePageSize, 10);
-  assert.equal(homePageCount(21), 3);
+test("each home page holds twelve entries and the last page keeps the remainder", () => {
+  const entries = Array.from({ length: 25 }, (_, index) => index);
+  assert.equal(homePageSize, 12);
+  assert.equal(homePageCount(25), 3);
   assert.equal(homePageCount(0), 1);
-  assert.deepEqual(homePageSlice(entries, 1), entries.slice(0, 10));
-  assert.deepEqual(homePageSlice(entries, 2), entries.slice(10, 20));
-  assert.deepEqual(homePageSlice(entries, 3), [20]);
+  assert.deepEqual(homePageSlice(entries, 1), entries.slice(0, 12));
+  assert.deepEqual(homePageSlice(entries, 2), entries.slice(12, 24));
+  assert.deepEqual(homePageSlice(entries, 3), [24]);
   assert.deepEqual(homePageNumbers(2, 4), [1, 2, 3, 4]);
   assert.deepEqual(homePageNumbers(5, 12), [1, "gap", 4, 5, 6, "gap", 12]);
 });
 
-test("the home page links the next ten entries", () => {
+test("the home page links the next twelve entries", () => {
   const page = readFileSync(join(rootDir, "pages/index.svelte"), "utf8");
   const loader = readFileSync(join(rootDir, "pages/index.server.ts"), "utf8");
   assert.match(page, /class="entry-grid"/);

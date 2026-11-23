@@ -155,11 +155,11 @@ As an unauthenticated reader, I want to read a feed of deliverable entries so th
 
 **Acceptance criteria:**
 
-Scenario: When deliverable entries exist, the first page lists ten of them
+Scenario: When deliverable entries exist, the first home page lists twelve of them
 
-- Given: More than ten deliverable entries exist. A page is public and is not deliverable.
+- Given: More than twelve deliverable entries exist. A page is public and is not deliverable.
 - When: An unauthenticated client requests `GET /`, `GET /feed.xml`, or `GET /feed.json`.
-- Then: The response lists ten deliverable entries. Order is `updatedAt` descending, then the immutable id descending. The public page is absent. Each item includes the body. On the `GET /` card, that body shows at most 100 characters. A longer body shows those 100 characters followed by `…`. The title and the images are outside that count. A feed still includes the full body. The item id is the canonical URL. The HTML for `GET /` places those items in one wrapping grid of cards. The column count follows the width of the list. The list does not divide items by date. The feeds are not divided by date.
+- Then: `GET /` lists twelve deliverable entries. `GET /feed.xml` and `GET /feed.json` list ten. Order is `updatedAt` descending, then the immutable id descending. The public page is absent. Each item includes the body. On the `GET /` card, that body shows at most 100 characters. A longer body shows those 100 characters followed by `…`. The title and the images are outside that count. A feed still includes the full body. The item id is the canonical URL. The HTML for `GET /` places those items in one wrapping grid of cards. The column count follows the width of the list. The list does not divide items by date. The feeds are not divided by date.
 
 Scenario: When more than ten deliverable entries exist, the response offers the next page
 
@@ -169,9 +169,9 @@ Scenario: When more than ten deliverable entries exist, the response offers the 
 
 Scenario: When the reader opens the second page of the home list
 
-- Given: Twenty-one deliverable entries exist.
+- Given: Twenty-five deliverable entries exist.
 - When: An unauthenticated client requests `GET /?page=2`.
-- Then: The response is 200 and lists the eleventh through the twentieth entries, in the same order as `GET /`. The HTML links to `/` with the text `前へ` and to `/?page=3` with the text `次へ`. The link to the first page is `/` and has no `page` query.
+- Then: The response is 200 and lists the thirteenth through the twenty-fourth entries, in the same order as `GET /`. The HTML links to `/` with the text `前へ` and to `/?page=3` with the text `次へ`. The link to the first page is `/` and has no `page` query.
 
 Scenario: When `page` is not a page number
 
@@ -314,7 +314,7 @@ When no public entry has the title and no public inbound edge points at it, the 
 
 ### List feeds
 
-**Overview:** Human-readable feeds list deliverable entries. A feed page contains ten items.
+**Overview:** Human-readable feeds list deliverable entries. A feed page contains ten items. The home HTML list contains twelve.
 
 **Input:** One of the following paths. A later page uses the next-page URL from the previous response.
 
@@ -325,7 +325,7 @@ When no public entry has the title and no public inbound edge points at it, the 
 - `GET /feed/notes.xml`
 - `GET /feed/bookmarks.xml`
 
-**Output:** A page of ten items, or fewer on the last page. The response includes the next page's URL when more items exist.
+**Output:** A feed page of ten items, or a home page of twelve, with fewer on the last page. The response includes the next page's URL when more items exist.
 
 #### Applicable conditions
 
@@ -339,9 +339,9 @@ A feed includes only deliverable entries, ordered by `updatedAt` descending. Whe
 
 The owner's API list of 50 entries is a different list. It is not this page size.
 
-##### Pages of ten
+##### Pages of ten and twelve
 
-Each of these responses returns ten items. The last page may be shorter. When no item exists, the response is 200 and the list is empty. When more items exist, the response includes the URL of the next page. The last page omits that URL. The pages partition the ordered list. They do not repeat an item or skip an item.
+A feed response returns ten items. `GET /` returns twelve. The last page may be shorter. When no item exists, the response is 200 and the list is empty. When more items exist, the response includes the URL of the next page. The last page omits that URL. The pages partition the ordered list. They do not repeat an item or skip an item.
 
 For `GET /`, the next page is `/?page=` plus the 1-based page number. The second page is `/?page=2`. The first page omits `page`. `page=1` lists the same entries as the URL without `page`. A feed's next-page URL is the shape Design records for that feed.
 

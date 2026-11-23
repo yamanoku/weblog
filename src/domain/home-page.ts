@@ -1,6 +1,6 @@
 // One page of the public home list. The first page omits the query.
 
-export const homePageSize = 10;
+export const homePageSize = 12;
 
 export function parseHomePage(raw: string | undefined): number | null {
   if (raw === undefined || raw === "") return 1;

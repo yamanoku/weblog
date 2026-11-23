@@ -176,7 +176,7 @@ A title URL is one path segment. The segment is percent-decoded to the compariso
 
 #### Home list
 
-The first page of `GET /` has no query. `page=1` lists the same ten entries. A later page sets `page` to the 1-based page number, so the second page is `/?page=2`. Each page holds ten deliverable entries. The last page may be shorter. The offset is `(page - 1) * 10`. Order stays `updated_at` descending, then `id` descending. The response counts the deliverable rows, then reads that page with `LIMIT` and `OFFSET`.
+The first page of `GET /` has no query. `page=1` lists the same twelve entries. A later page sets `page` to the 1-based page number, so the second page is `/?page=2`. Each page holds twelve deliverable entries. The last page may be shorter. The offset is `(page - 1) * 12`. Order stays `updated_at` descending, then `id` descending. The response counts the deliverable rows, then reads that page with `LIMIT` and `OFFSET`.
 
 `page` is omitted, empty, or a decimal integer of at least 1 with no leading zero and no sign. Any other value is 400 `invalid_page`. The body is `text/plain; charset=utf-8` and `Cache-Control` is `no-store`. A 400 is not an empty list.
 
@@ -335,7 +335,7 @@ The index load is an owner command run from the local export listing. It is not 
 
 ### A keyset on the home list
 
-`before` and `before_id` keep a partition when a row is inserted or deleted between requests. The home list uses `page` instead, because a reader opens the next ten entries at `/?page=2`. Feeds keep the keyset.
+`before` and `before_id` keep a partition when a row is inserted or deleted between requests. The home list uses `page` instead, because a reader opens the next twelve entries at `/?page=2`. Feeds keep the keyset.
 
 ### An opaque cursor
 
