@@ -198,6 +198,11 @@ export function cosenseTextToMarkdown(source: string): string {
   const lines = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n");
   const out: string[] = [];
   let index = 0;
+  // The page title is already the heading. A leading date line would repeat it.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(lines[0] ?? "")) {
+    index = 1;
+    if ((lines[1] ?? "") === "") index = 2;
+  }
   while (index < lines.length) {
     const line = lines[index] ?? "";
     const code = /^(\t*)code:(.*)$/.exec(line);

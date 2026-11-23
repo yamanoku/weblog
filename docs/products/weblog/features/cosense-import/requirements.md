@@ -44,7 +44,7 @@ Scenario: When the page is not stored yet, the host creates one public page
 
 - Given: The CLI token is valid. The page is in the migration set. The public project has a page ID, a title, and line text for it. No entry stores that page ID. The fetched body is not empty.
 - When: The owner runs the import.
-- Then: One entry exists. Its kind is page and its visibility is public. The immutable ID is new and is not the Cosense page ID. The canonical URL is `https://weblog.yamanoku.net/e/{id}`. The Cosense page ID is stored on that entry. The body is the fetched line text converted to Markdown by the rules in the later section. The converted first line remains even when it equals the title. The entry is not deliverable. This run does not send an activity.
+- Then: One entry exists. Its kind is page and its visibility is public. The immutable ID is new and is not the Cosense page ID. The canonical URL is `https://weblog.yamanoku.net/e/{id}`. The Cosense page ID is stored on that entry. The body is the fetched line text converted to Markdown by the rules in the later section. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. The entry is not deliverable. This run does not send an activity.
 
 Scenario: A page created after the migration set is not stored
 
@@ -171,7 +171,7 @@ After the move, the owner does not update the public project. The replace rules 
 
 ##### Fields a create sets
 
-A create sets kind to page and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched lines converted to Markdown, including the converted first line when it equals the title. The bookmark URL is empty. The entry is not deliverable, so it has no publishedAt and this feature does not send an activity. The home HTML list includes it. The human-readable feeds do not. Public reading states that rule.
+A create sets kind to page and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched lines converted to Markdown. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. The bookmark URL is empty. The entry is not deliverable, so it has no publishedAt and this feature does not send an activity. The home HTML list includes it. The human-readable feeds do not. Public reading states that rule.
 
 The entry's created time is the time the create commits. The entry's updated time is the time a later write commits. Those times are not replaced by the Cosense timestamps. The source updated time is stored beside them and is used only to decide whether a later source copy is newer.
 
@@ -181,6 +181,7 @@ The last imported body is the Markdown of the last write this feature committed 
 
 Before the host stores the page, it converts the fetched lines to Markdown. A blank line separates the surrounding blocks. The conversions below do not run inside a code block or a table.
 
+- A first line that is only `YYYY-MM-DD` is omitted. One blank line immediately after that line is omitted. A date later in the body remains.
 - One leading space or tab is one list level. A line with no leading space or tab is not a list item. Consecutive list lines become one list.
 - A `>` at the start of the line, after that indent is removed, is a quotation. Consecutive quotation lines become one quotation. An indented quotation stays a list item at that level.
 - A span wrapped in `` ` `` stays inline code.

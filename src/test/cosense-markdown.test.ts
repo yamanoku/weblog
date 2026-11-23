@@ -27,6 +27,10 @@ test("cosense text becomes markdown with host links, lists, code, and tables", (
 
   const markdown = cosenseTextToMarkdown(source);
   assert.match(markdown, /^yamanoku\n/);
+  const dated = cosenseTextToMarkdown("2025-01-01\n\n- [誕生日]\n2024-10-30 は残る");
+  assert.equal(dated.startsWith("- [誕生日]"), true);
+  assert.match(dated, /2024-10-30 は残る/);
+  assert.equal(dated.includes("2025-01-01"), false);
   assert.match(markdown, /^- \[Luma AI\]\(\/Luma_AI\)\n {2}- \[子ページ\]\(\/%E5%AD%90%E3%83%9A%E3%83%BC%E3%82%B8\)/m);
   assert.match(markdown, /\[GitHub\.icon\] \[https:\/\/github\.com\/yamanoku\/yamanoku-icons\]\(https:\/\/github\.com\/yamanoku\/yamanoku-icons\)/);
   assert.match(markdown, /\[2016\]\(\/2016\) 年にリメイクした/);
