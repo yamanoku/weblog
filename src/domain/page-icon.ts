@@ -46,6 +46,12 @@ export const archivedPageIcons: Readonly<
     extension: "png",
     objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-45/a664a528df5e2cbfa6c3b0cda850b72d.png",
   },
+  // The Cosense pin is a scrapbox.io file. This archived Gyazo is that same mark.
+  yamanoku: {
+    imageId: "809a6f523937838d9ba5eaf20717feee",
+    extension: "png",
+    objectKey: "916c3640-cadb-40b0-a2da-8e61ec874755-1/809a6f523937838d9ba5eaf20717feee.png",
+  },
 };
 
 export function archivedPageIconKey(imageId: string, extension: string): string | null {

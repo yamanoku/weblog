@@ -125,6 +125,12 @@ test("a shipped icon is used when no public entry has that title", async () => {
   assert.equal(seeded.Copilot?.src, copilotSrc);
   assert.equal(seeded["ChatGPT 4o"]?.href, "/ChatGPT_4o");
   assert.equal(seeded.Unknown, undefined);
+  const yamanoku = await pageIconsForBody(database, "[yamanoku.icon]");
+  assert.equal(yamanoku.yamanoku?.href, "/yamanoku");
+  assert.equal(
+    yamanoku.yamanoku?.src,
+    "https://weblog.yamanoku.net/gyazo/809a6f523937838d9ba5eaf20717feee.png",
+  );
   const now = "2026-11-23T00:00:00.000Z";
   await database.insert(entries).values({
     id: "page-kept",
