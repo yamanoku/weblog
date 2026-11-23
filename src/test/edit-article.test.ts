@@ -312,7 +312,7 @@ test("a missing title page and a note page keep a document title", () => {
 test("a public article or bookmark shows an edit link for the owner", () => {
   for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const page = readRoot(path);
-    assert.match(page, /owner && \(entry\.kind === "article" \|\| entry\.kind === "bookmark"\)/);
+    assert.match(page, /owner && \(entry\.kind === "article" \|\| entry\.kind === "bookmark" \|\| entry\.kind === "page"\)/);
     assert.match(page, /href=\{`\/edit\/\$\{entry\.id\}`\}>edit<\/Link>/);
   }
   const title = readRoot("pages/[title].server.ts");
@@ -355,6 +355,9 @@ test("the article edit form posts visibility", () => {
   assert.match(server, /parseBody\s*\(/);
   assert.match(server, /visibility:\s*postedText\(\s*posted\.visibility\s*\)/);
   assert.match(server, /updateArticleFromEdit\(/);
+  assert.match(server, /updatePageFromEdit\(/);
+  assert.match(page, /entry\.kind !== "page"/);
+  assert.match(page, /Save page/);
 
   const canonical = readRoot("pages/e/[id].server.ts");
   assert.equal(canonical.includes("void/db"), false);

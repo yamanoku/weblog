@@ -112,6 +112,7 @@
     register={(api) => (entryImages = api)}
     serverCode={editForm.errors.entryImages ?? ""}
   />
+  {#if entry.kind !== "page"}
   <div class="dads-form-control-label" data-size="md">
     <label class="dads-form-control-label__label" for="edit-visibility">Visibility</label>
     <div class="dads-form-control-label__field">
@@ -128,7 +129,8 @@
       </span>
     </div>
   </div>
+  {/if}
   <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={editForm.pending}>
-    {entry.kind === "bookmark" ? "Save bookmark" : "Save article"}
+    {entry.kind === "bookmark" ? "Save bookmark" : entry.kind === "page" ? "Save page" : "Save article"}
   </button>
 </Form>

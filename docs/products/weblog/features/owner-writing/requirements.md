@@ -24,7 +24,7 @@ The parent product is [weblog.yamanoku.net](../../product.md).
 - Putting a bookmark's external URL into the body of a delivered Note as a link. This feature stores that URL as a field separate from the body.
 - Bulk import from Cosense, retries, and merging a local edit with a newer source page. When import writes an entry, it passes this feature's validation and the same entry-and-edge update boundary. Import has no path that stores an entry directly.
 - Public image URLs, rendering of notation other than links, and the ORM. Attaching the one note image is in scope. The public URL and the bytes a reader receives are in [Public reading](../public-reading/requirements.md).
-- More than one image on a note, and an image on a reply or a page. An article and a bookmark may have many images. The CLI does not send those images.
+- More than one image on a note, and an image on a reply. An article, a bookmark, and a page may have many images. The CLI does not send those images.
 - More than one owner, signup, and merging fields from concurrent edits.
 
 ## User stories
@@ -407,9 +407,9 @@ Scenario: When the owner deletes one note in a thread, the other notes remain
 - When: The owner deletes B.
 - Then: B disappears from the notes list. The canonical URL of B is 404 and does not return B's body. A and C remain. The canonical page of C includes the bodies of A and C, does not include B's body, and shows no reply target on C.
 
-### Open the edit screen from a public article or bookmark
+### Open the edit screen from a public article, bookmark, or page
 
-As the owner, I want an edit link at the bottom of a public article or bookmark, on its view path and on its canonical page, so that I can open that entry's edit screen. The link is absent unless the request is verified as the owner. A note and a page do not show it.
+As the owner, I want an edit link at the bottom of a public article, bookmark, or page, on its view path and on its canonical page, so that I can open that entry's edit screen. The link is absent unless the request is verified as the owner. A note does not show it. GET `/edit` does not list pages.
 
 **Acceptance criteria:**
 
@@ -421,21 +421,51 @@ Scenario: An unverified article page omits the edit link
 
 Scenario: The owner opens the edit screen from the public page
 
-- Given: The request is verified as the owner. One public article and one public bookmark each have a view path.
+- Given: The request is verified as the owner. One public article, one public bookmark, and one public page each have a view path.
 - When: The owner opens each view path and each canonical URL.
 - Then: Each response is 200 and includes the body. After the entry, a link reads `edit` and opens GET `/edit/{id}` for that entry. The stored body is unchanged.
 
-Scenario: A note and a page omit the edit link
+Scenario: A note omits the edit link
 
-- Given: The request is verified as the owner. One public note and one public page exist.
-- When: The owner opens the note's canonical URL, the page's view path, and the page's canonical URL.
-- Then: Those responses do not include the edit link.
+- Given: The request is verified as the owner. One public note exists.
+- When: The owner opens the note's canonical URL.
+- Then: That response does not include the edit link.
 
 Scenario: The local dev server includes the edit link
 
-- Given: The process is the local dev server. Access is not in front of it. The dev catalog includes a public article.
-- When: The owner opens that article's view path.
-- Then: The response includes the edit link.
+- Given: The process is the local dev server. Access is not in front of it. The dev catalog includes a public article and a public page.
+- When: The owner opens that article's view path and that page's view path.
+- Then: Both responses include the edit link.
+
+### Save a page from its edit screen
+
+As the owner, I want the edit screen opened from a public page to replace that page's title and body, so that a Cosense page can be edited on this host. Kind stays page. Visibility stays as stored. The page does not become deliverable.
+
+**Acceptance criteria:**
+
+Scenario: The owner saves a new title and body
+
+- Given: The request is verified as the owner. One public page has a Cosense page ID, a last imported body, and a source updated time. `publishedAt` is absent.
+- When: The owner opens GET `/edit/{id}` and submits a new title and a non-empty body.
+- Then: Kind stays page. Visibility stays public. `publishedAt` stays absent. The Cosense page ID, the last imported body, and the source updated time stay. The title and body are the submitted values. The view path follows the same title rule as an article update. GET `/edit` still does not list the page. A later import that sees a different body reports that page ID as a local edit and does not replace the body. That report is defined by Cosense import.
+
+Scenario: An empty page body is refused
+
+- Given: The request is verified as the owner. One public page has a body.
+- When: The owner submits an empty body from GET `/edit/{id}`.
+- Then: The previous title and body remain. The response lets the owner distinguish the empty body. A body of only whitespace is stored.
+
+Scenario: The page form has no visibility control
+
+- Given: The request is verified as the owner. One public page exists.
+- When: The owner opens GET `/edit/{id}`.
+- Then: The form includes the title, the body, and the same image controls as an article. It does not include a visibility control. A submitted visibility value does not change the stored visibility. Images follow the article image rule. Public HTML for the page does not list those images under the body.
+
+Scenario: A note ID does not open the page form
+
+- Given: The request is verified as the owner. One note exists.
+- When: The owner opens GET `/edit/{id}` for that note, and for an id that is not stored.
+- Then: Each response is 404. Nothing is stored.
 
 ### Save a bookmark on the edit screen
 
@@ -672,7 +702,7 @@ An unauthenticated resolution target is only a public entry whose current title 
 
 The owner's get-one and list include draft and public entries of all four kinds. An unauthenticated response does not include a draft body. The public-reading feature decides the format of the unauthenticated feeds and empty pages.
 
-GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. An unverified request for `/edit`, `/edit/*`, `/new`, or `/new/*` returns 404 and does not include a draft body. GET `/login` is the Cloudflare Access login. When that request is verified as the owner, it returns 200 HTML with links to `/edit` and `/new`, and no draft body. GET `/edit`, when the request is verified as the owner, returns a list of stored articles, a separate list of stored notes, and a separate list of stored bookmarks. It does not return the article create form, the bookmark create form, or the note field. GET `/new`, when the request is verified as the owner, returns the article create form, the bookmark create form, and the note create form. The three create forms share one tab list. The first response shows the article create form. The other two stay in the response and are hidden until the owner chooses their tab. Choosing a tab stores nothing and keeps text already typed in any form. GET `/new` does not return those lists. The article form posts to POST `/edit`. The bookmark form posts to POST `/edit?bookmark`. The note form posts to POST `/edit?note` and uses the same body and image rules as the home note field. A successful note save still redirects to GET `/?posted={id}`. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body, its visibility, and its image when it has one, and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The article form, the bookmark form, and GET `/edit/{id}` accept many images for that entry. Each image is JPEG, PNG, GIF, or WebP and at most 8 MiB. Alternative text is optional, surrounding whitespace is removed, and more than 1500 Unicode scalar values stores no change. Empty text is stored as empty. A public bookmark lists the images under the Markdown body. A public article does not list them there. A control labeled `本文に入れる` copies one image into the body as Markdown. Removing an image does not rewrite the body. A draft image is not on the public image URL. The CLI does not send these images. A reply and a page do not get them. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The local dev server is the exception: its GET `/edit`, GET `/edit/*`, and GET `/new` return the screens, including drafts, so the owner can look. POST from that process stays 401. Preview and the deployed Worker are not this exception. The note field does not submit a title. When it has a body or one image, the host stores kind note, an empty title, and visibility public. The body stays the submitted text. The response shows that the save succeeded and shows the canonical URL. An empty body with no image stores nothing. One image is at most 8 MiB and is JPEG, PNG, GIF, or WebP. The owner writes alternative text for that image. Without that text, or when the text is only whitespace, the host stores nothing. The stored text is at most 1500 Unicode scalar values, after surrounding whitespace is removed. Public pages use that text as the image alt. Deleting a note removes that note only, and a reader can no longer retrieve its image bytes. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only. A verified owner's view path and canonical page for a public article or a public bookmark include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits the link. A public note and a public page omit it. On the local dev server the link is included for those articles and bookmarks.
+GET `/`, when the request is verified as the owner, shows the note field under the navigation. An unverified GET `/` omits that field and does not include a draft body. An unverified request for `/edit`, `/edit/*`, `/new`, or `/new/*` returns 404 and does not include a draft body. GET `/login` is the Cloudflare Access login. When that request is verified as the owner, it returns 200 HTML with links to `/edit` and `/new`, and no draft body. GET `/edit`, when the request is verified as the owner, returns a list of stored articles, a separate list of stored notes, and a separate list of stored bookmarks. It does not return the article create form, the bookmark create form, or the note field. GET `/new`, when the request is verified as the owner, returns the article create form, the bookmark create form, and the note create form. The three create forms share one tab list. The first response shows the article create form. The other two stay in the response and are hidden until the owner chooses their tab. Choosing a tab stores nothing and keeps text already typed in any form. GET `/new` does not return those lists. The article form posts to POST `/edit`. The bookmark form posts to POST `/edit?bookmark`. The note form posts to POST `/edit?note` and uses the same body and image rules as the home note field. A successful note save still redirects to GET `/?posted={id}`. Those lists include draft and public. The article list does not include notes, bookmarks, or pages. Each article opens that article's edit screen. Each note shows its body, its visibility, and its image when it has one, and does not open the article edit screen. Each bookmark shows its title, external URL, and visibility, and opens that bookmark's edit screen. The article form, the bookmark form, and GET `/edit/{id}` accept many images for that entry. Each image is JPEG, PNG, GIF, or WebP and at most 8 MiB. Alternative text is optional, surrounding whitespace is removed, and more than 1500 Unicode scalar values stores no change. Empty text is stored as empty. A public bookmark lists the images under the Markdown body. A public article does not list them there. A control labeled `本文に入れる` copies one image into the body as Markdown. Removing an image does not rewrite the body. A draft image is not on the public image URL. The CLI does not send these images. A reply does not get them. A page gets them on GET `/edit/{id}`, with the same image rules as an article. A public page does not list them under the body. The order is newest `createdAt` first, then descending immutable ID. An unauthenticated response does not return these lists. The local dev server is the exception: its GET `/edit`, GET `/edit/*`, and GET `/new` return the screens, including drafts, so the owner can look. POST from that process stays 401. Preview and the deployed Worker are not this exception. The note field does not submit a title. When it has a body or one image, the host stores kind note, an empty title, and visibility public. The body stays the submitted text. The response shows that the save succeeded and shows the canonical URL. An empty body with no image stores nothing. One image is at most 8 MiB and is JPEG, PNG, GIF, or WebP. The owner writes alternative text for that image. Without that text, or when the text is only whitespace, the host stores nothing. The stored text is at most 1500 Unicode scalar values, after surrounding whitespace is removed. Public pages use that text as the image alt. Deleting a note removes that note only, and a reader can no longer retrieve its image bytes. An article ID does not delete the article. The bookmark form stores kind bookmark and visibility draft. The external URL stays apart from the body. An empty title or a missing external URL stores nothing. Deleting a bookmark removes that bookmark only. An article ID or a note ID does not delete that entry. GET `/e/{id}` for a public note shows a reply field on each note in that thread when the request is verified as the owner. An unverified request omits the fields. A reply stores kind note, an empty title, and visibility public. It has no publishedAt and no view path. It records the note it replies to and the note that started the thread. An empty body stores nothing. A target that is not a stored public note stores nothing. The new note appears in the thread and in the notes list. It does not appear on GET `/`. Deleting one note in a thread removes that note only. A verified owner's view path and canonical page for a public article, a public bookmark, or a public page include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits the link. A public note omits it. GET `/edit` does not list pages. On the local dev server the link is included for those articles, bookmarks, and pages.
 
 ##### A store that is past the free allowance
 

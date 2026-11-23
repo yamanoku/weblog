@@ -59,11 +59,11 @@ Scenario: When the reader opens the canonical URL, the same public entry is retu
 - When: An unauthenticated client requests that URL and does not ask for Activity Streams.
 - Then: The response is 200 HTML for that entry. The canonical URL stays the one issued at creation.
 
-Scenario: A verified owner sees an edit link on a public article or bookmark
+Scenario: A verified owner sees an edit link on a public article, bookmark, or page
 
-- Given: The request is verified as the owner. One public article and one public bookmark each have a view path. One public note and one public page exist.
-- When: The owner opens each article and bookmark view path and canonical URL, and also opens the note's canonical URL and the page's view path and canonical URL. An unverified caller opens the article view path.
-- Then: Each article and bookmark response for the owner is 200 and, after the entry, includes a link whose text is `edit` and whose target is that entry's GET `/edit/{id}`. The note response and the page responses do not include that link. The unverified article response is 200 and does not include the link. The stored body is unchanged.
+- Given: The request is verified as the owner. One public article, one public bookmark, and one public page each have a view path. One public note exists.
+- When: The owner opens each article, bookmark, and page view path and canonical URL, and also opens the note's canonical URL. An unverified caller opens the article view path.
+- Then: Each article, bookmark, and page response for the owner is 200 and, after the entry, includes a link whose text is `edit` and whose target is that entry's GET `/edit/{id}`. The note response does not include that link. The unverified article response is 200 and does not include the link. The stored body is unchanged.
 
 ### Read the notes connected to a note
 
@@ -143,11 +143,17 @@ Scenario: When the image URL is requested, the host returns the bytes
 - When: An unauthenticated client requests `GET /note-images/{id}`.
 - Then: The response is those bytes. The content type is `image/jpeg`, `image/png`, `image/gif`, or `image/webp`. The host does not list a bucket.
 
-Scenario: When the note is missing or not public, the image URL returns no bytes
+Scenario: When the entry is missing or not public, the image URL returns no bytes
 
-- Given: The id is missing, is not a public note, or that note has no image.
+- Given: The id is missing, the entry is missing or not public, or the entry has no image. A public note, article, bookmark, or page that stores the image is not this case.
 - When: An unauthenticated client requests that image URL.
 - Then: The response is 404 and includes no image bytes.
+
+Scenario: When a public page stores an image, the image URL returns the bytes
+
+- Given: One public page stores an image.
+- When: An unauthenticated client requests `GET /note-images/{id}` for that image.
+- Then: The response is those bytes. The page HTML does not list the image under the body. The image appears only where the stored Markdown places it.
 
 ### Read the human-readable feeds
 
@@ -296,13 +302,13 @@ An old path of a public entry redirects with 301 to the current view path. When 
 
 The stored body stays plain text. Public HTML does not replace that string.
 
-Public HTML for an article, a bookmark, or a page renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, and two leading spaces per nested list level, lines that start with `>`, a list item whose text starts with `>` (consecutive items of that form at the same level are one quotation), `*` and `**` emphasis, `***` for bold and italic, `~~` strikethrough, inline code in backticks, fenced code, `[label](URL)` links, and `![text](URL)` images into HTML. A pipe table becomes a table with a header and a body. A `Table: name` line immediately before it is that table's caption. A link or image URL is only `http`, `https`, or a path on this host. The image alt is the text between the brackets, and it may be empty. Raw HTML in the body is escaped and is not executed. A bookmark also lists every stored image under the body, in stored order, even when the Markdown already contains it. An article does not add that list. An article image appears in the HTML only where the Markdown places it. The image source is `/note-images/{id}` for that image. For a note, that id is the note id. Links in a page are the Markdown links stored in the body. Rendering does not walk Cosense brackets again.
+Public HTML for an article, a bookmark, or a page renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, and two leading spaces per nested list level, lines that start with `>`, a list item whose text starts with `>` (consecutive items of that form at the same level are one quotation), `*` and `**` emphasis, `***` for bold and italic, `~~` strikethrough, inline code in backticks, fenced code, `[label](URL)` links, and `![text](URL)` images into HTML. A pipe table becomes a table with a header and a body. A `Table: name` line immediately before it is that table's caption. A link or image URL is only `http`, `https`, or a path on this host. The image alt is the text between the brackets, and it may be empty. Raw HTML in the body is escaped and is not executed. A bookmark also lists every stored image under the body, in stored order, even when the Markdown already contains it. An article and a page do not add that list. An article or page image appears in the HTML only where the Markdown places it. The image source is `/note-images/{id}` for that image. For a note, that id is the note id. Links in a page are the Markdown links stored in the body. Rendering does not walk Cosense brackets again.
 
 Public HTML for a note keeps the stored lines.
 
 On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body.
 
-When the request is verified as the owner, the view path and the canonical page of a public article or a public bookmark include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note and a public page omit it. The stored body does not change. Owner writing defines the edit screen that link opens.
+When the request is verified as the owner, the view path and the canonical page of a public article, a public bookmark, or a public page include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note omits it. The stored body does not change. Owner writing defines the edit screen that link opens.
 
 Icons, formulas, lines that start with `$` or `%`, and links to another project that remain in the body stay source text. The order of HTML for those is decided when that rendering's requirements are written.
 

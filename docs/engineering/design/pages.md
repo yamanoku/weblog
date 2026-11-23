@@ -55,11 +55,11 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /login` | The Cloudflare Access login page. A verified response links to `/edit` and `/new` and includes no draft body. |
 | `GET /edit` | Lists of stored articles, notes, and bookmarks. No create form and no note field. |
 | `GET /new` | Article, bookmark, and note create forms, one tab at a time. No lists. |
-| `GET /edit/{id}` | Edit form for that article or bookmark. A note ID or a page ID is 404. |
+| `GET /edit/{id}` | Edit form for that article, bookmark, or page. A note ID is 404. |
 | `POST /edit` | Create a draft article. The form may send many images. |
 | `POST /edit?note` | Create a public note from the note field. The field sends the body and at most one image. |
 | `POST /edit?bookmark` | Create a draft bookmark. The form may send many images. |
-| `POST /edit/{id}` | Update that article or bookmark, including its images. |
+| `POST /edit/{id}` | Update that article, bookmark, or page, including its images. A page keeps its kind and visibility. |
 | `GET /edit/images/{id}` | Image bytes for the verified owner, including a draft. |
 | `POST /edit?deleteNote` | Delete one note from the edit screen. |
 | `POST /edit?deleteBookmark` | Delete one bookmark from the edit screen. |

@@ -3,6 +3,7 @@ import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
 import { entryImagesFromField } from "../../domain/entry-image.ts";
 import { editArticleDatabase, updateArticleFromEdit } from "../../store/edit-article.ts";
+import { updatePageFromEdit } from "../../store/edit-page.ts";
 import { updateBookmarkFromEdit } from "../../store/edit-bookmark.ts";
 import { entryImagesForEdit } from "../../store/entry-images.ts";
 import { noteImageObjects } from "../../store/note-image-object.ts";
@@ -14,7 +15,7 @@ function postedText(value: unknown): string {
 
 export const loader = defineHandler(async (c) => {
   const entry = await readStoredEntry(editArticleDatabase(), c.req.param("id") ?? "");
-  if (!entry || (entry.kind !== "article" && entry.kind !== "bookmark")) {
+  if (!entry || (entry.kind !== "article" && entry.kind !== "bookmark" && entry.kind !== "page")) {
     throw new HTTPException(404, { message: "Not found" });
   }
   return {
@@ -46,7 +47,7 @@ export const action = defineHandler(async (c) => {
   const posted = await postedRecord(c);
   const id = c.req.param("id") ?? "";
   const current = await readStoredEntry(editArticleDatabase(), id);
-  if (!current || (current.kind !== "article" && current.kind !== "bookmark")) {
+  if (!current || (current.kind !== "article" && current.kind !== "bookmark" && current.kind !== "page")) {
     throw new HTTPException(404, { message: "not_found" });
   }
   const parsed = "entryImages" in posted ? await entryImagesFromField(posted.entryImages) : null;
@@ -67,14 +68,23 @@ export const action = defineHandler(async (c) => {
           images,
           noteImageObjects,
         )
-      : await updateArticleFromEdit(
-          editArticleDatabase(),
-          id,
-          fields,
-          new Date().toISOString(),
-          images,
-          noteImageObjects,
-        );
+      : current.kind === "page"
+        ? await updatePageFromEdit(
+            editArticleDatabase(),
+            id,
+            { title: fields.title, body: fields.body },
+            new Date().toISOString(),
+            images,
+            noteImageObjects,
+          )
+        : await updateArticleFromEdit(
+            editArticleDatabase(),
+            id,
+            fields,
+            new Date().toISOString(),
+            images,
+            noteImageObjects,
+          );
   if ("error" in result) {
     if (result.error === "image_store" || result.error === "image_type" || result.error === "image_alt_length") {
       imageFailure(result.error);
