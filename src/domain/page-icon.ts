@@ -1,5 +1,6 @@
 // A Cosense `[Title.icon]` bracket. The stored body stays that bracket.
-// The icon is the first Gyazo image in the public entry of that title.
+// The icon is the first Gyazo image in the one public entry of that title.
+// When no public entry has the title, the image id comes from page_icons.
 
 import { gyazoPublicOrigin, parseGyazoUrl } from "./gyazo.ts";
 

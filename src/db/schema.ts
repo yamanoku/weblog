@@ -102,6 +102,12 @@ export const gyazoObjects = sqliteTable(
   (table) => [primaryKey({ columns: [table.imageId, table.extension] })],
 );
 
+// Gyazo image id for a `[Title.icon]` whose page is not a public entry.
+export const pageIcons = sqliteTable("page_icons", {
+  title: text("title").primaryKey(),
+  imageId: text("image_id").notNull(),
+});
+
 export const activities = sqliteTable(
   "activities",
   {

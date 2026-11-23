@@ -1,7 +1,8 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { and, eq, inArray } from "void/db";
-import { entries } from "../db/schema.ts";
+import { entries, pageIcons } from "../db/schema.ts";
 import { firstGyazoIcon, iconTitles, pageIconSrc, type PageIcon } from "../domain/page-icon.ts";
+import { articlePathTitle } from "../domain/public-article.ts";
 import { gyazoExtensions } from "./gyazo-objects.ts";
 
 const titleChunk = 80;
@@ -11,6 +12,10 @@ type IconRow = { id: string; title: string; body: string; viewPath: string | nul
 function iconHref(row: IconRow): string {
   if (row.viewPath && row.viewPath.length > 0) return `/${encodeURIComponent(row.viewPath)}`;
   return `/e/${encodeURIComponent(row.id)}`;
+}
+
+function titleHref(title: string): string {
+  return `/${encodeURIComponent(articlePathTitle(title))}`;
 }
 
 // Public `[Title.icon]` targets. A reader does not write. A draft body is not read.
@@ -38,14 +43,36 @@ export async function pageIconsForBody(
       rows.set(row.title, row);
     }
   }
-  const pending: { title: string; row: IconRow; imageId: string; extension: string | null }[] = [];
+  const pending: { title: string; href: string; imageId: string; extension: string | null }[] = [];
   for (const title of titles) {
     if (counts.get(title) !== 1) continue;
     const row = rows.get(title);
     if (!row) continue;
     const image = firstGyazoIcon(row.body);
     if (!image) continue;
-    pending.push({ title, row, imageId: image.imageId, extension: image.extension });
+    pending.push({
+      title,
+      href: iconHref(row),
+      imageId: image.imageId,
+      extension: image.extension,
+    });
+  }
+  const missing = titles.filter((title) => (counts.get(title) ?? 0) === 0);
+  for (let start = 0; start < missing.length; start += titleChunk) {
+    const chunk = missing.slice(start, start + titleChunk);
+    if (chunk.length === 0) continue;
+    const found = await database
+      .select({ title: pageIcons.title, imageId: pageIcons.imageId })
+      .from(pageIcons)
+      .where(inArray(pageIcons.title, chunk));
+    for (const row of found) {
+      pending.push({
+        title: row.title,
+        href: titleHref(row.title),
+        imageId: row.imageId,
+        extension: null,
+      });
+    }
   }
   const extensions = await gyazoExtensions(
     database,
@@ -58,7 +85,7 @@ export async function pageIconsForBody(
       extensions[item.imageId] ?? [],
     );
     if (!src) continue;
-    icons[item.title] = { href: iconHref(item.row), src };
+    icons[item.title] = { href: item.href, src };
   }
   return icons;
 }

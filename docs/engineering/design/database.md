@@ -33,7 +33,7 @@ No diagram. The sections below are the schema. A picture would repeat the same n
 
 ## Data model and ER diagrams
 
-`entries` is the parent of edges, past titles, and redirects. `delivery_records` and `tombstones` remain after the entry row is gone. Foreign-key delete cascades do not remove them. Edges and past titles are removed by explicit statements in the delete batch. No foreign key runs from `followers` or `entries` into activities or jobs. `gyazo_objects` has no foreign key to `entries`. The image id is parsed from body text. `note_images` has no foreign key to `entries`. Deleting an entry removes those rows by an explicit statement.
+`entries` is the parent of edges, past titles, and redirects. `delivery_records` and `tombstones` remain after the entry row is gone. Foreign-key delete cascades do not remove them. Edges and past titles are removed by explicit statements in the delete batch. No foreign key runs from `followers` or `entries` into activities or jobs. `gyazo_objects` has no foreign key to `entries`. The image id is parsed from body text. `page_icons` has no foreign key to `entries` or to `gyazo_objects`. `note_images` has no foreign key to `entries`. Deleting an entry removes those rows by an explicit statement.
 
 ### `entries`
 
@@ -77,6 +77,10 @@ Columns are `id`, `entry_id`, `position`, `media_type`, `byte_length`, and `alt_
 
 Columns are `image_id`, `extension`, and `object_key`. `extension` is lowercase and has no dot. `object_key` includes the export directory name. The primary key is `image_id` plus `extension`. A public request does not write this table. An entry write batch does not include it.
 
+### `page_icons`
+
+Columns are `title` and `image_id`. `title` is the primary key. `image_id` is a Gyazo image id. There is no foreign key. A public request reads a row only when no public entry has that title, and does not write the table. The still-image extension still comes from `gyazo_objects`. The migration that creates this table inserts the known titles and the matching `gyazo_objects` rows.
+
 Read indexes, and they do not replace the unique `view_path` or the edge and past-title indexes:
 
 - `entries_feed` on `(kind, updated_at, id)` where `visibility = 'public'` and `published_at` is not null
@@ -110,7 +114,7 @@ The database is the one D1 binding. This document adds no other database product
 
 ## Data handling
 
-The body stored in `entries` is plain text. HTML is not stored. `tombstones` does not copy the body. `delivery_records` and `tombstones` stay after the entry row is gone. `note_images` stores the type, the byte length, the position, and the alternative text of each entry image. A note has at most one. An article or a bookmark has zero or more. A reader does not write that row. `gyazo_objects` is loaded by an owner command from a local listing. A reader does not write it.
+The body stored in `entries` is plain text. HTML is not stored. `tombstones` does not copy the body. `delivery_records` and `tombstones` stay after the entry row is gone. `note_images` stores the type, the byte length, the position, and the alternative text of each entry image. A note has at most one. An article or a bookmark has zero or more. A reader does not write that row. `gyazo_objects` is loaded by an owner command from a local listing. A reader does not write it. `page_icons` maps a title to a Gyazo image id when no public entry has that title. A reader does not write it.
 
 ## Authentication and authorization notes
 
@@ -122,7 +126,7 @@ The actor private key is not selected by public SQL. Public HTML does not read t
 
 ## Deployment notes
 
-The first database is empty except for the tables above. `gyazo_objects` may start empty. `followers` may start empty. There is no migration from an existing site inside this document. Relocation adds no table.
+The first database is empty except for the tables above. `page_icons` starts with the rows its migration inserts, and that migration also inserts the matching `gyazo_objects` rows. Other `gyazo_objects` rows may be absent. `followers` may start empty. There is no migration from an existing site inside this document. Relocation adds no table.
 
 ## Alternatives considered
 

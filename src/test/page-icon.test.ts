@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
-import { entries, gyazoObjects } from "../db/schema.ts";
+import { entries, gyazoObjects, pageIcons } from "../db/schema.ts";
 import { markdownToHtml } from "../domain/markdown-html.ts";
 import { firstGyazoIcon, iconTitles, pageIconSrc } from "../domain/page-icon.ts";
 import { pageIconsForBody } from "../store/page-icons.ts";
@@ -96,10 +96,11 @@ test("a public page icon uses the first gyazo image and the archive index", asyn
     updatedAt: now,
     viewPath: "Photo",
   });
-  await database.insert(gyazoObjects).values([
-    { imageId: copilotId, extension: "png", objectKey: `${copilotId}.png` },
-    { imageId: copilotId, extension: "mp4", objectKey: `${copilotId}.mp4` },
-  ]);
+  await database.insert(gyazoObjects).values({
+    imageId: copilotId,
+    extension: "mp4",
+    objectKey: `${copilotId}.mp4`,
+  });
   const icons = await pageIconsForBody(
     database,
     "use [Copilot.icon] and [Draft Icon.icon] and [Photo.icon] and [Absent.icon]",
@@ -109,4 +110,34 @@ test("a public page icon uses the first gyazo image and the archive index", asyn
   const canonical = readFileSync(join(rootDir, "pages/e/[id].server.ts"), "utf8");
   assert.match(title, /pageIconsForBody/);
   assert.match(canonical, /pageIconsForBody/);
+});
+
+test("a page icon row is used when no public entry has that title", async () => {
+  const database = applyShippedMigrations();
+  await database.insert(pageIcons).values({ title: "IconOnly", imageId: "abcicon" });
+  await database.insert(gyazoObjects).values({
+    imageId: "abcicon",
+    extension: "png",
+    objectKey: "dir/abcicon.png",
+  });
+  const icons = await pageIconsForBody(database, "see [IconOnly.icon]");
+  assert.deepEqual(icons, {
+    IconOnly: { href: "/IconOnly", src: "https://weblog.yamanoku.net/gyazo/abcicon.png" },
+  });
+  const seeded = await pageIconsForBody(database, "[Copilot.icon] and [ChatGPT 4o.icon]");
+  assert.equal(seeded.Copilot?.href, "/Copilot");
+  assert.equal(seeded.Copilot?.src, copilotSrc);
+  assert.equal(seeded["ChatGPT 4o"]?.href, "/ChatGPT_4o");
+  const now = "2026-11-23T00:00:00.000Z";
+  await database.insert(entries).values({
+    id: "page-kept",
+    kind: "page",
+    title: "IconOnly",
+    body: "![](https://pbs.twimg.com/media/x.jpg)",
+    visibility: "public",
+    createdAt: now,
+    updatedAt: now,
+    viewPath: "IconOnly",
+  });
+  assert.deepEqual(await pageIconsForBody(database, "[IconOnly.icon]"), {});
 });
