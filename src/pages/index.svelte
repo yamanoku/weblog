@@ -335,6 +335,7 @@
 
   .entry-card footer p {
     margin: 0;
+    text-align: right;
   }
 
   .home-pages {
