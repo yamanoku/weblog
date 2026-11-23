@@ -5,7 +5,7 @@ import { publicDocumentTitle } from "../../domain/public-article.ts";
 import { verifiedOwner } from "../../middleware/01.access.ts";
 import { editArticleDatabase } from "../../store/edit-article.ts";
 import { entryImageViews } from "../../store/entry-images.ts";
-import { resolveSpeakerDeckPlayers } from "../../domain/speakerdeck.ts";
+import { resolveSpeakerDeck } from "../../domain/speakerdeck.ts";
 import { gyazoIndexForBody } from "../../store/gyazo-objects.ts";
 import { listPublicNoteThread } from "../../store/edit-note.ts";
 import { hasTombstone, readStoredEntry } from "../../store/entries.ts";
@@ -38,7 +38,13 @@ export const loader = defineHandler(async (c) => {
     }
     const showEdit = owner && editableKind(entry?.kind);
     if (showEdit) privateOwner(c);
-    return { entry, thread: null, owner: showEdit, refused: null, headTitle: publicDocumentTitle(entry) };
+    return {
+      entry,
+      thread: null,
+      owner: showEdit,
+      refused: null,
+      headTitle: publicDocumentTitle(entry),
+    };
   }
   const stored = await readStoredEntry(editArticleDatabase(), id);
   if (stored?.visibility === "public" && stored.kind === "note") {
@@ -59,7 +65,9 @@ export const loader = defineHandler(async (c) => {
         ? ((await entryImageViews(editArticleDatabase(), [id])).get(id) ?? [])
         : [];
     const gyazo = await gyazoIndexForBody(editArticleDatabase(), stored.body);
-    const speakerdeck = await resolveSpeakerDeckPlayers([stored.body, stored.bookmarkUrl ?? ""]);
+    const resolved = await resolveSpeakerDeck([stored.body, stored.bookmarkUrl ?? ""]);
+    if (c.req.query("speakerdeck") === "debug") c.header("x-speakerdeck", resolved.note);
+    const speakerdeck = resolved.players;
     return {
       entry: {
         id,

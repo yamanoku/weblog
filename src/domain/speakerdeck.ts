@@ -32,7 +32,10 @@ export function speakerDeckRef(value: string): SpeakerDeckRef | null {
   const slide = slideRaw && slideNumber.test(slideRaw) ? slideRaw : null;
   const id = parts[1] ?? "";
   if (parts.length === 2 && parts[0] === "player" && playerHash.test(id)) {
-    return { kind: "player", src: `https://speakerdeck.com/player/${id}${slide ? `?slide=${slide}` : ""}` };
+    return {
+      kind: "player",
+      src: `https://speakerdeck.com/player/${id}${slide ? `?slide=${slide}` : ""}`,
+    };
   }
   const user = parts[0] ?? "";
   const slug = parts[1] ?? "";
@@ -50,7 +53,9 @@ export function speakerDeckDeckKeys(text: string): string[] {
 }
 
 function cacheRequest(key: string): Request {
-  return new Request(`https://weblog.yamanoku.net/speakerdeck-player?deck=${encodeURIComponent(key)}`);
+  return new Request(
+    `https://weblog.yamanoku.net/speakerdeck-player?deck=${encodeURIComponent(key)}`,
+  );
 }
 
 async function playerCache(): Promise<Cache | null> {
@@ -92,19 +97,28 @@ async function rememberPlayer(key: string, src: string): Promise<void> {
   }
 }
 
-async function askSpeakerDeck(key: string, fetchImpl: FetchLike): Promise<string | null> {
+function playerFromHtml(html: string): string | null {
+  return /src=["'](https:\/\/speakerdeck\.com\/player\/[a-f0-9]{32})["']/.exec(html)?.[1] ?? null;
+}
+
+async function askSpeakerDeck(
+  key: string,
+  fetchImpl: FetchLike,
+): Promise<{ src: string | null; note: string }> {
+  const endpoint = `https://speakerdeck.com/oembed.json?url=${encodeURIComponent(key)}`;
   try {
-    const response = await fetchImpl(`https://speakerdeck.com/oembed.json?url=${encodeURIComponent(key)}`, {
+    const response = await fetchImpl(endpoint, {
       headers: { accept: "application/json", "user-agent": "weblog.yamanoku.net" },
-      signal: AbortSignal.timeout(4000),
-      redirect: "error",
+      redirect: "follow",
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { src: null, note: `http ${response.status}` };
     const payload = (await response.json()) as { html?: unknown };
-    if (typeof payload.html !== "string") return null;
-    return /src=["'](https:\/\/speakerdeck\.com\/player\/[a-f0-9]{32})["']/.exec(payload.html)?.[1] ?? null;
-  } catch {
-    return null;
+    if (typeof payload.html !== "string") return { src: null, note: "no-html" };
+    const src = playerFromHtml(payload.html);
+    return src ? { src, note: "ok" } : { src: null, note: "no-player" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "fetch failed";
+    return { src: null, note: message.slice(0, 120) };
   }
 }
 
@@ -112,6 +126,14 @@ export async function resolveSpeakerDeckPlayers(
   texts: readonly string[],
   fetchImpl: FetchLike = fetch,
 ): Promise<Record<string, string>> {
+  const resolved = await resolveSpeakerDeck(texts, fetchImpl);
+  return resolved.players;
+}
+
+export async function resolveSpeakerDeck(
+  texts: readonly string[],
+  fetchImpl: FetchLike = fetch,
+): Promise<{ players: Record<string, string>; note: string }> {
   const keys: string[] = [];
   const seen = new Set<string>();
   for (const text of texts) {
@@ -123,15 +145,18 @@ export async function resolveSpeakerDeckPlayers(
     }
     if (keys.length >= deckLimit) break;
   }
+  if (keys.length === 0) return { players: {}, note: "no-keys" };
   const players: Record<string, string> = {};
+  const notes: string[] = [];
   await Promise.all(
     keys.map(async (key) => {
       const cached = fetchImpl === fetch ? await rememberedPlayer(key) : null;
-      const src = cached ?? (await askSpeakerDeck(key, fetchImpl));
-      if (!src) return;
-      players[key] = src;
-      if (!cached && fetchImpl === fetch) await rememberPlayer(key, src);
+      const asked = cached ? { src: cached, note: "cached" } : await askSpeakerDeck(key, fetchImpl);
+      notes.push(asked.note);
+      if (!asked.src) return;
+      players[key] = asked.src;
+      if (!cached && fetchImpl === fetch) await rememberPlayer(key, asked.src);
     }),
   );
-  return players;
+  return { players, note: notes.join(",") };
 }

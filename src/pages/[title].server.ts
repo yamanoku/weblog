@@ -5,7 +5,7 @@ import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
 import { entryImageViews } from "../store/entry-images.ts";
-import { resolveSpeakerDeckPlayers } from "../domain/speakerdeck.ts";
+import { resolveSpeakerDeck } from "../domain/speakerdeck.ts";
 import { gyazoIndexForBody } from "../store/gyazo-objects.ts";
 import { readPublicEntryByPath } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
@@ -40,7 +40,15 @@ export const loader = defineHandler(async (c) => {
       ? ((await entryImageViews(editArticleDatabase(), [entry.id])).get(entry.id) ?? [])
       : [];
   const gyazo = await gyazoIndexForBody(editArticleDatabase(), entry.body);
-  const speakerdeck =
-    entry.kind === "note" ? {} : await resolveSpeakerDeckPlayers([entry.body, entry.bookmarkUrl ?? ""]);
-  return { entry: { ...entry, images, gyazo, speakerdeck }, owner, headTitle: publicDocumentTitle(entry) };
+  const resolved =
+    entry.kind === "note"
+      ? { players: {}, note: "note" }
+      : await resolveSpeakerDeck([entry.body, entry.bookmarkUrl ?? ""]);
+  if (c.req.query("speakerdeck") === "debug") c.header("x-speakerdeck", resolved.note);
+  const speakerdeck = resolved.players;
+  return {
+    entry: { ...entry, images, gyazo, speakerdeck },
+    owner,
+    headTitle: publicDocumentTitle(entry),
+  };
 });
