@@ -460,7 +460,10 @@ test("domain and pages stay free of the store and the Access check", () => {
   assert.match(config, /database_name:\s*"weblog"/);
   assert.match(config, /database_id:\s*"3ca9f890-f6a1-4bdd-973d-e3a72b0004f3"/);
   assert.equal(config.includes("kv_namespaces"), false);
-  assert.equal(config.includes("r2_buckets"), false);
+  assert.match(config, /binding:\s*"STORAGE"/);
+  assert.match(config, /bucket_name:\s*"weblog-storage"/);
+  assert.match(config, /binding:\s*"GYAZO_BUCKET"/);
+  assert.match(config, /bucket_name:\s*"gyazo-archives"/);
   assert.equal(config.includes("queues"), false);
   assert.equal(config.includes("durable_objects"), false);
   assert.equal(config.includes("crons"), false);

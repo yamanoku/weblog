@@ -5,6 +5,7 @@ import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
 import { entryImageViews } from "../store/entry-images.ts";
+import { gyazoIndexForBody } from "../store/gyazo-objects.ts";
 import { readPublicEntryByPath } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
@@ -37,5 +38,6 @@ export const loader = defineHandler(async (c) => {
     entry.kind === "bookmark"
       ? ((await entryImageViews(editArticleDatabase(), [entry.id])).get(entry.id) ?? [])
       : [];
-  return { entry: { ...entry, images }, owner, headTitle: publicDocumentTitle(entry) };
+  const gyazo = await gyazoIndexForBody(editArticleDatabase(), entry.body);
+  return { entry: { ...entry, images, gyazo }, owner, headTitle: publicDocumentTitle(entry) };
 });

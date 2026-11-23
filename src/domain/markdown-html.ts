@@ -1,3 +1,5 @@
+import { gyazoMarkdown, type GyazoIndex } from "./gyazo.ts";
+
 // Renders a stored article body as HTML. The stored string stays unchanged.
 
 function escapeHtml(value: string): string {
@@ -13,6 +15,15 @@ function safeUrl(url: string): string | null {
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
   return null;
+}
+
+function isMp4(url: string): boolean {
+  try {
+    const path = url.startsWith("/") ? url : new URL(url).pathname;
+    return path.toLowerCase().endsWith(".mp4");
+  } catch {
+    return false;
+  }
 }
 
 function renderInline(source: string): string {
@@ -67,7 +78,9 @@ function renderInline(source: string): string {
           const url = safeUrl(source.slice(labelEnd + 2, urlEnd));
           if (url) {
             const alt = source.slice(index + 2, labelEnd);
-            html += `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`;
+            html += isMp4(url)
+              ? `<video controls src="${escapeHtml(url)}"></video>`
+              : `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`;
             index = urlEnd + 1;
             continue;
           }
@@ -202,8 +215,11 @@ function renderTable(lines: string[], cursor: { index: number }, caption: string
 
 let tableSerial = 0;
 
-export function markdownToHtml(source: string): string {
-  const lines = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n");
+export function markdownToHtml(source: string, gyazo?: GyazoIndex): string {
+  const lines = (gyazo ? gyazoMarkdown(source, gyazo) : source)
+    .replaceAll("\r\n", "\n")
+    .replaceAll("\r", "\n")
+    .split("\n");
   const blocks: string[] = [];
   const cursor = { index: 0 };
   while (cursor.index < lines.length) {

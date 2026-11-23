@@ -26,7 +26,7 @@
       <p class="entry-body" style="white-space: pre-wrap">{entry.body}</p>
     {:else}
       <div class="entry-body">
-        {@html markdownToHtml(entry.body)}
+        {@html markdownToHtml(entry.body, entry.gyazo ?? {})}
       </div>
       {#if entry.kind === "bookmark"}
         {#each entry.images ?? [] as image (image.href)}

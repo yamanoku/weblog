@@ -332,7 +332,7 @@ test("the note page shows the thread and a reply field for the owner", () => {
   assert.match(page, /name="replyTo"/);
   assert.match(page, /返信する/);
   assert.match(page, /本文が空です/);
-  assert.match(page, /markdownToHtml\(entry\.body\)/);
+  assert.match(page, /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}\)/);
   const loader = readFileSync(join(rootDir, "pages/e/[id].server.ts"), "utf8");
   assert.match(loader, /listPublicNoteThread\(/);
   assert.match(loader, /verifiedOwner\(/);

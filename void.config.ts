@@ -8,7 +8,7 @@ export default defineConfig({
     compatibility_date: "2026-02-24",
   },
   // One Workers Free app. The entry store is this D1 binding.
-  // Note images use the inferred R2 binding STORAGE. That bucket is not gyazo-archives.
+  // STORAGE is note images. GYAZO_BUCKET is the existing Gyazo archive, read only.
   // KV, Queues, cron, Durable Objects, and a second database stay out.
   cloudflare: {
     name: "weblog",
@@ -27,6 +27,10 @@ export default defineConfig({
         database_name: "weblog",
         database_id: "3ca9f890-f6a1-4bdd-973d-e3a72b0004f3",
       },
+    ],
+    r2_buckets: [
+      { binding: "STORAGE", bucket_name: "weblog-storage" },
+      { binding: "GYAZO_BUCKET", bucket_name: "gyazo-archives" },
     ],
   },
   head: {

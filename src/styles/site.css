@@ -234,8 +234,8 @@ ol.dads-breadcrumb__list {
   font-family: var(--font-family-mono), ui-monospace, monospace;
 }
 
-.site-main img,
-.preview img {
+.site-main :is(img, video),
+.preview :is(img, video) {
   max-width: 100%;
   height: auto;
 }
