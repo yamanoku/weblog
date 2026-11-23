@@ -1,11 +1,11 @@
 <script lang="ts">
   import { Link } from "@void/svelte";
   import { markdownToHtml } from "../domain/markdown-html.ts";
-  import { publicArticleHref } from "../domain/public-article.ts";
+  import { missingTitleCreateHref, publicArticleHref } from "../domain/public-article.ts";
   import Breadcrumb from "../ui/breadcrumb.svelte";
   import EntryHeading from "../ui/entry-heading.svelte";
 
-  let { entry, owner = false, headTitle = "weblog.yamanoku.net" } = $props();
+  let { entry, owner = false, headTitle = "weblog.yamanoku.net", requestedTitle = "" } = $props();
 </script>
 
 <svelte:head>
@@ -41,4 +41,7 @@
   {/if}
 {:else}
   <p>Empty page</p>
+  {#if owner}
+    <p><Link class="dads-link" href={missingTitleCreateHref(requestedTitle)}>作成</Link></p>
+  {/if}
 {/if}

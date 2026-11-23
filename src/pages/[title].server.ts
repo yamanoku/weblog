@@ -23,14 +23,25 @@ export const loader = defineHandler(async (c) => {
   const owner = readsDevCatalog() || (await verifiedOwner(c));
   if (readsDevCatalog()) {
     const entry = publicEntryByTitle(title);
-    if (owner && editableKind(entry?.kind)) {
+    if (owner && (!entry || editableKind(entry.kind))) {
       c.header("cache-control", "private, no-store");
       c.header("vary", "Cookie");
     }
-    return { entry, owner, headTitle: publicDocumentTitle(entry) };
+    return {
+      entry,
+      owner,
+      headTitle: publicDocumentTitle(entry),
+      requestedTitle: entry ? "" : title,
+    };
   }
   const entry = await readPublicEntryByPath(editArticleDatabase(), title);
-  if (!entry) return { entry: null, owner: false, headTitle: publicDocumentTitle(null) };
+  if (!entry) {
+    if (owner) {
+      c.header("cache-control", "private, no-store");
+      c.header("vary", "Cookie");
+    }
+    return { entry: null, owner, headTitle: publicDocumentTitle(null), requestedTitle: title };
+  }
   if (owner && editableKind(entry.kind)) {
     c.header("cache-control", "private, no-store");
     c.header("vary", "Cookie");

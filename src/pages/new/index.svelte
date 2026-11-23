@@ -5,7 +5,9 @@
   import NoteComposer from "../../ui/note-composer.svelte";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
 
-  const articleForm = useForm("/edit", { title: "", body: "" });
+  let { presetTitle = "" } = $props();
+
+  const articleForm = useForm("/edit", { title: presetTitle, body: "" });
   const bookmarkForm = useForm("/edit?bookmark", { title: "", body: "", bookmarkUrl: "" });
   let createTab = $state<"entry" | "bookmark" | "note">("entry");
   let articleBody = $state<HTMLTextAreaElement | null>(null);

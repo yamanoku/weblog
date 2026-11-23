@@ -12,7 +12,7 @@ import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.
 import { acceptNoteImage, encodeNoteImage, noteActivityAttachment, noteImageIsPublic } from "../domain/note-image.ts";
 import { entryImageViews, type EntryImageObjects } from "../store/entry-images.ts";
 import type { NoteImageBytes } from "../domain/note-image.ts";
-import { publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath } from "../domain/public-article.ts";
+import { missingTitleCreateHref, publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath } from "../domain/public-article.ts";
 import {
   commitEntry,
   listDeliverableEntries,
@@ -307,6 +307,24 @@ test("a missing title page and a note page keep a document title", () => {
   }
   assert.match(readRoot("pages/[title].server.ts"), /publicDocumentTitle\(null\)/);
   assert.match(readRoot("pages/e/[id].server.ts"), /publicDocumentTitle\(\{ title: stored\.title, id \}\)/);
+});
+
+test("a missing title links the owner to a new article with that title", () => {
+  assert.equal(
+    missingTitleCreateHref("ぼくのなつやすみ"),
+    "/new?title=" + encodeURIComponent("ぼくのなつやすみ"),
+  );
+  const page = readRoot("pages/[title].svelte");
+  assert.match(page, /Empty page[\s\S]*\{#if owner\}[\s\S]*missingTitleCreateHref\(requestedTitle\)\}>作成<\/Link>/);
+  const loader = readRoot("pages/[title].server.ts");
+  assert.match(loader, /requestedTitle: title/);
+  assert.match(loader, /requestedTitle: entry \? "" : title/);
+  const created = readRoot("pages/new/index.svelte");
+  assert.match(created, /let \{ presetTitle = "" \} = \$props\(\)/);
+  assert.match(created, /useForm\("\/edit", \{ title: presetTitle, body: "" \}\)/);
+  const createdLoader = readRoot("pages/new/index.server.ts");
+  assert.match(createdLoader, /query\("title"\)/);
+  assert.match(createdLoader, /presetTitle: typeof title === "string" \? title : ""/);
 });
 
 test("a public article or bookmark shows an edit link for the owner", () => {

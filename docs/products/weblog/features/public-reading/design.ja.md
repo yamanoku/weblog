@@ -40,7 +40,7 @@ Free プランの D1 は、Worker の 1 回の実行でクエリ 50 までであ
 
 ドメインは、公開行の読取、公開タイトルの解決、HTML の描画を行う。アダプタが D1 と R2 バケットを読む。ドメインは Cloudflare SDK、D1 の型、R2 の型を import しない。ORM と Fedify の型も import しない。実行場所を外すときは、アダプタだけを差し替える。描画は描画ポートである。オブジェクトポートは、画像取得ポートである。保存ポートは、この読み取りのエントリ保存である。
 
-公開経路は所有者の資格を読まない。例外は GET `/`、GET `/{title}`、GET `/e/{id}` である。GET `/` は、所有者の書き込みが定める note 欄を出すか省くかだけのために Access の JWT を読む。GET `/{title}` は、公開 article、bookmark、または page の edit リンクを出すか省くかだけのために同じ JWT を読む。GET `/e/{id}` は、公開 note の返信欄を出すか省くため、および公開 article、bookmark、または page のその edit リンクを出すか省くために同じ JWT を読む。配送対象の一覧は、どの呼び出し手でも同じである。この機能の応答に draft は出ない。所有者は GET `/entries/{id}` と GET `/edit/{id}` で draft を読む。その経路は所有者の書き込みに属する。
+公開経路は所有者の資格を読まない。例外は GET `/`、GET `/{title}`、GET `/e/{id}` である。GET `/` は、所有者の書き込みが定める note 欄を出すか省くかだけのために Access の JWT を読む。GET `/{title}` は、公開 article、bookmark、または page の edit リンクを出すか省くか、および公開エントリが無いときに `作成` リンクを出すか省くかだけのために同じ JWT を読む。GET `/e/{id}` は、公開 note の返信欄を出すか省くため、および公開 article、bookmark、または page のその edit リンクを出すか省くために同じ JWT を読む。配送対象の一覧は、どの呼び出し手でも同じである。この機能の応答に draft は出ない。所有者は GET `/entries/{id}` と GET `/edit/{id}` で draft を読む。その経路は所有者の書き込みに属する。
 
 読み取りの流れは、次の順である。
 
@@ -247,7 +247,7 @@ default-src 'none'; img-src 'self'; media-src 'self'; frame-src https://www.yout
 
 GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこのホストの `/edit` である。他の文書応答は `form-action 'none'` のままである。
 
-文書の言語は `ja` である。次ページのアンカー文言は `次へ` である。これらの応答は Cookie で変えない。例外は、所有者の GET `/` と、note の GET `/e/{id}` である。edit リンクを含む公開 article、公開 bookmark、公開 page の GET `/{title}` と GET `/e/{id}` も例外である。
+文書の言語は `ja` である。次ページのアンカー文言は `次へ` である。これらの応答は Cookie で変えない。例外は、所有者の GET `/` と、note の GET `/e/{id}` である。edit リンクを含む公開 article、公開 bookmark、公開 page の GET `/{title}` と GET `/e/{id}` も例外である。公開エントリが無く `作成` リンクを含む GET `/{title}` も例外である。
 
 エントリの HTML は、正規 URL への canonical リンクを持つ。`/feed.xml` と `/feed.json` への alternate リンクも持つ。`h1` は現在のタイトルである。bookmark では、その見出しの横に外部 URL を置く。タイトルが空なら `h1` を省く。文書タイトルは正規 URL にする。エントリの無いタイトルページの文書タイトルは `weblog.yamanoku.net` である。note のスレッドは、開いた note のタイトルを文書タイトルにする。そのタイトルが空なら、その note の正規 URL にする。フィードも、同じ head のリンクを持つ。
 
@@ -335,13 +335,13 @@ Gyazo の索引は、所有者のコマンドが読み込む。読者の要求�
 
 ## 認証・認可に関する注記
 
-これらの経路は、draft や別のエントリ一覧を選ぶために資格を確認しない。GET `/` は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。読む目的は、note 欄を出すか省くかだけである。GET `/{title}` は、同じ値を、公開 article、公開 bookmark、公開 page の edit リンクを出すか省くためだけに読む。GET `/e/{id}` は、公開 note の返信欄を出すか省くために同じ値を読む。公開 article、公開 bookmark、公開 page では、edit リンクを出すか省くためにも読む。JWT が無いとき、無効なときも、200 のまま欄とリンクを出さない。note 欄、返信欄、edit リンクのどれかを含む所有者の応答は `Cache-Control: private, no-store` を付ける。他の経路は `Cf-Access-Jwt-Assertion` と `Authorization` を読まない。draft は、所有者の書き込みが定める所有者経路に残す。
+これらの経路は、draft や別のエントリ一覧を選ぶために資格を確認しない。GET `/` は `Cf-Access-Jwt-Assertion` を読み、そのヘッダが無いときだけ `CF_Authorization` Cookie を読む。読む目的は、note 欄を出すか省くかだけである。GET `/{title}` は、同じ値を、公開 article、公開 bookmark、公開 page の edit リンクを出すか省くため、および公開エントリが無いときに `作成` リンクを出すか省くためだけに読む。GET `/e/{id}` は、公開 note の返信欄を出すか省くために同じ値を読む。公開 article、公開 bookmark、公開 page では、edit リンクを出すか省くためにも読む。JWT が無いとき、無効なときも、200 のまま欄とリンクを出さない。note 欄、返信欄、edit リンクのどれかを含む所有者の応答は `Cache-Control: private, no-store` を付ける。他の経路は `Cf-Access-Jwt-Assertion` と `Authorization` を読まない。draft は、所有者の書き込みが定める所有者経路に残す。
 
 ## セキュリティ上の考慮事項
 
 公開 HTML は、保存されたテキストをエスケープしてから、生成した `http`、`https`、またはこのホストのパスのアンカーを挿入する。コンテンツセキュリティポリシーは、スクリプトを拒否する。他ホストの画像も拒否する。書き換えた画像は、このホストから読む。この機能が残した元の Gyazo URL はアンカーなので、ポリシーはそれを画像としては取得しない。
 
-これらの経路の応答は、draft の本文を含めない。所有者として確認できた GET `/` は、あわせて `Cache-Control: private, no-store` と `Vary: Cookie` を送る。共有キャッシュが note 欄を保存しないようにするためである。所有者として確認できた公開 note の GET `/e/{id}` も、同じ二つのヘッダを送る。共有キャッシュが返信欄を保存しないようにするためである。所有者として確認できた公開 article、bookmark、または page の GET `/{title}` と GET `/e/{id}` は、edit リンクを含めるとき、同じ二つのヘッダを送る。共有キャッシュがそのリンクを保存しないようにするためである。他の応答は Cookie によって変えない。削除前の本文は SELECT しない。画像経路は、一つのオブジェクトのバイト列を返す。画像経路でないパスは、アーカイブのバイト列を返さない。バケットの一覧も返さない。
+これらの経路の応答は、draft の本文を含めない。所有者として確認できた GET `/` は、あわせて `Cache-Control: private, no-store` と `Vary: Cookie` を送る。共有キャッシュが note 欄を保存しないようにするためである。所有者として確認できた公開 note の GET `/e/{id}` も、同じ二つのヘッダを送る。共有キャッシュが返信欄を保存しないようにするためである。所有者として確認できた公開 article、bookmark、または page の GET `/{title}` と GET `/e/{id}` は、edit リンクを含めるとき、同じ二つのヘッダを送る。共有キャッシュがそのリンクを保存しないようにするためである。公開エントリが無い GET `/{title}` は、`作成` リンクを含めるとき、同じ二つのヘッダを送る。共有キャッシュがそのリンクを保存しないようにするためである。他の応答は Cookie によって変えない。削除前の本文は SELECT しない。画像経路は、一つのオブジェクトのバイト列を返す。画像経路でないパスは、アーカイブのバイト列を返さない。バケットの一覧も返さない。
 
 ## デプロイに関する注記
 

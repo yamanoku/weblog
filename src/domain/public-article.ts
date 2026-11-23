@@ -21,6 +21,11 @@ export function publicArticleHref(article: { id: string; title: string }): strin
   return "/" + path;
 }
 
+// A missing title opens the article form with that path title already filled in.
+export function missingTitleCreateHref(title: string): string {
+  return `/new?title=${encodeURIComponent(title)}`;
+}
+
 // A public bookmark title opens the site URL. Other kinds stay on this host.
 export function publicEntryHref(entry: {
   id: string;

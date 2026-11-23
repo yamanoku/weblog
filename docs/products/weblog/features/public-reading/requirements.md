@@ -263,6 +263,12 @@ Scenario: When a title has no public entry and no public inbound edge, the respo
 - When: An unauthenticated client requests that title path.
 - Then: The response is 404. It does not include a draft body. It does not create an entry.
 
+Scenario: The owner can start an entry from a missing title
+
+- Given: No public entry has the title `ぼくのなつやすみ`. The request is verified as the owner.
+- When: The owner opens that title path. An unverified caller opens the same path.
+- Then: The owner's response includes a link whose visible text is `作成`. The link opens GET `/new?title=` plus that title percent-encoded. The unverified response omits the link. Neither response stores an entry.
+
 ### Read a Gyazo image
 
 As an unauthenticated reader, I want public HTML to refer to this host for a Gyazo image so that the bytes can be read from the existing archive without changing the stored body.
@@ -377,6 +383,8 @@ The canonical page of a public note lists every public note in its thread. The o
 When no public entry has the requested title, and a public entry has an inbound edge to that title, the response is 200. The page shows the title and the current titles of those public sources. Each source links to its view path, or to its canonical URL when it has no view path. The page does not include a draft body and does not say that a draft exists.
 
 When no public entry has the title and no public inbound edge points at it, the response is 404.
+
+When no public entry has the title and the request is verified as the owner, the title path includes a link whose visible text is `作成`. The target is GET `/new?title=` plus the path title percent-encoded. An unverified request omits the link. The host stores no entry. Owner writing defines the create form that link opens.
 
 ### List feeds
 
