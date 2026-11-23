@@ -1,5 +1,7 @@
 // Turns one Cosense text/plain page into the Markdown stored for that page.
 
+import { cosenseProjectMarkdown } from "./cosense-project-link.ts";
+
 const imageExtension = /\.(png|jpe?g|gif|webp|svg)$/i;
 
 function preservedUrl(url: string): boolean {
@@ -59,6 +61,8 @@ function linkLabel(tokens: string[]): string {
 
 function convertSingle(inner: string, raw: string): string {
   if (inner.endsWith(".icon") || inner.startsWith("$")) return raw;
+  const project = cosenseProjectMarkdown(inner);
+  if (project) return project;
   if (inner.startsWith("/") && !/^\/\*\s+\S/.test(inner) && !/^\/\s+\S/.test(inner)) return raw;
   const decorated = decoration(inner);
   if (decorated) return decorated;

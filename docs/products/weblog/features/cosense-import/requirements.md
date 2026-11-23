@@ -28,7 +28,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Writes use the va
 - Two-way sync back to Cosense
 - A Cosense page created after the 2026-11-03 migration set
 - A link target that is not in the page list. The link text stays in the body
-- Formulas, icons, lines that start with `$` or `%`, and links to another project. Those stay the fetched strings in the body. Edge extraction is defined by owner writing
+- Formulas, icons, and lines that start with `$` or `%`. Those stay the fetched strings in the body. Edge extraction is defined by owner writing
 - The UI framework and the ORM
 - A procedure that adopts a newer Cosense body over a local edit. The local-edit section records that this feature does not do that
 
@@ -192,7 +192,8 @@ Before the host stores the page, it converts the fetched lines to Markdown. A bl
 - `[page title]` becomes `[page title](/path)`. The path is the view path: spaces in the title become `_`, then the title is percent-encoded. A `#tag` uses the same shape. The link text of `#2016 年にリメイクした` is `2016` only.
 - A bare `http` or `https` URL, `[URL title]`, and `[title URL]` become a Markdown link. An image URL becomes `![](URL)`. When one bracket holds both a link and an image, the image is wrapped in that link.
 - A URL on `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files` stays the fetched bracket or URL string.
-- `[name.icon]`, `[$ formula]`, a line that starts with `$` or `%`, and a link to another project that starts with `/` stay the fetched string.
+- `[/project]` becomes `[project](https://scrapbox.io/project)`. `[/project/page title]` becomes a Markdown link whose text is the page title and whose URL is `https://scrapbox.io/project/` plus the percent-encoded page title. The project name is the first path segment. A space after `/`, as in `[/ text]`, is italic and is not this link. The link is not an edge on this host.
+- `[name.icon]`, `[$ formula]`, and a line that starts with `$` or `%` stay the fetched string.
 
 ##### Fields a later import keeps
 

@@ -44,6 +44,20 @@ test("cosense text becomes markdown with host links, lists, code, and tables", (
   assert.match(markdown, /\*\*大きい\*\*/);
   assert.match(markdown, /\*\*もっと大きな文字\*\*/);
   assert.match(markdown, /\[\$ \\frac\{1\}\{2\}\]/);
+  const other = cosenseTextToMarkdown('[/useful-gyazo/その"ツイート"冷笑が止まりませんね笑]\n[/useful-gyazo]\n[/ text]');
+  assert.match(
+    other,
+    /\[その"ツイート"冷笑が止まりませんね笑\]\(https:\/\/scrapbox\.io\/useful-gyazo\/%E3%81%9D%E3%81%AE%22%E3%83%84%E3%82%A4%E3%83%BC%E3%83%88%22%E5%86%B7%E7%AC%91%E3%81%8C%E6%AD%A2%E3%81%BE%E3%82%8A%E3%81%BE%E3%81%9B%E3%82%93%E3%81%AD%E7%AC%91\)/,
+  );
+  assert.match(other, /\[useful-gyazo\]\(https:\/\/scrapbox\.io\/useful-gyazo\)/);
+  assert.match(other, /\*text\*/);
+  const stored = '[/useful-gyazo/その"ツイート"冷笑が止まりませんね笑]';
+  const linked = markdownToHtml(stored);
+  assert.match(linked, /href="https:\/\/scrapbox\.io\/useful-gyazo\/%E3%81%9D%E3%81%AE%22/);
+  assert.match(linked, />その&quot;ツイート&quot;冷笑が止まりませんね笑</);
+  assert.equal(linked.includes("[/useful-gyazo/"), false);
+  const coded = markdownToHtml("```\n[/useful-gyazo/page]\n```");
+  assert.equal(coded.includes("<a "), false);
   assert.match(markdown, /```hello\.js\nfunction \(\) \{\nconsole\.log\('hi'\)\n```/);
   assert.match(markdown, /Table: 表の例\n\| abc \| def \|\n\| --- \| --- \|\n\| 123 \| 456 \|/);
 

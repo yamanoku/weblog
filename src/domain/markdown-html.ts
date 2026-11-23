@@ -1,3 +1,4 @@
+import { cosenseProjectLink } from "./cosense-project-link.ts";
 import { gyazoMarkdown, type GyazoIndex } from "./gyazo.ts";
 import { mediaEmbedHtml } from "./media-embed.ts";
 
@@ -116,6 +117,13 @@ function renderInline(source: string): string {
             continue;
           }
         }
+      }
+      const rawProject = /^\[(\/[^\]\n]*)\]/.exec(source.slice(index));
+      const project = rawProject?.[1] ? cosenseProjectLink(rawProject[1]) : null;
+      if (rawProject && project) {
+        html += `<a href="${escapeHtml(project.href)}">${escapeHtml(project.label)}</a>`;
+        index += rawProject[0].length;
+        continue;
       }
     }
     const bare = /^https?:\/\/[^\s<>)\]]+/.exec(source.slice(index));
