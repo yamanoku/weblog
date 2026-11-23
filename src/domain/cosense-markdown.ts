@@ -148,12 +148,6 @@ function indentOf(line: string): number {
   return /^[ \t]*/.exec(line)?.[0].length ?? 0;
 }
 
-function stripOne(line: string): string {
-  if (line.startsWith("\t")) return line.slice(1);
-  if (line.startsWith(" ")) return line.slice(1);
-  return line;
-}
-
 function fence(info: string, body: string[]): string {
   const longest = body.reduce((size, line) => {
     const match = /^(`+)/.exec(line);
@@ -162,6 +156,15 @@ function fence(info: string, body: string[]): string {
   const marker = "`".repeat(Math.max(3, longest + 1));
   const opened = info ? `${marker}${info}` : marker;
   return [opened, ...body, marker].join("\n");
+}
+
+function indentedFence(depth: number, info: string, body: string[]): string {
+  const fenced = fence(info, body);
+  if (depth === 0) return fenced;
+  const pad = "  ".repeat(depth - 1);
+  const contentPad = "  ".repeat(depth);
+  const [first, ...rest] = fenced.split("\n");
+  return [`${pad}- ${first ?? ""}`, ...rest.map((row) => `${contentPad}${row}`)].join("\n");
 }
 
 function pipeCell(cell: string): string {
@@ -209,7 +212,7 @@ export function cosenseTextToMarkdown(source: string): string {
   }
   while (index < lines.length) {
     const line = lines[index] ?? "";
-    const code = /^(\t*)code:(.*)$/.exec(line);
+    const code = /^(\s*)code:(.*)$/.exec(line);
     if (code) {
       const depth = code[1]?.length ?? 0;
       const info = (code[2] ?? "").trim();
@@ -217,13 +220,11 @@ export function cosenseTextToMarkdown(source: string): string {
       index += 1;
       while (index < lines.length) {
         const current = lines[index] ?? "";
-        if (current === "") break;
-        if (indentOf(current) <= depth && !/^[\t ]/.test(current)) break;
-        if (!/^[\t ]/.test(current)) break;
-        body.push(stripOne(current));
+        if (current === "" || indentOf(current) <= depth) break;
+        body.push(current.slice(depth + 1));
         index += 1;
       }
-      pushBlock(out, fence(info, body));
+      pushBlock(out, indentedFence(depth, info, body));
       continue;
     }
     const table = /^(\t*)table:(.*)$/.exec(line);

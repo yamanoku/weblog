@@ -237,6 +237,49 @@ function isTableAt(lines: string[], index: number): boolean {
   return line.includes("|") && isSeparator(lines[index + 1] ?? "");
 }
 
+function openingFence(text: string): number | null {
+  const match = /^(`{3,})(.*)$/.exec(text);
+  return match?.[1] ? match[1].length : null;
+}
+
+function stripSpaces(line: string, width: number): string {
+  let index = 0;
+  while (index < width && line[index] === " ") index += 1;
+  return line.slice(index);
+}
+
+function listCode(lines: string[], cursor: { index: number }, level: number, text: string): string | null {
+  const open = openingFence(text);
+  if (open !== null) {
+    const body: string[] = [];
+    const width = level * 2 + 2;
+    while (cursor.index < lines.length) {
+      const current = lines[cursor.index] ?? "";
+      if (current === "") break;
+      const trimmed = current.trim();
+      const size = /^(`+)$/.exec(trimmed)?.[1]?.length ?? 0;
+      if (size >= open && trimmed === "`".repeat(size)) {
+        cursor.index += 1;
+        break;
+      }
+      body.push(stripSpaces(current, width));
+      cursor.index += 1;
+    }
+    return `<pre><code>${escapeHtml(body.join("\n"))}</code></pre>`;
+  }
+  if (!/^code:\S*$/.test(text)) return null;
+  const upcoming = listItem(lines[cursor.index] ?? "");
+  if (!upcoming || upcoming.level <= level) return null;
+  const body: string[] = [];
+  while (cursor.index < lines.length) {
+    const row = listItem(lines[cursor.index] ?? "");
+    if (!row || row.level <= level) break;
+    body.push(`${" ".repeat(row.level - level - 1)}${row.text}`);
+    cursor.index += 1;
+  }
+  return `<pre><code>${escapeHtml(body.join("\n"))}</code></pre>`;
+}
+
 function isBlockStart(lines: string[], index: number): boolean {
   const line = lines[index] ?? "";
   if (line.startsWith("```")) return true;
@@ -266,6 +309,11 @@ function renderList(
       continue;
     }
     cursor.index += 1;
+    const code = listCode(lines, cursor, level, parsed.text);
+    if (code) {
+      items.push(`<li>${code}</li>`);
+      continue;
+    }
     let html = "";
     if (parsed.text.startsWith(">")) {
       const quotes = [renderInline(parsed.text.replace(/^>\s?/, ""), decks, true, icons)];

@@ -108,3 +108,80 @@ test("a space counts as one list level and an indented quote stays in the list",
     "<ul><li><blockquote><p>one</p><p>two</p></blockquote><ul><li>child</li></ul></li></ul>",
   );
 });
+
+test("an indented code block stays inside its list item", () => {
+  const source = [
+    "title",
+    "\t[参考]になりました",
+    " \tいまだと指定になりそう",
+    "  \t\tcode:ts",
+    "  \t\t  {",
+    "       accessorKey: 'name',",
+    "       header: '発表者',",
+    "       meta: {",
+    "         class: {",
+    "           td: 'w-full',",
+    "         },",
+    "       },",
+    "     },",
+    "",
+    "\t[次]です",
+    "\tcode:plain",
+    "\t [page] はリンクにしない",
+  ].join("\n");
+
+  const code = [
+    " {",
+    "  accessorKey: 'name',",
+    "  header: '発表者',",
+    "  meta: {",
+    "    class: {",
+    "      td: 'w-full',",
+    "    },",
+    "  },",
+    "},",
+  ].join("\n");
+  const markdown = cosenseTextToMarkdown(source);
+  assert.match(markdown, /```ts\n/);
+  assert.equal(markdown.includes("[page](/"), false);
+  const html = markdownToHtml(markdown);
+  assert.match(html, new RegExp(`<li><pre><code>${code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</code></pre></li>`));
+  assert.equal(html.includes("<li><pre><code>[page] はリンクにしない</code></pre></li>"), true);
+  assert.equal(html.includes("<li>code:ts"), false);
+  assert.equal(html.includes("<li>accessorKey"), false);
+  assert.match(html, /<li><a href="\/%E6%AC%A1">次<\/a>です<\/li>/);
+});
+
+test("a stored list of code lines still renders as one code block", () => {
+  const code = [
+    " {",
+    "  accessorKey: 'name',",
+    "  header: '発表者',",
+    "  meta: {",
+    "    class: {",
+    "      td: 'w-full',",
+    "    },",
+    "  },",
+    "},",
+  ].join("\n");
+  const html = markdownToHtml(
+    [
+      "- いまだと指定になりそう",
+      "      - code:ts",
+      "          - {",
+      "            - accessorKey: 'name',",
+      "            - header: '発表者',",
+      "            - meta: {",
+      "                - class: {",
+      "                    - td: 'w-full',",
+      "                - },",
+      "            - },",
+      "        - },",
+      "- 次",
+    ].join("\n"),
+  );
+  assert.equal(
+    html,
+    `<ul><li>いまだと指定になりそう<ul><li><pre><code>${code}</code></pre></li></ul></li><li>次</li></ul>`,
+  );
+});

@@ -185,7 +185,7 @@ Before the host stores the page, it converts the fetched lines to Markdown. A bl
 - One leading space or tab is one list level. A line with no leading space or tab is not a list item. Consecutive list lines become one list.
 - A `>` at the start of the line, after that indent is removed, is a quotation. Consecutive quotation lines become one quotation. An indented quotation stays a list item at that level.
 - A span wrapped in `` ` `` stays inline code.
-- A line that starts with `code:` and the following lines that start with whitespace and end at a blank line become a fenced code block. The text after `code:` is the fence's info string.
+- A line whose text after the leading spaces and tabs is `code:`, and the following lines with a greater indent, until a blank line or a line with the same or a smaller indent, become a fenced code block. The text after `code:` is the fence's info string. One indent character past the `code:` line is removed from each code line. When the `code:` line is indented, the fence stays a list item at that level.
 - A line that starts with `table:` and the following tab-separated lines become a pipe table. The first row is the header. The name after `table:` is that table's caption.
 - `[[text]]`, `[* text]`, `[** text]`, `[*** text]`, and `[**** text]` become bold. In Cosense the number of asterisks is the size of the text, and the outline of a page is the indent. Markdown on this host has no text size.
 - `[/ text]` becomes italic. `[/* text]` becomes bold and italic. `[- text]` becomes strikethrough.
