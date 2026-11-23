@@ -204,7 +204,7 @@ Worker は、タイトルより前に次のパスを一致させる。比較キ�
 
 公開 HTML を描く関数は一つである。article、bookmark、page は、保存された本文を Markdown として描く。見出し、段落、ネストした箇条書き、引用、強調、打ち消し、インラインコード、フェンス、リンク、画像、キャプション付きの表を HTML にする。生の HTML はエスケープし、保存された文字列を HTML としては挿入しない。note は、保存された行をエスケープして残す。page のリンクは、取り込みが保存した Markdown のリンクである。描画時に Cosense のブラケットをもう一度は辿らない。例外は、Gyazo の URL と、もう一つの `http` または `https` の URL だけを書いたブラケットである。アイコン、数式、行頭の `$` と `%`、別プロジェクトのリンクは、本文に残った文字列のままである。
 
-本文中のリンクの href は、その Markdown に書いた URL である。生成する href は `http`、`https`、またはこのホストのパスだけである。他のスキームはエスケープしたテキストにする。空ページに出す内向きの辺は、保存済みの辺であり、描画時に本文から抽出し直さない。
+本文中のリンクの href は、その Markdown に書いた URL である。生成する href は `http`、`https`、またはこのホストのパスだけである。他のスキームはエスケープしたテキストにする。YouTube または Spotify のメディアリンクは、そのアンカーにしない。描画は、動画 id、プレイリスト id、または Spotify の種類と id から iframe の `src` を組み立てる。書いた URL をフレームへはコピーしない。YouTube の `src` は `https://www.youtube-nocookie.com/embed/{id}` または `.../embed/videoseries?list={id}` である。Spotify の `src` は `https://open.spotify.com/embed/{type}/{id}` である。空ページに出す内向きの辺は、保存済みの辺であり、描画時に本文から抽出し直さない。
 
 次の解決は、空ページがリンク元を出すときに、保存済みの辺のタイトルへ使う。エントリ本文に保存した Markdown の href は書き換えない。
 
@@ -237,12 +237,12 @@ href は、次のように決める。
 
 id の読取は `WHERE image_id IN (...)` である。80 個ずつに分け、タイトル解決と同じ batch に入れる。
 
-閲覧用パスと正規 URL の HTML では、bookmark の外部 URL を `h1` の横に描く。値が `http` または `https` なら、テキストをその URL とした外部アンカーにする。それ以外の空でない値は、エスケープしたテキストにする。所有者の書き込みは、スキームを検証しないからである。保存された本文は書き換えない。article、note、page は、そのアンカーを描かない。
+閲覧用パスと正規 URL の HTML では、bookmark の外部 URL を `h1` の横に描く。YouTube または Spotify のメディア URL は、本文のリンクと同じ埋め込みである。それ以外の `http` または `https` は、テキストをその URL とした外部アンカーにする。それ以外の空でない値は、エスケープしたテキストにする。所有者の書き込みは、スキームを検証しないからである。保存された本文は書き換えない。article、note、page は、そのアンカーを描かない。ホーム一覧では、bookmark のタイトルを外部 URL へのリンクのままにする。
 
 文書の応答は `text/html; charset=utf-8` と `Cache-Control: no-cache` を使う。Content-Security-Policy の値は、次のとおりである。
 
 ```text
-default-src 'none'; img-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'
+default-src 'none'; img-src 'self'; media-src 'self'; frame-src https://www.youtube-nocookie.com https://open.spotify.com; base-uri 'none'; form-action 'none'
 ```
 
 GET `/e/{id}` が返信欄を含むとき、その応答の `form-action` はこのホストの `/edit` である。他の文書応答は `form-action 'none'` のままである。

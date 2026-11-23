@@ -200,7 +200,7 @@ Both parameters are required together. `before_id` is a lowercase UUID. `before`
 
 One function renders public HTML. An article, a bookmark, and a page render the stored body as Markdown: headings, paragraphs, nested lists, quotations, emphasis, strikethrough, inline code, fenced code, links, images, and a table with a caption. Raw HTML in that text is escaped, and the stored string is never inserted as HTML. A note keeps the stored lines, escaped. Links in a page are the Markdown links the import stored. Rendering does not walk Cosense brackets again, except a bracket that is only a Gyazo URL and one other `http` or `https` URL. Icons, formulas, lines that start with `$` or `%`, and links to another project stay the strings left in the body.
 
-The href of a link in the body is the URL written in that Markdown. A generated href is only `http`, `https`, or a path on this host. Any other scheme is escaped text. Inbound edges shown on an empty page are the stored edges. Rendering does not extract them from the body again.
+The href of a link in the body is the URL written in that Markdown. A generated href is only `http`, `https`, or a path on this host. Any other scheme is escaped text. A YouTube or Spotify media link is not that anchor. The renderer builds an iframe `src` from the video id, the playlist id, or the Spotify type and id. It does not copy the written URL into the frame. A YouTube `src` is `https://www.youtube-nocookie.com/embed/{id}` or `.../embed/videoseries?list={id}`. A Spotify `src` is `https://open.spotify.com/embed/{type}/{id}`. Inbound edges shown on an empty page are the stored edges. Rendering does not extract them from the body again.
 
 The list below resolves the title of a stored edge when an empty page lists its sources. It does not rewrite a Markdown href already stored in an entry body.
 
@@ -233,12 +233,12 @@ A bracket whose text is only a Gyazo URL and one other `http` or `https` URL use
 
 The ids are loaded with `WHERE image_id IN (...)`, chunked at 80, in the same batch as title resolution.
 
-On the view path and on the canonical HTML page, a bookmark's external URL is rendered beside the `h1`. An `http` or `https` value is an external anchor whose text is the URL. Any other non-empty value is escaped text, because owner writing does not validate the scheme. The stored body is not rewritten. An article, a note, and a page do not render that anchor.
+On the view path and on the canonical HTML page, a bookmark's external URL is rendered beside the `h1`. A YouTube or Spotify media URL is the same embed as a body link. Any other `http` or `https` value is an external anchor whose text is the URL. Any other non-empty value is escaped text, because owner writing does not validate the scheme. The stored body is not rewritten. An article, a note, and a page do not render that anchor. The home list keeps the bookmark title linked to the external URL.
 
 Document responses use `text/html; charset=utf-8` and `Cache-Control: no-cache`. The Content-Security-Policy value is:
 
 ```text
-default-src 'none'; img-src 'self'; media-src 'self'; base-uri 'none'; form-action 'none'
+default-src 'none'; img-src 'self'; media-src 'self'; frame-src https://www.youtube-nocookie.com https://open.spotify.com; base-uri 'none'; form-action 'none'
 ```
 
 When GET `/e/{id}` includes a reply field, that response sets `form-action` to this host's `/edit`. Other document responses keep `form-action 'none'`.

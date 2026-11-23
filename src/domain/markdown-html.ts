@@ -1,4 +1,5 @@
 import { gyazoMarkdown, type GyazoIndex } from "./gyazo.ts";
+import { mediaEmbedHtml } from "./media-embed.ts";
 
 // Renders a stored article body as HTML. The stored string stays unchanged.
 
@@ -108,11 +109,23 @@ function renderInline(source: string): string {
         if (urlEnd !== -1) {
           const url = safeUrl(source.slice(labelEnd + 2, urlEnd));
           if (url) {
-            html += `<a href="${escapeHtml(url)}">${renderInline(source.slice(index + 1, labelEnd))}</a>`;
+            const label = source.slice(index + 1, labelEnd);
+            const embed = mediaEmbedHtml(url, label);
+            html += embed ?? `<a href="${escapeHtml(url)}">${renderInline(label)}</a>`;
             index = urlEnd + 1;
             continue;
           }
         }
+      }
+    }
+    const bare = /^https?:\/\/[^\s<>)\]]+/.exec(source.slice(index));
+    if (bare?.[0]) {
+      const trimmed = bare[0].replace(/[.,;:]+$/, "");
+      const embed = mediaEmbedHtml(trimmed, null);
+      if (embed) {
+        html += embed;
+        index += trimmed.length;
+        continue;
       }
     }
     html += escapeHtml(source[index] ?? "");

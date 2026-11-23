@@ -115,7 +115,7 @@ Scenario: 配送済みのエントリを削除した場合、HTML に削除前�
 
 Scenario: 公開ブックマークの場合、HTML はタイトルの横に外部 URL を含める
 
-- Given: 公開の bookmark に外部 URL がある。本文が他の URL に触れていてもよい。公開の article もある。
+- Given: 公開の bookmark に外部 URL がある。その URL は、後の規則にある YouTube または Spotify のメディア URL ではない。本文が他の URL に触れていてもよい。公開の article もある。
 - When: 未認証のクライアントが、Activity Streams を求めずに、その bookmark の閲覧用パスと正規 URL を要求する。article の閲覧用パスも要求する。
 - Then: bookmark の閲覧用パスと正規 URL では、HTML がその URL をタイトルの横に出す。URL が `http://` または `https://` で始まるときは、テキストをその URL とした外部リンクである。それ以外の空でない値は、リンクではないテキストである。タイトルの文字は、保存されたタイトルのままである。保存された本文は変えない。article のページは、bookmark の URL を出さない。
 
@@ -124,6 +124,18 @@ Scenario: 公開ブックマークを一覧に出す場合、タイトルは外�
 - Given: 公開の bookmark に、`http://` または `https://` で始まる外部 URL がある。閲覧用パスもある。
 - When: 未認証のクライアントが `GET /` を開く。
 - Then: タイトルのリンクは、その外部 URL である。閲覧用パスにはしない。正規 URL にもしない。正規 URL を直接要求したとき、応答はそのエントリの HTML である。
+
+Scenario: 本文のリンクが YouTube または Spotify の URL である場合、ページは埋め込みを出す
+
+- Given: 公開の article、bookmark、または page が、YouTube の動画、ショート、ライブ、プレイリスト、または Spotify のトラック、アルバム、プレイリスト、エピソード、番組、アーティストへの Markdown リンクか、裸の `http` または `https` の URL を含む。同じ URL がコードブロックの中にもある。公開の note の本文にも、その URL がある。
+- When: 未認証のクライアントが、それぞれのエントリの HTML を要求する。
+- Then: article、bookmark、page は、そのメディアの iframe を出す。YouTube のフレームは `https://www.youtube-nocookie.com` を使う。Spotify のフレームは `https://open.spotify.com` を使う。保存された本文は変えない。コードブロックはテキストのままである。note は保存されたテキストを出し、iframe は出さない。
+
+Scenario: bookmark の URL が YouTube または Spotify の URL である場合、タイトルの横にその埋め込みを出す
+
+- Given: 公開の bookmark の外部 URL が、それらのメディア URL の一つである。閲覧用パスもある。
+- When: 未認証のクライアントが、その bookmark の閲覧用パスと正規 URL を要求し、`GET /` も開く。
+- Then: タイトルの横は、その埋め込みである。テキストをその URL としたアンカーは出さない。ホーム一覧のタイトルは、外部 URL へのリンクのままである。保存された bookmark の URL は変えない。
 
 ### note の画像を読む
 
@@ -316,9 +328,11 @@ Scenario: 本文中の URL からオブジェクトが一つに決まらない�
 
 article、bookmark、page の公開 HTML は、保存された本文を Markdown として描く。空行で区切った段落、`#` から `######` の直後に空白がある見出し、`-` または `*` で始まる順序なしリストを HTML にする。リストの行頭の空白二つが一段である。`>` で始まる行は引用である。テキストが `>` で始まる箇条書きの項目も引用であり、同じ段で続くその項目は一つの引用にする。`*` と `**` の強調、`***` の太字かつ斜体、`~~` の打ち消し、バッククォートのインラインコード、フェンスのコード、`[表示](URL)` のリンク、`![文](URL)` の画像も HTML にする。パイプの表は、見出しと本文を持つ表にする。直前の `Table: 名前` は、その表のキャプションである。リンクと画像の URL は `http`、`https`、またはこのホストのパスだけである。画像の alt は括弧の間の文であり、空でもよい。本文中の生の HTML はエスケープし、実行しない。bookmark は、Markdown が既に含んでいても、保存した画像を保存した順で本文の下にも並べる。article と page はその一覧を足さない。article と page の画像は、Markdown が置いた位置にだけ出る。画像の参照先は、その画像の `/note-images/{id}` である。note では、その id は note の ID である。page のリンクは、保存された Markdown のリンクである。描画時に、Cosense のブラケットをもう一度は辿らない。例外は、Gyazo の URL と、もう一つの `http` または `https` の URL だけを書いたブラケットである。
 
+article、bookmark、page にある YouTube または Spotify のリンクは、埋め込みになる。保存された文字は、リンクのままである。YouTube の形は、`/watch`、`/shorts`、`/live`、`/embed`、`youtu.be` の動画と、プレイリストである。フレームのオリジンは `https://www.youtube-nocookie.com` である。`t` または `start` の再生開始は残す。Spotify の形は、トラック、アルバム、プレイリスト、エピソード、番組、アーティストであり、`intl-` の接頭辞を含んでよい。フレームのオリジンは `https://open.spotify.com` である。共有用のパラメータは、フレームへコピーしない。iframe の title は、リンクの文字が URL そのものでないときはその文字であり、それ以外は `YouTube` または `Spotify` である。インラインコードとコードブロックの中の URL は、テキストのままである。それ以外のリンクはアンカーのままである。note は埋め込まない。
+
 note の公開 HTML は、保存された行を残す。
 
-bookmark の閲覧用パスと正規 URL では、外部 URL をタイトルの横に出す。値が `http` または `https` なら、テキストをその URL とした外部リンクである。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。
+bookmark の閲覧用パスと正規 URL では、外部 URL をタイトルの横に出す。値が上の規則の YouTube または Spotify のメディア URL である `http` または `https` なら、その埋め込みであり、アンカーではない。それ以外の `http` または `https` は、テキストをその URL とした外部リンクである。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。bookmark のホーム一覧のタイトルは、外部 URL を開く。
 
 所有者として確認できた要求では、公開 article、公開 bookmark、公開 page の閲覧用パスと正規 URL が、エントリのあとにリンクを出す。表示は `edit` である。行き先は、そのエントリの GET `/edit/{id}` である。確認できていない要求は、そのリンクを出さない。公開の note は出さない。保存された本文は変えない。リンク先の編集画面は、所有者の書き込みが定める。
 

@@ -162,6 +162,33 @@ ol.dads-breadcrumb__list {
   line-height: 1.6;
 }
 
+.media-embed {
+  display: block;
+  inline-size: 100%;
+  border: 0;
+}
+
+.entry-heading .media-embed {
+  flex-basis: 100%;
+}
+
+.media-embed[data-shape="video"] {
+  aspect-ratio: 16 / 9;
+  block-size: auto;
+}
+
+.media-embed[data-shape="compact"] {
+  block-size: 152px;
+}
+
+.media-embed[data-shape="tall"] {
+  block-size: 352px;
+}
+
+.media-embed__label {
+  display: block;
+}
+
 .entry-body {
   display: grid;
   gap: 1rem;

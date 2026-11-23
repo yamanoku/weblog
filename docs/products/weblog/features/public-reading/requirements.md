@@ -115,7 +115,7 @@ Scenario: When a delivered entry was deleted, the HTML does not include the dele
 
 Scenario: When a bookmark is public, the HTML includes its external URL beside the title
 
-- Given: A public bookmark has an external URL. The body may also mention other URLs. A public article exists.
+- Given: A public bookmark has an external URL that is not a YouTube or Spotify media URL from the later rule. The body may also mention other URLs. A public article exists.
 - When: An unauthenticated client requests the bookmark's view path and its canonical URL, and does not ask for Activity Streams. The client also requests the article's view path.
 - Then: On the bookmark's view path and canonical URL, the HTML shows that URL beside the title. When the URL starts with `http://` or `https://`, it is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The title text stays the stored title. The stored body is unchanged. The article page does not show a bookmark URL.
 
@@ -124,6 +124,18 @@ Scenario: When a public bookmark is listed, its title opens the external URL
 - Given: A public bookmark has an external URL that starts with `http://` or `https://`. It also has a view path.
 - When: An unauthenticated client opens GET `/`.
 - Then: The title's link is that external URL. It is not the view path and not the canonical URL. A direct request for the canonical URL still returns that entry's HTML.
+
+Scenario: When a body link is a YouTube or Spotify URL, the page shows an embed
+
+- Given: A public article, bookmark, or page contains a Markdown link, or a bare `http` or `https` URL, for a YouTube video, short, live video, or playlist, or for a Spotify track, album, playlist, episode, show, or artist. The same URL also appears in fenced code. A public note contains that URL in its body.
+- When: An unauthenticated client requests each entry's HTML.
+- Then: The article, bookmark, or page shows an iframe for that media. A YouTube frame uses `https://www.youtube-nocookie.com`. A Spotify frame uses `https://open.spotify.com`. The stored body is unchanged. The fenced code stays text. The note shows the stored text and does not show an iframe.
+
+Scenario: When a bookmark URL is a YouTube or Spotify URL, the page shows that embed beside the title
+
+- Given: A public bookmark's external URL is one of those media URLs. The bookmark also has a view path.
+- When: An unauthenticated client requests the bookmark's view path and its canonical URL, and also opens GET `/`.
+- Then: Beside the title, the HTML shows that embed and does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
 
 ### Read a note image
 
@@ -316,9 +328,11 @@ The stored body stays plain text. Public HTML does not replace that string.
 
 Public HTML for an article, a bookmark, or a page renders the stored body as Markdown. It turns paragraphs separated by blank lines, headings of one to six `#` followed by a space, unordered lists that start with `-` or `*`, and two leading spaces per nested list level, lines that start with `>`, a list item whose text starts with `>` (consecutive items of that form at the same level are one quotation), `*` and `**` emphasis, `***` for bold and italic, `~~` strikethrough, inline code in backticks, fenced code, `[label](URL)` links, and `![text](URL)` images into HTML. A pipe table becomes a table with a header and a body. A `Table: name` line immediately before it is that table's caption. A link or image URL is only `http`, `https`, or a path on this host. The image alt is the text between the brackets, and it may be empty. Raw HTML in the body is escaped and is not executed. A bookmark also lists every stored image under the body, in stored order, even when the Markdown already contains it. An article and a page do not add that list. An article or page image appears in the HTML only where the Markdown places it. The image source is `/note-images/{id}` for that image. For a note, that id is the note id. Links in a page are the Markdown links stored in the body. Rendering does not walk Cosense brackets again, except a bracket that is only a Gyazo URL and one other `http` or `https` URL.
 
+A YouTube or Spotify link in an article, a bookmark, or a page becomes an embed. The stored characters stay the link. The YouTube forms are a video in `/watch`, `/shorts`, `/live`, `/embed`, or `youtu.be`, and a playlist. The frame origin is `https://www.youtube-nocookie.com`. A `t` or `start` time is kept. The Spotify forms are a track, album, playlist, episode, show, or artist, including an `intl-` prefix. The frame origin is `https://open.spotify.com`. Share parameters are not copied into the frame. The iframe title is the link text when that text is not itself a URL, and otherwise `YouTube` or `Spotify`. A URL inside inline code or fenced code stays text. Any other link stays an anchor. A note does not embed.
+
 Public HTML for a note keeps the stored lines.
 
-On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body.
+On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value that is a YouTube or Spotify media URL from the rule above is that embed, not an anchor. Any other `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body. The home list title of a bookmark still opens the external URL.
 
 When the request is verified as the owner, the view path and the canonical page of a public article, a public bookmark, or a public page include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note omits it. The stored body does not change. Owner writing defines the edit screen that link opens.
 
