@@ -20,7 +20,7 @@
       </p>
     {/if}
   </div>
-  {#if embed}
-    {@html embed}
-  {/if}
 </div>
+{#if embed}
+  {@html embed}
+{/if}

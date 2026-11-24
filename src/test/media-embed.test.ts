@@ -59,6 +59,11 @@ test("a youtube or spotify link becomes an embed and the source url stays out of
 
   const heading = readFileSync(join(rootDir, "ui/entry-heading.svelte"), "utf8");
   assert.match(heading, /mediaEmbedHtml\(href, null, speakerdeck, "eager"\)/);
+  const headingEnd = heading.lastIndexOf("</div>");
+  const embedHtml = heading.lastIndexOf("{@html embed}");
+  assert.ok(headingEnd > 0 && embedHtml > headingEnd);
+  const css = readFileSync(join(rootDir, "styles/site.css"), "utf8");
+  assert.equal(css.includes(".entry-heading .media-embed"), false);
   for (const page of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const source = readFileSync(join(rootDir, page), "utf8");
     assert.match(source, /speakerdeck=\{entry\.speakerdeck \?\? \{\}\}/);

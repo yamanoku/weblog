@@ -131,11 +131,11 @@ Scenario: When a body link is a YouTube or Spotify URL, the page shows an embed
 - When: An unauthenticated client requests each entry's HTML.
 - Then: The article, bookmark, or page shows an iframe for that media. A YouTube frame uses `https://www.youtube-nocookie.com`. A Spotify frame uses `https://open.spotify.com`. The stored body is unchanged. The fenced code stays text. The note shows the stored text and does not show an iframe.
 
-Scenario: When a bookmark URL is a YouTube or Spotify URL, the page shows that embed beside the title
+Scenario: When a bookmark URL is a YouTube or Spotify URL, the page shows that embed in the article
 
 - Given: A public bookmark's external URL is one of those media URLs. The bookmark also has a view path.
 - When: An unauthenticated client requests the bookmark's view path and its canonical URL, and also opens GET `/`.
-- Then: Beside the title, the HTML shows that embed and does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
+- Then: The article shows that embed after the heading. The heading does not contain the iframe. The page does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
 
 Scenario: When a body link is a Speaker Deck URL, the page shows an embed
 
@@ -149,11 +149,11 @@ Scenario: When Speaker Deck does not name a player, the deck URL stays a link
 - When: An unauthenticated client requests that page's HTML.
 - Then: The response is 200. That URL is an anchor. The page does not show an iframe for it. The stored body is unchanged.
 
-Scenario: When a bookmark URL is a Speaker Deck URL, the page shows that embed beside the title
+Scenario: When a bookmark URL is a Speaker Deck URL, the page shows that embed in the article
 
 - Given: A public bookmark's external URL is a Speaker Deck deck URL. Speaker Deck names a player for it. The bookmark also has a view path.
 - When: An unauthenticated client requests the bookmark's view path and its canonical URL, and also opens GET `/`.
-- Then: Beside the title, the HTML shows that embed and does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
+- Then: The article shows that embed after the heading. The heading does not contain the iframe. The page does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
 
 Scenario: When a link href is http or https, its underline is dotted and its background is yellow
 
@@ -398,7 +398,7 @@ On a public HTML page, an anchor whose href starts with `http://` or `https://` 
 
 Public HTML for a note keeps the stored lines.
 
-On a bookmark's view path and canonical page, the external URL is shown beside the title. An `http` or `https` value that is a YouTube or Spotify media URL from the rule above, or a Speaker Deck URL whose player is known, is that embed, not an anchor. Any other `http` or `https` value is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body. The home list title of a bookmark still opens the external URL.
+On a bookmark's view path and canonical page, an external URL that is not a media embed is shown beside the title. An `http` or `https` value that is a YouTube or Spotify media URL from the rule above, or a Speaker Deck URL whose player is known, is that embed, not an anchor. The article contains that embed after the heading, and the heading does not contain the iframe. Any other `http` or `https` value is an external link whose text is the URL, beside the title. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body. The home list title of a bookmark still opens the external URL.
 
 When the request is verified as the owner, the view path and the canonical page of a public article, a public bookmark, or a public page include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note omits it. The stored body does not change. Owner writing defines the edit screen that link opens.
 

@@ -172,10 +172,6 @@ ol.dads-breadcrumb__list {
   border: 0;
 }
 
-.entry-heading .media-embed {
-  flex-basis: 100%;
-}
-
 .media-embed[data-shape="video"] {
   aspect-ratio: 16 / 9;
   block-size: auto;

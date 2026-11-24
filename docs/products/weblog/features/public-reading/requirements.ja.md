@@ -131,11 +131,11 @@ Scenario: 本文のリンクが YouTube または Spotify の URL である場�
 - When: 未認証のクライアントが、それぞれのエントリの HTML を要求する。
 - Then: article、bookmark、page は、そのメディアの iframe を出す。YouTube のフレームは `https://www.youtube-nocookie.com` を使う。Spotify のフレームは `https://open.spotify.com` を使う。保存された本文は変えない。コードブロックはテキストのままである。note は保存されたテキストを出し、iframe は出さない。
 
-Scenario: bookmark の URL が YouTube または Spotify の URL である場合、タイトルの横にその埋め込みを出す
+Scenario: bookmark の URL が YouTube または Spotify の URL である場合、記事の中にその埋め込みを出す
 
 - Given: 公開の bookmark の外部 URL が、それらのメディア URL の一つである。閲覧用パスもある。
 - When: 未認証のクライアントが、その bookmark の閲覧用パスと正規 URL を要求し、`GET /` も開く。
-- Then: タイトルの横は、その埋め込みである。テキストをその URL としたアンカーは出さない。ホーム一覧のタイトルは、外部 URL へのリンクのままである。保存された bookmark の URL は変えない。
+- Then: 記事は、見出しのあとにその埋め込みを出す。見出しは iframe を含まない。テキストをその URL としたアンカーは出さない。ホーム一覧のタイトルは、外部 URL へのリンクのままである。保存された bookmark の URL は変えない。
 
 Scenario: 本文のリンクが Speaker Deck の URL である場合、ページは埋め込みを出す
 
@@ -149,11 +149,11 @@ Scenario: Speaker Deck がプレーヤーを名指ししない場合、デッキ
 - When: 未認証のクライアントが、その page の HTML を要求する。
 - Then: 応答は 200 である。その URL はアンカーである。その iframe は出さない。保存された本文は変えない。
 
-Scenario: bookmark の URL が Speaker Deck の URL である場合、タイトルの横にその埋め込みを出す
+Scenario: bookmark の URL が Speaker Deck の URL である場合、記事の中にその埋め込みを出す
 
 - Given: 公開の bookmark の外部 URL が Speaker Deck のデッキ URL である。Speaker Deck がそのプレーヤーを名指しする。閲覧用パスもある。
 - When: 未認証のクライアントが、その bookmark の閲覧用パスと正規 URL を要求し、`GET /` も開く。
-- Then: タイトルの横は、その埋め込みである。テキストをその URL としたアンカーは出さない。ホーム一覧のタイトルは、外部 URL へのリンクのままである。保存された bookmark の URL は変えない。
+- Then: 記事は、見出しのあとにその埋め込みを出す。見出しは iframe を含まない。テキストをその URL としたアンカーは出さない。ホーム一覧のタイトルは、外部 URL へのリンクのままである。保存された bookmark の URL は変えない。
 
 Scenario: リンクの href が http または https の場合、下線を点線にし、背景を黄色にする
 
@@ -398,7 +398,7 @@ article、bookmark、page にある Speaker Deck のリンクは、Speaker Deck 
 
 note の公開 HTML は、保存された行を残す。
 
-bookmark の閲覧用パスと正規 URL では、外部 URL をタイトルの横に出す。値が上の規則の YouTube または Spotify のメディア URL である `http` または `https`、またはプレーヤーが分かっている Speaker Deck の URL なら、その埋め込みであり、アンカーではない。それ以外の `http` または `https` は、テキストをその URL とした外部リンクである。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。bookmark のホーム一覧のタイトルは、外部 URL を開く。
+bookmark の閲覧用パスと正規 URL では、メディアの埋め込みでない外部 URL をタイトルの横に出す。値が上の規則の YouTube または Spotify のメディア URL である `http` または `https`、またはプレーヤーが分かっている Speaker Deck の URL なら、その埋め込みであり、アンカーではない。記事は、その埋め込みを見出しのあとに含み、見出しは iframe を含まない。それ以外の `http` または `https` は、テキストをその URL とした外部リンクであり、タイトルの横に出す。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。bookmark のホーム一覧のタイトルは、外部 URL を開く。
 
 所有者として確認できた要求では、公開 article、公開 bookmark、公開 page の閲覧用パスと正規 URL が、エントリのあとにリンクを出す。表示は `edit` である。行き先は、そのエントリの GET `/edit/{id}` である。確認できていない要求は、そのリンクを出さない。公開の note は出さない。保存された本文は変えない。リンク先の編集画面は、所有者の書き込みが定める。
 
