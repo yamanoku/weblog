@@ -280,12 +280,15 @@ ol.dads-breadcrumb__list {
   background: var(--color-neutral-solid-gray-50);
 }
 
-.entry-body pre code {
-  overflow-wrap: normal;
-}
-
 .entry-body code {
   font-family: var(--font-family-mono), ui-monospace, monospace;
+  background: var(--color-neutral-solid-gray-50);
+  padding: 2px 8px;
+}
+
+.entry-body pre code {
+  overflow-wrap: normal;
+  padding: 0;
 }
 
 .site-main :is(img, video),
