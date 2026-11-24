@@ -26,6 +26,8 @@ The ActivityPub Follow, Undo, and delivery model is `docs/products/weblog/featur
 
 The Cosense import and local-edit model is `docs/products/weblog/features/cosense-import/cosenseImport.qnt`. Its test module is `cosenseImportTest`. Its invariant is `safety`.
 
+The owner create, update, publish, and delete model is `docs/products/weblog/features/owner-writing/ownerWriting.qnt`. Its test module is `ownerWritingTest`. Its invariant is `safety`.
+
 From the directory that contains the model:
 
 ```sh
@@ -36,6 +38,11 @@ npx @informalsystems/quint run followDelivery.qnt --main followDelivery --invari
 ```sh
 npx @informalsystems/quint test cosenseImportTest.qnt --main cosenseImportTest
 npx @informalsystems/quint run cosenseImport.qnt --main cosenseImport --invariant safety
+```
+
+```sh
+npx @informalsystems/quint test ownerWritingTest.qnt --main ownerWritingTest
+npx @informalsystems/quint run ownerWriting.qnt --main ownerWriting --invariant safety
 ```
 
 `quint` may be absent from `PATH`. Use `npx @informalsystems/quint`.
