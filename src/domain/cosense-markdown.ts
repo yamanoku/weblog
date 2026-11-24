@@ -146,12 +146,12 @@ function convertInline(text: string): string {
   return result;
 }
 
-function indentOf(line: string): number {
-  return /^[ \t]*/.exec(line)?.[0].length ?? 0;
+function leadingFullwidthAsSpace(line: string): string {
+  return line.replace(/^[ \t\u3000]*/, (run) => run.replaceAll("\u3000", " "));
 }
 
-function codeIndent(line: string): number {
-  return /^[ \t\u3000]*/.exec(line)?.[0].length ?? 0;
+function indentOf(line: string): number {
+  return /^[ \t]*/.exec(line)?.[0].length ?? 0;
 }
 
 function fence(info: string, body: string[]): string {
@@ -208,7 +208,7 @@ function pushBlock(out: string[], block: string): void {
 }
 
 export function cosenseTextToMarkdown(source: string): string {
-  const lines = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n");
+  const lines = source.replaceAll("\r\n", "\n").replaceAll("\r", "\n").split("\n").map(leadingFullwidthAsSpace);
   const out: string[] = [];
   let index = 0;
   // The page title is already the heading. A leading date line would repeat it.
@@ -218,7 +218,7 @@ export function cosenseTextToMarkdown(source: string): string {
   }
   while (index < lines.length) {
     const line = lines[index] ?? "";
-    const code = /^([ \t\u3000]*)code:(.*)$/.exec(line);
+    const code = /^([ \t]*)code:(.*)$/.exec(line);
     if (code) {
       const depth = code[1]?.length ?? 0;
       const info = (code[2] ?? "").trim();
@@ -226,7 +226,7 @@ export function cosenseTextToMarkdown(source: string): string {
       index += 1;
       while (index < lines.length) {
         const current = lines[index] ?? "";
-        if (current === "" || codeIndent(current) <= depth) break;
+        if (current === "" || indentOf(current) <= depth) break;
         body.push(current.slice(depth + 1));
         index += 1;
       }

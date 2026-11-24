@@ -211,6 +211,40 @@ test("a stored list of code lines still renders as one code block", () => {
   );
 });
 
+test("a leading fullwidth space is a halfwidth space", () => {
+  const source = [
+    "day",
+    "\u3000[項目]です",
+    "\u3000\u3000子です",
+    " \u3000混在です",
+    "本文\u3000は残す",
+    "\u3000>引用です",
+    "code:js",
+    "\u3000const x = 1",
+    "\u3000\u3000 nested",
+  ].join("\n");
+
+  assert.equal(
+    cosenseTextToMarkdown(source),
+    [
+      "day",
+      "",
+      "- [項目](/%E9%A0%85%E7%9B%AE)です",
+      "  - 子です",
+      "  - 混在です",
+      "",
+      "本文\u3000は残す",
+      "",
+      "- > 引用です",
+      "",
+      "```js",
+      "const x = 1",
+      "  nested",
+      "```",
+    ].join("\n"),
+  );
+});
+
 test("code:css and a spaced info string stay inside the list", () => {
   const source = [
     "day",

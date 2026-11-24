@@ -185,13 +185,13 @@ The last imported body is the Markdown of the last write this feature committed 
 
 ##### The body becomes Markdown
 
-Before the host stores the page, it converts the fetched lines to Markdown. A blank line separates the surrounding blocks. The conversions below do not run inside a code block or a table.
+Before the host stores the page, it converts the fetched lines to Markdown. On every line, a fullwidth space in the leading run is a halfwidth space. That run is the halfwidth spaces, tabs, and fullwidth spaces before any other character. A fullwidth space after that run stays as fetched. A blank line separates the surrounding blocks. The conversions below do not run inside a code block or a table.
 
 - A first line that is only `YYYY-MM-DD` is omitted. One blank line immediately after that line is omitted. A date later in the body remains.
 - One leading space or tab is one list level. A line with no leading space or tab is not a list item. Consecutive list lines become one list.
 - A `>` at the start of the line, after that indent is removed, is a quotation. Consecutive quotation lines become one quotation. An indented quotation stays a list item at that level.
 - A span wrapped in `` ` `` stays inline code.
-- A line whose text after the leading spaces, tabs, or fullwidth spaces is `code:`, and the following lines with a greater indent, until a blank line or a line with the same or a smaller indent, become a fenced code block. A fullwidth space counts as one indent character here. The text after `code:` is the fence's info string. That string may contain spaces, as in `code:css`, `code:js`, `code:html`, and `code:template strings.js`. One indent character past the `code:` line is removed from each code line. When the `code:` line is indented, the fence stays a list item at that level.
+- A line whose text after the leading spaces or tabs is `code:`, and the following lines with a greater indent, until a blank line or a line with the same or a smaller indent, become a fenced code block. The text after `code:` is the fence's info string. That string may contain spaces, as in `code:css`, `code:js`, `code:html`, and `code:template strings.js`. One indent character past the `code:` line is removed from each code line. When the `code:` line is indented, the fence stays a list item at that level.
 - A line that starts with `table:` and the following tab-separated lines become a pipe table. The first row is the header. The name after `table:` is that table's caption.
 - `[[text]]`, `[* text]`, `[** text]`, `[*** text]`, and `[**** text]` become bold. In Cosense the number of asterisks is the size of the text, and the outline of a page is the indent. Markdown on this host has no text size. `[[URL]]` whose text is only one `gyazo.com` or `i.gyazo.com` URL is not bold. The Gyazo rule below stores `[URL]`.
 - `[/ text]` becomes italic. `[/* text]` becomes bold and italic. `[- text]` becomes strikethrough.
