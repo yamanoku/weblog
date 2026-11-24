@@ -35,6 +35,28 @@ test("cosense text becomes markdown with host links, lists, code, and tables", (
   assert.match(markdown, /\[GitHub\.icon\] \[https:\/\/github\.com\/yamanoku\/yamanoku-icons\]\(https:\/\/github\.com\/yamanoku\/yamanoku-icons\)/);
   assert.match(markdown, /\[2016\]\(\/2016\) 年にリメイクした/);
   assert.match(markdown, /\[https:\/\/gyazo\.com\/809a6f523937838d9ba5eaf20717feee\]/);
+  const doubled = cosenseTextToMarkdown(
+    [
+      "[[https://gyazo.com/c4de38b02edf21030042353143b4f762]]",
+      "[[https://i.gyazo.com/abc.png]]",
+      "[[ https://gyazo.com/spaced ]]",
+      "[[https://scrapbox.io/files/x.png]]",
+      "[[大きい画像]]",
+      "code:",
+      " [[https://gyazo.com/abc]]",
+    ].join("\n"),
+  );
+  assert.equal(doubled.includes("[[https://gyazo.com/c4de38b02edf21030042353143b4f762]]"), false);
+  assert.match(doubled, /^\[https:\/\/gyazo\.com\/c4de38b02edf21030042353143b4f762\]$/m);
+  assert.match(doubled, /^\[https:\/\/i\.gyazo\.com\/abc\.png\]$/m);
+  assert.match(doubled, /^\[https:\/\/gyazo\.com\/spaced\]$/m);
+  assert.match(doubled, /^\[\[https:\/\/scrapbox\.io\/files\/x\.png\]\]$/m);
+  assert.match(doubled, /\*\*大きい画像\*\*/);
+  assert.match(doubled, /\[\[https:\/\/gyazo\.com\/abc\]\]/);
+  assert.equal(
+    cosenseTextToMarkdown("[https://gyazo.com/c4de38b02edf21030042353143b4f762]"),
+    "[https://gyazo.com/c4de38b02edf21030042353143b4f762]",
+  );
   assert.match(markdown, /!\[\]\(https:\/\/example\.com\/pixel\.png\)/);
   assert.match(markdown, /^- \[DLSS 5 Anything\]\(https:\/\/huggingface\.co\/spaces\/victor\/dlss-5-anything\)/m);
   assert.match(markdown, /^> 引用です/m);

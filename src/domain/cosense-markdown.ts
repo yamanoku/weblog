@@ -15,6 +15,15 @@ function preservedUrl(url: string): boolean {
   }
 }
 
+function gyazoUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "gyazo.com" || host === "i.gyazo.com";
+  } catch {
+    return false;
+  }
+}
+
 function imageUrl(url: string): boolean {
   try {
     return imageExtension.test(new URL(url).pathname);
@@ -38,6 +47,7 @@ function trimBareUrl(url: string): string {
 function convertDouble(inner: string, raw: string): string {
   const trimmed = inner.trim();
   if (/^https?:\/\//i.test(trimmed) && !/\s/.test(trimmed)) {
+    if (gyazoUrl(trimmed)) return `[${trimmed}]`;
     if (preservedUrl(trimmed)) return raw;
     if (imageUrl(trimmed)) return `![](${trimmed})`;
     return `[${trimmed}](${trimmed})`;

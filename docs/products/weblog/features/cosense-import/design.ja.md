@@ -168,7 +168,7 @@ CLI は次の URL を、資格情報なしの HTTPS GET で呼ぶ。プロジェ
 - 空でない `X-Following-Id` を `followingId` にした、同じパス
 - `GET https://scrapbox.io/api/pages/yamanoku/{title}/text`
 
-ページ一覧から使う項目は `id` と `created` である。`search/titles` の要素に `created` は無い。出典は [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles) である。そのページは、作成日時を返さないと書く。走査で使う要素は `id`、`title`、`updated` である。要素に本文の行は無い。`links` 配列は辺の一覧ではない。辺は、保存した Markdown から、所有者の書き込みの規則で抽出する。text 応答は `text/plain` である。CLI は、投稿する前に `src/domain/cosense-markdown.ts` の `cosenseTextToMarkdown` で Markdown へ変える。インデントのある `code:` の行は、その段の箇条書き項目にあるフェンスのコードブロックになる。`src/domain/markdown-html.ts` の `markdownToHtml` は、その項目を `li` の中の `pre` の中の `code` として描く。Worker は、受け取った本文をそのまま保存する。Worker は Cosense の記法を読み直さない。CLI は `i.gyazo.com`、`gyazo.com`、`scrapbox.io/files` を要求しない。
+ページ一覧から使う項目は `id` と `created` である。`search/titles` の要素に `created` は無い。出典は [api/pages/:projectname/search/titles](https://scrapbox.io/scrapboxlab/api%2Fpages%2F:projectname%2Fsearch%2Ftitles) である。そのページは、作成日時を返さないと書く。走査で使う要素は `id`、`title`、`updated` である。要素に本文の行は無い。`links` 配列は辺の一覧ではない。辺は、保存した Markdown から、所有者の書き込みの規則で抽出する。text 応答は `text/plain` である。CLI は、投稿する前に `src/domain/cosense-markdown.ts` の `cosenseTextToMarkdown` で Markdown へ変える。インデントのある `code:` の行は、その段の箇条書き項目にあるフェンスのコードブロックになる。`src/domain/markdown-html.ts` の `markdownToHtml` は、その項目を `li` の中の `pre` の中の `code` として描く。Worker は、受け取った本文をそのまま保存する。Worker は Cosense の記法を読み直さない。その変換では、中身が `gyazo.com` または `i.gyazo.com` の URL 一つだけである `[[URL]]` が `[URL]` になる。どのブラケットを取得したまま残すかは、要求にある。Worker はブラケットを再び外さない。CLI は `i.gyazo.com`、`gyazo.com`、`scrapbox.io/files` を要求しない。
 
 件数を測った URL `https://scrapbox.io/api/pages/yamanoku?limit=1` は、走査には使わない。あの応答には、`X-Following-Id` による続きが無い。
 

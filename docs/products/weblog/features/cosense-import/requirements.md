@@ -128,7 +128,13 @@ Scenario: When the body contains a Gyazo URL or a scrapbox.io file URL, the URL 
 
 - Given: The fetched plain text contains an `i.gyazo.com` URL, a `gyazo.com` URL, or a `scrapbox.io/files` URL.
 - When: The owner runs the import and the page is stored.
-- Then: The stored body still contains that URL string. The host does not upload bytes into the bucket `gyazo-archives`. The host does not copy the `scrapbox.io/files` object. Brackets around the URL stay as fetched.
+- Then: The stored body still contains that URL string. The host does not upload bytes into the bucket `gyazo-archives`. The host does not copy the `scrapbox.io/files` object. Brackets around a `scrapbox.io/files` URL stay as fetched. Brackets around a Gyazo URL stay as fetched, except when `[[` and `]]` enclose only that URL. That case is the next scenario.
+
+Scenario: When double brackets hold only a Gyazo URL, the stored body uses one pair
+
+- Given: The fetched plain text contains `[[https://gyazo.com/c4de38b02edf21030042353143b4f762]]`, or the same shape with one `i.gyazo.com` URL. Those brackets contain no other text.
+- When: The owner runs the import and the page is stored.
+- Then: The stored body contains that URL inside one pair, `[URL]`. It does not contain `[[` and `]]` around that URL. The host does not upload bytes into the bucket `gyazo-archives`. A later read does not remove brackets. A code block, a table, and a bracket that contains other text stay as fetched. A `scrapbox.io/files` URL inside `[[ ]]` stays as fetched.
 
 Scenario: When a scrapbox.io file URL later stops being public, this feature has no copy
 
@@ -187,11 +193,11 @@ Before the host stores the page, it converts the fetched lines to Markdown. A bl
 - A span wrapped in `` ` `` stays inline code.
 - A line whose text after the leading spaces, tabs, or fullwidth spaces is `code:`, and the following lines with a greater indent, until a blank line or a line with the same or a smaller indent, become a fenced code block. A fullwidth space counts as one indent character here. The text after `code:` is the fence's info string. That string may contain spaces, as in `code:css`, `code:js`, `code:html`, and `code:template strings.js`. One indent character past the `code:` line is removed from each code line. When the `code:` line is indented, the fence stays a list item at that level.
 - A line that starts with `table:` and the following tab-separated lines become a pipe table. The first row is the header. The name after `table:` is that table's caption.
-- `[[text]]`, `[* text]`, `[** text]`, `[*** text]`, and `[**** text]` become bold. In Cosense the number of asterisks is the size of the text, and the outline of a page is the indent. Markdown on this host has no text size.
+- `[[text]]`, `[* text]`, `[** text]`, `[*** text]`, and `[**** text]` become bold. In Cosense the number of asterisks is the size of the text, and the outline of a page is the indent. Markdown on this host has no text size. `[[URL]]` whose text is only one `gyazo.com` or `i.gyazo.com` URL is not bold. The Gyazo rule below stores `[URL]`.
 - `[/ text]` becomes italic. `[/* text]` becomes bold and italic. `[- text]` becomes strikethrough.
 - `[page title]` becomes `[page title](/path)`. The path is the view path: spaces in the title become `_`, then the title is percent-encoded. A `#tag` uses the same shape. The link text of `#2016 年にリメイクした` is `2016` only.
 - A bare `http` or `https` URL, `[URL title]`, and `[title URL]` become a Markdown link. An image URL becomes `![](URL)`. When one bracket holds both a link and an image, the image is wrapped in that link.
-- A URL on `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files` stays the fetched bracket or URL string.
+- A URL on `i.gyazo.com`, `gyazo.com`, or `scrapbox.io/files` stays the fetched bracket or URL string. When `[[` and `]]` enclose only one `gyazo.com` or `i.gyazo.com` URL, import stores `[URL]` once, in this conversion. A code block, a table, a `scrapbox.io/files` URL, and a bracket that contains other text keep the fetched brackets. A later read does not remove brackets.
 - `[/project]` becomes `[project](https://scrapbox.io/project)`. `[/project/page title]` becomes a Markdown link whose text is the page title and whose URL is `https://scrapbox.io/project/` plus the percent-encoded page title. The project name is the first path segment. A space after `/`, as in `[/ text]`, is italic and is not this link. The link is not an edge on this host.
 - `[name.icon]`, `[$ formula]`, and a line that starts with `$` or `%` stay the fetched string.
 
