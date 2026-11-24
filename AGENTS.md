@@ -17,3 +17,26 @@ Use this project's Product, Requirements, and Design. Without another placement 
 Use the default language and translations configured in sdev.toml. Default-language documents use `.md`; other language versions use `.<language>.md`.
 Keep language versions equivalent and update them in the same change.
 <!-- sdev:end -->
+
+## Quint checks during implementation verification
+
+When verifying an implementation, also run every Quint model that covers the behavior being changed. Models live next to that feature's requirements as `<name>.qnt` and `<name>Test.qnt`.
+
+The ActivityPub Follow, Undo, and delivery model is `docs/products/weblog/features/activitypub/followDelivery.qnt`. Its test module is `followDeliveryTest`. Its invariant is `safety`.
+
+From the directory that contains the model:
+
+```sh
+npx @informalsystems/quint test followDeliveryTest.qnt --main followDeliveryTest
+npx @informalsystems/quint run followDelivery.qnt --main followDelivery --invariant safety
+```
+
+`quint` may be absent from `PATH`. Use `npx @informalsystems/quint`.
+
+Tests must pass. `quint run --invariant safety` must report no violation. Say so in the verification report, including the seed the command prints.
+
+These commands check the model. Still verify the implementation's own scenarios. A passing Quint run does not replace that.
+
+If the implementation and the model disagree, stop and report the disagreement. Leave both unchanged until the user decides which one is wrong.
+
+When a change alters a property the model states, update the model in the same change and run both commands again.
