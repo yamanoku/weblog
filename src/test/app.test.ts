@@ -22,7 +22,7 @@ function readRoot(path: string) {
   return readFileSync(join(rootDir, path), "utf8");
 }
 
-const required = ["svelte", "@void/svelte", "void", "yama-normalize"];
+const required = ["svelte", "@void/svelte", "void"];
 const rejected = ["@void/react", "@void/vue", "@void/solid", "@sveltejs/adapter-cloudflare"];
 
 type PackageManifest = {
@@ -75,7 +75,9 @@ test("the app manifest declares the Svelte Void packages", () => {
   for (const name of rejected) {
     assert.equal(names.includes(name), false, name);
   }
+  assert.equal(names.includes("yama-normalize"), false);
   const layout = readRoot("pages/layout.svelte");
+  assert.equal(layout.includes("yama-normalize"), false);
   assert.match(layout, /import ["']\.\.\/styles\/site\.css["']/);
   assert.match(layout, /href="\/login"/);
   assert.match(layout, /ログイン/);

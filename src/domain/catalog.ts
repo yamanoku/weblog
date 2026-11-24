@@ -465,13 +465,13 @@ D1 の1日の書き込み上限に当たったら、その仕事は 00:00 UTC �
   },
   {
     id: "entry-bookmark-20261110",
-    title: "yama-normalize",
+    title: "デザインシステムの HTML 断片",
     kind: "bookmark",
-    body: "全ページの最初のスタイルシートです。そのあとにデザインシステムの CSS を重ねています。",
+    body: "見える部品は、ここの HTML 断片に合わせています。レイアウトは手元に写した CSS を読みます。",
     visibility: "public",
     deliverable: true,
     publishedAt: "2026-11-10T00:00:00.000Z",
-    bookmarkUrl: "https://github.com/yamanoku/yama-normalize",
+    bookmarkUrl: "https://github.com/digital-go-jp/design-system-example-components-html",
   },
   {
     id: "entry-index-only",
