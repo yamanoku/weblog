@@ -395,10 +395,11 @@ a.dads-utility-link[href^="https://" i]:active .dads-utility-link__label {
 a[href^="http://" i]:has(:is(img, video)),
 a[href^="https://" i]:has(:is(img, video)) {
   text-decoration: none;
+  background-color: transparent;
 }
 
 a[href^="http://" i]:has(:is(img, video)) :is(img, video),
 a[href^="https://" i]:has(:is(img, video)) :is(img, video) {
-  outline: calc(2 / 16 * 1rem) dotted currentColor;
+  outline: calc(2 / 16 * 1rem) solid currentColor;
   outline-offset: calc(2 / 16 * 1rem);
 }
