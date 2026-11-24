@@ -1,6 +1,6 @@
 // Turns one Cosense text/plain page into the Markdown stored for that page.
 
-import { cosenseProjectMarkdown } from "./cosense-project-link.ts";
+import { cosenseProjectMarkdown, splitLineAnchor } from "./cosense-project-link.ts";
 
 const imageExtension = /\.(png|jpe?g|gif|webp|svg)$/i;
 
@@ -33,7 +33,9 @@ function imageUrl(url: string): boolean {
 }
 
 function pagePath(title: string): string {
-  return `/${encodeURIComponent(title.replaceAll(" ", "_"))}`;
+  const anchor = splitLineAnchor(title);
+  const path = `/${encodeURIComponent(anchor.title.replaceAll(" ", "_"))}`;
+  return anchor.lineId ? `${path}#${anchor.lineId}` : path;
 }
 
 function pageLink(title: string): string {

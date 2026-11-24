@@ -37,6 +37,20 @@ test("cosense text becomes markdown with host links, lists, code, and tables", (
   assert.equal(markdown.includes("](/2016)"), false);
   assert.equal(cosenseTextToMarkdown("前 #ほげほげ"), "前 #ほげほげ");
   assert.equal(cosenseTextToMarkdown("[#ほげほげ]"), "[#ほげほげ](/%23%E3%81%BB%E3%81%92%E3%81%BB%E3%81%92)");
+  const lineId = "64daf294c2cd3f000030dd69";
+  const lineLink = cosenseTextToMarkdown(`[2023-05-16#${lineId}]`);
+  assert.equal(lineLink, `[2023-05-16#${lineId}](/2023-05-16#${lineId})`);
+  assert.equal(lineLink.includes("%23"), false);
+  const spacedLine = cosenseTextToMarkdown(`[my page#${lineId}]`);
+  assert.equal(spacedLine, `[my page#${lineId}](/my_page#${lineId})`);
+  assert.equal(cosenseTextToMarkdown("[foo#bar]"), "[foo#bar](/foo%23bar)");
+  assert.equal(
+    cosenseTextToMarkdown(`[#ほげ#${lineId}]`),
+    `[#ほげ#${lineId}](/%23%E3%81%BB%E3%81%92#${lineId})`,
+  );
+  const lineHtml = markdownToHtml(lineLink);
+  assert.match(lineHtml, new RegExp(`href="/2023-05-16#${lineId}"`));
+  assert.equal(lineHtml.includes("%23"), false);
   assert.match(markdown, /\[https:\/\/gyazo\.com\/809a6f523937838d9ba5eaf20717feee\]/);
   const doubled = cosenseTextToMarkdown(
     [
@@ -75,6 +89,10 @@ test("cosense text becomes markdown with host links, lists, code, and tables", (
     /\[その"ツイート"冷笑が止まりませんね笑\]\(https:\/\/scrapbox\.io\/useful-gyazo\/%E3%81%9D%E3%81%AE%22%E3%83%84%E3%82%A4%E3%83%BC%E3%83%88%22%E5%86%B7%E7%AC%91%E3%81%8C%E6%AD%A2%E3%81%BE%E3%82%8A%E3%81%BE%E3%81%9B%E3%82%93%E3%81%AD%E7%AC%91\)/,
   );
   assert.match(other, /\[useful-gyazo\]\(https:\/\/scrapbox\.io\/useful-gyazo\)/);
+  assert.equal(
+    cosenseTextToMarkdown(`[/icons/2023-05-16#${lineId}]`),
+    `[2023-05-16#${lineId}](https://scrapbox.io/icons/2023-05-16#${lineId})`,
+  );
   assert.match(other, /\*text\*/);
   const stored = '[/useful-gyazo/その"ツイート"冷笑が止まりませんね笑]';
   const linked = markdownToHtml(stored);

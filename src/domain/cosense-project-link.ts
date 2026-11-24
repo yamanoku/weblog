@@ -1,5 +1,16 @@
 // A Cosense bracket that points at another project: [/project] or [/project/page title].
 
+const lineAnchor = /^([\s\S]+)#([0-9a-fA-F]{24})$/;
+
+// A trailing `#` plus a 24-hex Cosense line id is a fragment, not part of the page title.
+export function splitLineAnchor(value: string): { title: string; lineId: string | null } {
+  const match = lineAnchor.exec(value);
+  const title = match?.[1];
+  const lineId = match?.[2];
+  if (!title || !lineId) return { title: value, lineId: null };
+  return { title, lineId };
+}
+
 export type CosenseProjectLink = { label: string; href: string };
 
 export function cosenseProjectLink(inner: string): CosenseProjectLink | null {
@@ -13,10 +24,12 @@ export function cosenseProjectLink(inner: string): CosenseProjectLink | null {
     return { label: project, href: `https://scrapbox.io/${project}` };
   }
   if (page.includes("\n")) return null;
-  return {
-    label: page,
-    href: `https://scrapbox.io/${project}/${encodeURIComponent(page)}`,
-  };
+  const anchor = splitLineAnchor(page);
+  const path = encodeURIComponent(anchor.title);
+  const href = anchor.lineId
+    ? `https://scrapbox.io/${project}/${path}#${anchor.lineId}`
+    : `https://scrapbox.io/${project}/${path}`;
+  return { label: page, href };
 }
 
 export function cosenseProjectMarkdown(inner: string): string | null {

@@ -699,7 +699,7 @@ Link extraction applies these rules to the stored body.
 - The inside of a fenced code block is not an edge.
 - The inside of a pipe table is not an edge.
 - A `[label](URL)` whose URL starts with `http://` or `https://` is not an edge.
-- A URL that starts with `/` and does not start with `//` is an edge. The edge title is the label before the parentheses, normalized the same way as a title. Spaces in the label are not turned back from `_` in the path.
+- A URL that starts with `/` and does not start with `//` is an edge. The edge title is the label before the parentheses, normalized the same way as a title. When that label ends with `#` and a 24-hex line id, the edge title omits that `#` and the line id. Spaces in the label are not turned back from `_` in the path.
 - Any other bracket, `#`, icon, or formula is not an edge.
 
 An unauthenticated resolution target is only a public entry whose current title matches. When no entry uses that string as its current title, and a public entry records it as a past title, the target is that entry. A draft resolves only in the owner's view. An edge with no matching public entry remains. Reading does not create an entry.
