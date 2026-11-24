@@ -195,13 +195,25 @@ ol.dads-breadcrumb__list {
 
 .entry-body {
   display: grid;
-  gap: 1.5rem;
   min-inline-size: 0;
   overflow-wrap: anywhere;
   color: var(--color-neutral-solid-gray-900);
   font-size: 1rem;
   line-height: 1.7;
   letter-spacing: 0.02em;
+}
+
+@supports (rule: 1px solid var(--color-neutral-solid-gray-200)) {
+  .entry-body {
+    rule: 1px solid var(--color-neutral-solid-gray-200);
+    gap: 5.5rem;
+  }
+}
+
+@supports not (rule: 1px solid var(--color-neutral-solid-gray-200)) {
+  .entry-body {
+    gap: 1.5rem;
+  }
 }
 
 .entry-body > * {
