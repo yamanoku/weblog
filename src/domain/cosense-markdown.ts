@@ -130,14 +130,6 @@ function convertInline(text: string): string {
         continue;
       }
     }
-    if (text[index] === "#" && (index === 0 || /\s/.test(text[index - 1] ?? ""))) {
-      const match = /^#([^\s[\]]+)/.exec(text.slice(index));
-      if (match?.[1]) {
-        result += pageLink(match[1]);
-        index += match[0].length;
-        continue;
-      }
-    }
     if (text.startsWith("http://", index) || text.startsWith("https://", index)) {
       const match = /^https?:\/\/\S+/.exec(text.slice(index));
       if (match?.[0]) {

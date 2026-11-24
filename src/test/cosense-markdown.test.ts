@@ -33,7 +33,10 @@ test("cosense text becomes markdown with host links, lists, code, and tables", (
   assert.equal(dated.includes("2025-01-01"), false);
   assert.match(markdown, /^- \[Luma AI\]\(\/Luma_AI\)\n {2}- \[子ページ\]\(\/%E5%AD%90%E3%83%9A%E3%83%BC%E3%82%B8\)/m);
   assert.match(markdown, /\[GitHub\.icon\] \[https:\/\/github\.com\/yamanoku\/yamanoku-icons\]\(https:\/\/github\.com\/yamanoku\/yamanoku-icons\)/);
-  assert.match(markdown, /\[2016\]\(\/2016\) 年にリメイクした/);
+  assert.match(markdown, /^#2016 年にリメイクした$/m);
+  assert.equal(markdown.includes("](/2016)"), false);
+  assert.equal(cosenseTextToMarkdown("前 #ほげほげ"), "前 #ほげほげ");
+  assert.equal(cosenseTextToMarkdown("[#ほげほげ]"), "[#ほげほげ](/%23%E3%81%BB%E3%81%92%E3%81%BB%E3%81%92)");
   assert.match(markdown, /\[https:\/\/gyazo\.com\/809a6f523937838d9ba5eaf20717feee\]/);
   const doubled = cosenseTextToMarkdown(
     [
@@ -118,7 +121,7 @@ test("a space counts as one list level and an indented quote stays in the list",
       "    - 子です",
       "- 午後休です",
       "- > [@a](https://x.com/a): 本文",
-      "- > [タグ](/%E3%82%BF%E3%82%B0)",
+      "- > #タグ",
       "  - 続き",
       "      - > ![](https://pbs.twimg.com/media/x.jpg)",
     ].join("\n"),
