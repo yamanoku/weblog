@@ -24,11 +24,18 @@ When verifying an implementation, also run every Quint model that covers the beh
 
 The ActivityPub Follow, Undo, and delivery model is `docs/products/weblog/features/activitypub/followDelivery.qnt`. Its test module is `followDeliveryTest`. Its invariant is `safety`.
 
+The Cosense import and local-edit model is `docs/products/weblog/features/cosense-import/cosenseImport.qnt`. Its test module is `cosenseImportTest`. Its invariant is `safety`.
+
 From the directory that contains the model:
 
 ```sh
 npx @informalsystems/quint test followDeliveryTest.qnt --main followDeliveryTest
 npx @informalsystems/quint run followDelivery.qnt --main followDelivery --invariant safety
+```
+
+```sh
+npx @informalsystems/quint test cosenseImportTest.qnt --main cosenseImportTest
+npx @informalsystems/quint run cosenseImport.qnt --main cosenseImport --invariant safety
 ```
 
 `quint` may be absent from `PATH`. Use `npx @informalsystems/quint`.
