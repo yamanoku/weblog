@@ -317,10 +317,14 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.match(page, /until-found/);
   const list = readFileSync(join(rootDir, "pages/edit/index.svelte"), "utf8");
   assert.equal(list.includes("useForm"), false);
-  assert.match(list, /<h2\b[^>]*>Bookmarks<\/h2>/);
-  assert.match(list, /action="\?deleteBookmark"/);
-  assert.match(list, /name="bookmarkId"/);
-  assert.match(list, /href=\{"\/edit\/" \+ bookmark\.id\}/);
+  assert.match(list, /heading="Bookmarks"/);
+  assert.match(list, /deleteAction="\?deleteBookmark"/);
+  assert.match(list, /deleteName="bookmarkId"/);
+  assert.match(list, /path=\{\(id\) => "\/edit\/" \+ id\}/);
+  const jump = readFileSync(join(rootDir, "ui/edit-jump.svelte"), "utf8");
+  assert.match(jump, /<select\b/);
+  assert.match(jump, />移動<\/button>/);
+  assert.match(jump, /name=\{deleteName\}/);
   const server = readFileSync(join(rootDir, "pages/edit/index.server.ts"), "utf8");
   assert.match(server, /submitBookmarkFromEdit\(/);
   assert.match(server, /visibility:\s*postedText\(\s*posted\.visibility\s*\)/);

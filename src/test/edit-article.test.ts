@@ -131,9 +131,15 @@ test("the create form posts the markdown body to the article submit", () => {
   assert.match(server, /listArticlesForEdit\(/);
   const list = readRoot("pages/edit/index.svelte");
   assert.equal(list.includes("useForm"), false);
-  assert.match(list, /href=\{"\/edit\/" \+ article\.id\}/);
-  assert.match(list, /article\.visibility/);
-  assert.match(list, /<h2\b[^>]*>Diaries<\/h2>[\s\S]*<h2\b[^>]*>Entries<\/h2>[\s\S]*<h2\b[^>]*>Bookmarks<\/h2>[\s\S]*<h2\b[^>]*>Notes<\/h2>/);
+  assert.match(list, /heading="Entries"/);
+  assert.match(list, /entry\.visibility/);
+  assert.match(list, /path=\{\(id\) => "\/edit\/" \+ id\}/);
+  assert.match(list, /heading="Diaries"[\s\S]*heading="Entries"[\s\S]*heading="Bookmarks"[\s\S]*heading="Notes"/);
+  const jump = readRoot("ui/edit-jump.svelte");
+  assert.match(jump, /<h2\b[^>]*>/);
+  assert.match(jump, /<select\b/);
+  assert.match(jump, />移動<\/button>/);
+  assert.match(jump, /method="get"/);
   assert.match(readRoot("pages/edit/index.server.ts"), /submitDiaryFromEdit\(/);
   assert.match(page, /id="create-diary-tab"/);
   assert.match(page, /Save diary/);

@@ -1,8 +1,38 @@
 <script lang="ts">
   import { Link } from "@void/svelte";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
+  import EditJump from "../../ui/edit-jump.svelte";
 
   let { diaries = [], articles = [], notes = [], bookmarks = [] } = $props();
+
+  const optionLimit = 80;
+
+  function clip(text: string): string {
+    const chars = Array.from(text);
+    if (chars.length <= optionLimit) return text;
+    return `${chars.slice(0, optionLimit).join("")}…`;
+  }
+
+  function entryOption(entry: { id: string; title: string; visibility: string }): string {
+    const name = entry.title.trim() ? entry.title : entry.id;
+    return `${clip(name)} (${entry.visibility})`;
+  }
+
+  function bookmarkOption(bookmark: {
+    id: string;
+    title: string;
+    bookmarkUrl: string;
+    visibility: string;
+  }): string {
+    const name = bookmark.title.trim() ? bookmark.title : bookmark.id;
+    return `${clip(name)} ${clip(bookmark.bookmarkUrl)} (${bookmark.visibility})`;
+  }
+
+  function noteOption(note: { id: string; body: string; visibility: string; imageHref: string | null }): string {
+    const body = note.body.replace(/\s+/g, " ").trim();
+    const text = body || (note.imageHref ? "画像" : note.id);
+    return `${clip(text)} (${note.visibility})`;
+  }
 </script>
 
 <svelte:head>
@@ -17,88 +47,50 @@
 <p><Link class="dads-link" href="/new">新規</Link></p>
 
 <div class="edit-lists">
-  <div>
-    <div class="dads-heading" data-size="24">
-      <h2 class="dads-heading__heading">Diaries</h2>
-    </div>
-    {#if diaries.length === 0}
-      <p>No diaries yet.</p>
-    {:else}
-      <ul class="dads-list" data-spacing="8">
-        {#each diaries as diary (diary.id)}
-          <li>
-            <Link class="dads-link" href={"/edit/" + diary.id}>{diary.title || diary.id}</Link>
-            {diary.visibility}
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
-  <div>
-    <div class="dads-heading" data-size="24">
-      <h2 class="dads-heading__heading">Entries</h2>
-    </div>
-    {#if articles.length === 0}
-      <p>No entries yet.</p>
-    {:else}
-      <ul class="dads-list" data-spacing="8">
-        {#each articles as article (article.id)}
-          <li>
-            <Link class="dads-link" href={"/edit/" + article.id}>{article.title || article.id}</Link>
-            {article.visibility}
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
-  <div>
-    <div class="dads-heading" data-size="24">
-      <h2 class="dads-heading__heading">Bookmarks</h2>
-    </div>
-    {#if bookmarks.length === 0}
-      <p>No bookmarks yet.</p>
-    {:else}
-      <ul class="dads-list" data-spacing="8">
-        {#each bookmarks as bookmark (bookmark.id)}
-          <li>
-            <Link class="dads-link" href={"/edit/" + bookmark.id}>{bookmark.title || bookmark.id}</Link>
-            {bookmark.bookmarkUrl}
-            {bookmark.visibility}
-            <form method="post" action="?deleteBookmark">
-              <input type="hidden" name="bookmarkId" value={bookmark.id} />
-              <button class="dads-button" data-size="sm" data-type="outline" type="submit">Delete</button>
-            </form>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
-  <div>
-    <div class="dads-heading" data-size="24">
-      <h2 class="dads-heading__heading">Notes</h2>
-    </div>
-    {#if notes.length === 0}
-      <p>No notes yet.</p>
-    {:else}
-      <ul class="dads-list" data-spacing="8">
-        {#each notes as note (note.id)}
-          <li>
-            {#if note.body.length > 0}
-              <p style="white-space: pre-wrap">{note.body}</p>
-            {/if}
-            {#if note.imageHref}
-              <img src={note.imageHref} alt={note.imageAlt ?? ""} />
-            {/if}
-            <p>{note.visibility}</p>
-            <form method="post" action="?deleteNote">
-              <input type="hidden" name="noteId" value={note.id} />
-              <button class="dads-button" data-size="sm" data-type="outline" type="submit">Delete</button>
-            </form>
-          </li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
+  <EditJump
+    id="edit-diaries"
+    heading="Diaries"
+    empty="No diaries yet."
+    items={diaries.map((diary: { id: string; title: string; visibility: string }) => ({
+      id: diary.id,
+      label: entryOption(diary),
+    }))}
+    path={(id) => "/edit/" + id}
+  />
+  <EditJump
+    id="edit-entries"
+    heading="Entries"
+    empty="No entries yet."
+    items={articles.map((article: { id: string; title: string; visibility: string }) => ({
+      id: article.id,
+      label: entryOption(article),
+    }))}
+    path={(id) => "/edit/" + id}
+  />
+  <EditJump
+    id="edit-bookmarks"
+    heading="Bookmarks"
+    empty="No bookmarks yet."
+    items={bookmarks.map((bookmark: { id: string; title: string; bookmarkUrl: string; visibility: string }) => ({
+      id: bookmark.id,
+      label: bookmarkOption(bookmark),
+    }))}
+    path={(id) => "/edit/" + id}
+    deleteAction="?deleteBookmark"
+    deleteName="bookmarkId"
+  />
+  <EditJump
+    id="edit-notes"
+    heading="Notes"
+    empty="No notes yet."
+    items={notes.map((note: { id: string; body: string; visibility: string; imageHref: string | null }) => ({
+      id: note.id,
+      label: noteOption(note),
+    }))}
+    path={(id) => "/e/" + id}
+    deleteAction="?deleteNote"
+    deleteName="noteId"
+  />
 </div>
 
 <style>
