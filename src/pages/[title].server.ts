@@ -12,7 +12,7 @@ import { readPublicEntryByPath, readPublicPathRedirect } from "../store/entries.
 import { readsDevCatalog } from "../store/read-source.ts";
 
 function editableKind(kind: string | undefined): boolean {
-  return kind === "article" || kind === "bookmark" || kind === "page";
+  return kind === "article" || kind === "diary" || kind === "bookmark" || kind === "page";
 }
 
 export const loader = defineHandler(async (c) => {

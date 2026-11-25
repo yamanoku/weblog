@@ -13,7 +13,7 @@ import { hasTombstone, readStoredEntry, type StoredEntry } from "../../store/ent
 import { readsDevCatalog } from "../../store/read-source.ts";
 
 function editableKind(kind: string | undefined): boolean {
-  return kind === "article" || kind === "bookmark" || kind === "page";
+  return kind === "article" || kind === "diary" || kind === "bookmark" || kind === "page";
 }
 
 function privateOwner(c: { header: (name: string, value: string) => void }) {

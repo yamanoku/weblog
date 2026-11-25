@@ -15,7 +15,9 @@ import {
 import {
   editArticleDatabase,
   listArticlesForEdit,
+  listDiariesForEdit,
   submitArticleFromEdit,
+  submitDiaryFromEdit,
 } from "../../store/edit-article.ts";
 import {
   deleteNoteFromEdit,
@@ -54,6 +56,7 @@ function imageFailure(error: string): never {
 
 export const loader = defineHandler(async () => {
   return {
+    diaries: await listDiariesForEdit(editArticleDatabase()),
     articles: await listArticlesForEdit(editArticleDatabase()),
     notes: await listNotesForEdit(editArticleDatabase()),
     bookmarks: await listBookmarksForEdit(editArticleDatabase()),
@@ -66,6 +69,28 @@ export const actions = {
     const images = json ? await entryImagesFromField(posted.entryImages) : null;
     if (images && "error" in images) imageFailure(images.error);
     const result = await submitArticleFromEdit(
+      editArticleDatabase(),
+      {
+        title: postedText(posted.title),
+        body: postedText(posted.body),
+        visibility: postedText(posted.visibility),
+      },
+      images && "images" in images ? images.images : null,
+      noteImageObjects,
+    );
+    if ("error" in result) {
+      if (result.error === "empty_body" || result.error === "invalid_visibility") {
+        throw new HTTPException(422, { message: result.error });
+      }
+      imageFailure(result.error);
+    }
+    return c.redirect(savedEntryHref(result));
+  }),
+  diary: defineHandler(async (c) => {
+    const { posted, json } = await postedRecord(c);
+    const images = json ? await entryImagesFromField(posted.entryImages) : null;
+    if (images && "error" in images) imageFailure(images.error);
+    const result = await submitDiaryFromEdit(
       editArticleDatabase(),
       {
         title: postedText(posted.title),

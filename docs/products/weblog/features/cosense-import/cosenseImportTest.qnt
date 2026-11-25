@@ -8,7 +8,7 @@ module cosenseImportTest {
       .then(walkOne)
       .expect(and {
         entries.get(1).present,
-        entries.get(1).kind == EntryPage,
+        entries.get(1).kind == Diary,
         entries.get(1).visibility == Public,
         entries.get(1).hostId == 10,
         entries.get(1).hostId != 1,
@@ -76,7 +76,7 @@ module cosenseImportTest {
         entries.get(1).lastImported == 1,
         entries.get(1).sourceTime == 2,
         entries.get(1).hostId == 10,
-        entries.get(1).kind == EntryPage,
+        entries.get(1).kind == Diary,
         cursor == 2,
       })
 
@@ -98,7 +98,7 @@ module cosenseImportTest {
         entries.get(1).title == 1,
         entries.get(1).lastImported == 1,
         entries.get(1).sourceTime == 1,
-        entries.get(1).kind == EntryPage,
+        entries.get(1).kind == Diary,
         entries.get(1).visibility == Public,
         entries.get(1).present,
       })

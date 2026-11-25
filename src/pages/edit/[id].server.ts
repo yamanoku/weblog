@@ -16,7 +16,7 @@ function postedText(value: unknown): string {
 
 export const loader = defineHandler(async (c) => {
   const entry = await readStoredEntry(editArticleDatabase(), c.req.param("id") ?? "");
-  if (!entry || (entry.kind !== "article" && entry.kind !== "bookmark" && entry.kind !== "page")) {
+  if (!entry || (entry.kind !== "article" && entry.kind !== "diary" && entry.kind !== "bookmark" && entry.kind !== "page")) {
     throw new HTTPException(404, { message: "Not found" });
   }
   return {
@@ -48,7 +48,7 @@ export const action = defineHandler(async (c) => {
   const posted = await postedRecord(c);
   const id = c.req.param("id") ?? "";
   const current = await readStoredEntry(editArticleDatabase(), id);
-  if (!current || (current.kind !== "article" && current.kind !== "bookmark" && current.kind !== "page")) {
+  if (!current || (current.kind !== "article" && current.kind !== "diary" && current.kind !== "bookmark" && current.kind !== "page")) {
     throw new HTTPException(404, { message: "not_found" });
   }
   const parsed = "entryImages" in posted ? await entryImagesFromField(posted.entryImages) : null;

@@ -36,7 +36,7 @@
 module cosenseImport {
   type PageId = int
 
-  type Kind = EntryPage | Article
+  type Kind = Diary | Article
   type Visibility = Public | Draft
   type Phase = Idle | Walking | Rechecking
   type Outcome = Hold | Skip | LocalEdit | Create | Replace | EmptyBody | Outside | Unavailable | Allowance
@@ -84,7 +84,7 @@ module cosenseImport {
     body: 0,
     lastImported: 0,
     sourceTime: 0,
-    kind: EntryPage,
+    kind: Diary,
     visibility: Public,
   }
 
@@ -144,7 +144,7 @@ module cosenseImport {
         body: src.body,
         lastImported: src.body,
         sourceTime: src.updated,
-        kind: EntryPage,
+        kind: Diary,
         visibility: Public,
       }
     else if (outcome == Replace)
@@ -181,7 +181,7 @@ module cosenseImport {
       or (after.present
         and after.hostId == hostId
         and after.hostId >= FIRST_HOST
-        and after.kind == EntryPage
+        and after.kind == Diary
         and after.visibility == Public
         and after.body == src.body
         and after.body != 0
@@ -419,7 +419,7 @@ module cosenseImport {
 
   action ownerSetArticle(id: PageId): bool = all {
     entries.get(id).present,
-    entries.get(id).kind == EntryPage,
+    entries.get(id).kind == Diary,
     entries' = entries.set(id, { ...entries.get(id), kind: Article }),
     sources' = sources,
     cursor' = cursor,

@@ -12,8 +12,8 @@
 // the previous body and edges stay. ActivityPub records delivery; this model
 // only keeps that flag. It does not send an activity.
 //
-// A deliverable entry is a public article, note, or bookmark that is not a
-// reply. A page is never deliverable. A reply is a public note with no
+// A deliverable entry is a public article, diary, note, or bookmark that is
+// not a reply. A page is never deliverable. A reply is a public note with no
 // publishedAt. publishedAt is set when the entry becomes deliverable, kept
 // while it stays deliverable, and cleared when it stops. The delivered flag
 // stays across draft, kind changes, and delete. A deleted id is not reused.
@@ -38,7 +38,7 @@
 
 module ownerWriting {
   type Slot = int
-  type Kind = Article | Note | Bookmark | PageKind
+  type Kind = Article | Diary | Note | Bookmark | PageKind
   type Visibility = Draft | Public
 
   type Entry = {
@@ -105,17 +105,17 @@ module ownerWriting {
 
   pure def deliverable(e: Entry): bool =
     e.present and e.visibility == Public and e.replyTo == 0
-      and (e.kind == Article or e.kind == Note or e.kind == Bookmark)
+      and (e.kind == Article or e.kind == Diary or e.kind == Note or e.kind == Bookmark)
 
   pure def readerSeesBody(e: Entry): bool =
     e.present and e.visibility == Public
 
   pure def needsTitle(kind: Kind): bool =
-    kind == Article or kind == Bookmark or kind == PageKind
+    kind == Article or kind == Diary or kind == Bookmark or kind == PageKind
 
   pure def willDeliver(kind: Kind, vis: Visibility, replyTo: Slot): bool =
     vis == Public and replyTo == 0
-      and (kind == Article or kind == Note or kind == Bookmark)
+      and (kind == Article or kind == Diary or kind == Note or kind == Bookmark)
 
   pure def sameEntry(a: Entry, b: Entry): bool =
     a.present == b.present
@@ -209,6 +209,9 @@ module ownerWriting {
   action createArticle(id: Slot, title: int, body: int, vis: Visibility): bool =
     store(id, Article, title, body, vis, 0, 0, true)
 
+  action createDiary(id: Slot, title: int, body: int, vis: Visibility): bool =
+    store(id, Diary, title, body, vis, 0, 0, true)
+
   action createNote(id: Slot, title: int, body: int, vis: Visibility): bool =
     store(id, Note, title, body, vis, 0, 0, true)
 
@@ -268,6 +271,8 @@ module ownerWriting {
     any {
       createArticle(id, u, m, Public),
       createArticle(id, u, m, Draft),
+      createDiary(id, u, m, Public),
+      createDiary(id, u, m, Draft),
       createNote(id, n, m, Public),
       createBookmark(id, u, 0, Public, u),
       createBookmark(id, u, m, Draft, u),

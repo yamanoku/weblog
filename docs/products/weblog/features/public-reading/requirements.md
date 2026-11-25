@@ -374,7 +374,7 @@ The parent product sets no percentage target for availability or delivery succes
 
 A public entry has visibility public. Draft bodies stay out of unauthenticated responses, the home list, the feeds, and view paths. The owner's GET `/e/{id}` includes that draft body and says the entry is a draft. A draft is indistinguishable from a missing entry for an unauthenticated client. Reading does not create an entry.
 
-The kinds are article, note, bookmark, and page. A public page is readable at its URL. Deliverable entries, feeds, and `publishedAt` are defined by [Owner writing](../owner-writing/requirements.md). This feature does not send activities.
+The kinds are article, diary, note, bookmark, and page. A public page and a public diary are readable at their URLs. Deliverable entries, feeds, and `publishedAt` are defined by [Owner writing](../owner-writing/requirements.md). This feature does not send activities.
 
 The canonical URL is `https://weblog.yamanoku.net/e/{id}`. A title change does not change it. Activity Streams for a live entry belong to the ActivityPub feature. This feature returns HTML when the request does not ask for Activity Streams.
 
@@ -443,11 +443,11 @@ When no public entry has the title and the request is verified as the owner, the
 
 ##### Feeds
 
-`GET /` is HTML. `GET /feed.xml` is Atom. `GET /feed.json` is JSON Feed. The two feeds list the same deliverable entries. Atom is required. JSON Feed is an additional representation of the same items. The home HTML adds public pages to those deliverable entries.
+`GET /` is HTML. `GET /feed.xml` is Atom. `GET /feed.json` is JSON Feed. The two feeds list the same deliverable entries. Atom is required. JSON Feed is an additional representation of the same items. The home HTML adds public pages that are not diaries to those deliverable entries. A public diary is already deliverable.
 
 `GET /feed/articles.xml`, `GET /feed/notes.xml`, and `GET /feed/bookmarks.xml` are Atom feeds for that kind only. There is no per-kind JSON Feed.
 
-A feed includes only deliverable entries, ordered by `updatedAt` descending. When `updatedAt` is equal, the immutable id descending breaks the tie. A page is excluded from the feeds. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. An imported page stays out of the feed until the owner changes its kind. `GET /` adds public pages to the deliverable entries. On that list, a public page with a source updated time uses that time, and every other entry uses `updatedAt`, newest first. An equal time breaks the tie by the immutable id descending. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
+A feed includes only deliverable entries, ordered by `updatedAt` descending. When `updatedAt` is equal, the immutable id descending breaks the tie. A public diary is included in the feeds. A page that is still kind page is excluded from the feeds. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. `GET /` adds a public page that is still kind page to the deliverable entries. On that list, an entry with a source updated time uses that time, and every other entry uses `updatedAt`, newest first. An equal time breaks the tie by the immutable id descending. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
 
 The owner's API list of 50 entries is a different list. It is not this page size.
 

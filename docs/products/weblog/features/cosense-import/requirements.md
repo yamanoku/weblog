@@ -4,14 +4,14 @@
 
 ## About this document
 
-The owner uses the CLI to move the 7655 pages that were in the project on 2026-11-03 onto this host. A target page that is not stored yet is saved as a public page and is not delivered. A later run may replace a target page's body only when the local body still matches the last import and the source updated time is newer. A local edit is reported and left in place. A page created after that set is not stored. A link target that has no page is not stored either. After the move, the owner does not update the public project. The replace rules remain.
+The owner uses the CLI to move the 7655 pages that were in the project on 2026-11-03 onto this host. A target page that is not stored yet is saved as a public diary. `publishedAt` is the commit time. This run does not send an activity. A later run may replace a target page's body only when the local body still matches the last import and the source updated time is newer. A local edit is reported and left in place. A page created after that set is not stored. A link target that has no page is not stored either. After the move, the owner does not update the public project. The replace rules remain.
 
 The parent product is [weblog.yamanoku.net](../../product.md). Writes use the validation and the entry-and-edge update boundary in [Owner writing](../owner-writing/requirements.md).
 
 ### Scope
 
 - A CLI batch that reads the public project `https://scrapbox.io/yamanoku/`
-- Creating a public page entry for a page among the 7655 pages that were in the project list on 2026-11-03, when that page is not stored yet
+- Creating a public diary for a page among the 7655 pages that were in the project list on 2026-11-03, when that page is not stored yet
 - Continuing an unfinished list walk, and rechecking the list after the walk has finished
 - Replacing a matching body, or reporting the Cosense page ID and leaving a local edit
 - Waiting and retrying when the source or the free store allowance does not accept the next page
@@ -36,7 +36,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Writes use the va
 
 ### Import a new page
 
-As the owner, I want a Cosense page in the migration set to become a page on this host so that its text and title links live here without entering the feed or a delivery.
+As the owner, I want a Cosense page in the migration set to become a diary on this host so that its text and title links live here and a public diary is deliverable like an article. This run does not send an activity.
 
 **Acceptance criteria:**
 
@@ -44,7 +44,7 @@ Scenario: When the page is not stored yet, the host creates one public page
 
 - Given: The CLI token is valid. The page is in the migration set. The public project has a page ID, a title, and line text for it. No entry stores that page ID. The fetched body is not empty.
 - When: The owner runs the import.
-- Then: One entry exists. Its kind is page and its visibility is public. The immutable ID is new and is not the Cosense page ID. The canonical URL is `https://weblog.yamanoku.net/e/{id}`. The Cosense page ID is stored on that entry. The body is the fetched line text converted to Markdown by the rules in the later section. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. The entry is not deliverable. This run does not send an activity.
+- Then: One entry exists. Its kind is diary and its visibility is public. The immutable ID is new and is not the Cosense page ID. The canonical URL is `https://weblog.yamanoku.net/e/{id}`. The Cosense page ID is stored on that entry. The body is the fetched line text converted to Markdown by the rules in the later section. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. `publishedAt` is the commit time, so the entry is deliverable and the human-readable feeds include it. This run does not send an activity and does not add a delivery record.
 
 Scenario: A page created after the migration set is not stored
 
@@ -177,7 +177,7 @@ After the move, the owner does not update the public project. The replace rules 
 
 ##### Fields a create sets
 
-A create sets kind to page and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched lines converted to Markdown. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. The bookmark URL is empty. The entry is not deliverable, so it has no publishedAt and this feature does not send an activity. The home HTML list includes it. The human-readable feeds do not. Public reading states that rule.
+A create sets kind to diary and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched lines converted to Markdown. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. The bookmark URL is empty. `publishedAt` is the commit time, so the entry is deliverable. The home HTML list includes it. The human-readable feeds include it. This feature does not send an activity and does not add a delivery record. Public reading states the list rules.
 
 The entry's created time is the time the create commits. The entry's updated time is the time a later write commits. Those times are not replaced by the Cosense timestamps. The source updated time is stored beside them and is used only to decide whether a later source copy is newer.
 
@@ -287,7 +287,7 @@ The report does not include the entry body, the last imported body, or the CLI t
 
 ### Required data
 
-- **Imported entry:** The entry fields owner writing stores, including kind, visibility, title, body, immutable ID, canonical URL, and bookmark URL. A create from this feature is a public page. A later import does not use those fields to change kind, visibility, or the bookmark URL.
+- **Imported entry:** The entry fields owner writing stores, including kind, visibility, title, body, immutable ID, canonical URL, and bookmark URL. A create from this feature is a public diary. A later import does not use those fields to change kind, visibility, or the bookmark URL.
 - **Cosense page ID:** The external identity of the source page. At most one entry holds a given page ID. The owner’s manual write does not clear it. This feature does not show it as a field the owner types. It remains for as long as that entry exists.
 - **Last imported body:** The line text committed by the last successful import of that page. It is kept so a later local edit can be recognized. It is replaced only when a later import commits. It is not a separate public page.
 - **Source updated time:** The updated time read from Cosense when the last successful import committed. It is compared as the source time, not as the entry's updated time. It is replaced only when a later import commits.
@@ -295,7 +295,7 @@ The report does not include the entry body, the last imported body, or the CLI t
 
 ### Relationships
 
-One Cosense page ID corresponds to at most one entry. That entry has one last imported body and one source updated time. The walk cursor is the position in the project list, not a field of every entry. Edges belong to the entry and follow owner writing. A public page is not a deliverable entry.
+One Cosense page ID corresponds to at most one entry. That entry has one last imported body and one source updated time. The walk cursor is the position in the project list, not a field of every entry. Edges belong to the entry and follow owner writing. A public diary is a deliverable entry. This feature does not send an activity when it creates one.
 
 ### Personal information
 

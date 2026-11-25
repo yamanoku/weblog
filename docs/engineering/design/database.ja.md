@@ -39,7 +39,7 @@ D1 は一つである。この設計は、二つ目のデータベースを足�
 
 列の前半は `id`、`kind`、`title`、`body`、`visibility`、`bookmark_url`、`published_at` である。続く列は `cosense_page_id`、`created_at`、`updated_at`、`view_path`、`last_imported_body`、`source_updated_at` である。返信の列は `in_reply_to_id` と `thread_root_id` である。
 
-`id` は主キーである。`kind` は article、note、bookmark、page のいずれかである。`visibility` は draft か public である。`view_path` は一意である。NULL の行は複数あってよい。`cosense_page_id` は一意である。NULL でもよい。所有者の HTTP API は、`cosense_page_id` を受け付けない。所有者の更新 SQL は、その列を書かない。
+`id` は主キーである。`kind` は article、diary、note、bookmark、page のいずれかである。`visibility` は draft か public である。`view_path` は一意である。NULL の行は複数あってよい。`cosense_page_id` は一意である。NULL でもよい。所有者の HTTP API は、`cosense_page_id` を受け付けない。所有者の更新 SQL は、その列を書かない。
 
 `last_imported_body` と `source_updated_at` は NULL でもよい。書くのは、取り込みの確定だけである。`source_updated_at` は Unix 秒の整数である。`updated_at` ではない。
 

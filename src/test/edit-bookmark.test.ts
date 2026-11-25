@@ -311,6 +311,7 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.match(page, /\/edit\?bookmark/);
   assert.match(page, /name="bookmarkUrl"/);
   assert.match(page, /Save bookmark/);
+  assert.match(page, /id="create-diary-tab"/);
   assert.match(page, /id="create-entry-tab"/);
   assert.match(page, /id="create-bookmark-tab"/);
   assert.match(page, /until-found/);

@@ -105,6 +105,7 @@ export type PublicEntryRow = {
 
 const deliverableKind = or(
   eq(entries.kind, "article"),
+  eq(entries.kind, "diary"),
   eq(entries.kind, "note"),
   eq(entries.kind, "bookmark"),
 );
@@ -116,10 +117,11 @@ const deliverableWhere = and(
   deliverableKind,
 );
 
-// The home list adds public pages. A page with a source time uses that time.
-// Other rows keep updated_at. Feeds stay on deliverableWhere.
+// The home list adds public pages that are not yet diaries. A row with a
+// source time uses that time, so a reclassified diary keeps its Cosense order.
+// Feeds stay on deliverableWhere.
 const homeWhere = or(deliverableWhere, and(eq(entries.visibility, "public"), eq(entries.kind, "page")));
-const homeMoment = sql`CASE WHEN ${entries.kind} = 'page' AND ${entries.sourceUpdatedAt} IS NOT NULL THEN ${entries.sourceUpdatedAt} ELSE CAST(strftime('%s', ${entries.updatedAt}) AS INTEGER) END`;
+const homeMoment = sql`CASE WHEN ${entries.sourceUpdatedAt} IS NOT NULL THEN ${entries.sourceUpdatedAt} ELSE CAST(strftime('%s', ${entries.updatedAt}) AS INTEGER) END`;
 
 function publicEntryRow(row: {
   id: string;

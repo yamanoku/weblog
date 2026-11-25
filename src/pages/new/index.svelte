@@ -5,15 +5,35 @@
   import NoteComposer from "../../ui/note-composer.svelte";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
 
-  let { presetTitle = "" } = $props();
+  let { presetTitle = "", diaryTitle = "" } = $props();
 
+  const diaryForm = useForm("/edit?diary", { title: diaryTitle, body: "", visibility: "public" });
   const articleForm = useForm("/edit", { title: presetTitle, body: "", visibility: "public" });
   const bookmarkForm = useForm("/edit?bookmark", { title: "", body: "", bookmarkUrl: "", visibility: "public" });
-  let createTab = $state<"entry" | "bookmark" | "note">("entry");
+  let createTab = $state<"diary" | "entry" | "bookmark" | "note">(
+    presetTitle.trim().length > 0 ? "entry" : "diary",
+  );
+  let diaryBody = $state<HTMLTextAreaElement | null>(null);
   let articleBody = $state<HTMLTextAreaElement | null>(null);
   let bookmarkBody = $state<HTMLTextAreaElement | null>(null);
+  let diaryImages = idleImages();
   let articleImages = idleImages();
   let bookmarkImages = idleImages();
+
+  const postDiary = diaryForm.post.bind(diaryForm);
+  diaryForm.post = async (options) => {
+    if (diaryImages.refuse()) return;
+    await postDiary({
+      ...options,
+      data: {
+        title: diaryForm.data.title,
+        body: diaryForm.data.body,
+        visibility: diaryForm.data.visibility,
+        entryImages: diaryImages.payload(),
+      },
+    });
+    if (diaryForm.wasSuccessful) diaryImages.markStored();
+  };
 
   const postArticle = articleForm.post.bind(articleForm);
   articleForm.post = async (options) => {
@@ -55,7 +75,7 @@
     };
   }
 
-  function selectCreate(tab: "entry" | "bookmark" | "note", event?: Event) {
+  function selectCreate(tab: "diary" | "entry" | "bookmark" | "note", event?: Event) {
     createTab = tab;
     const button = event?.currentTarget;
     if (button instanceof HTMLElement) {
@@ -70,6 +90,7 @@
   function onBeforeMatch(event: Event) {
     const panel = event.target;
     if (!(panel instanceof HTMLElement)) return;
+    if (panel.id === "create-diary-panel") createTab = "diary";
     if (panel.id === "create-entry-panel") createTab = "entry";
     if (panel.id === "create-bookmark-panel") createTab = "bookmark";
     if (panel.id === "create-note-panel") createTab = "note";
@@ -105,6 +126,17 @@
       class="create-tabs__tab"
       type="button"
       role="tab"
+      id="create-diary-tab"
+      aria-selected={createTab === "diary" ? "true" : "false"}
+      aria-controls="create-diary-panel"
+      focusgroupstart={createTab === "diary" ? "" : undefined}
+      onfocus={(event) => selectCreate("diary", event)}
+      onclick={(event) => selectCreate("diary", event)}
+    >Diary</button>
+    <button
+      class="create-tabs__tab"
+      type="button"
+      role="tab"
       id="create-entry-tab"
       aria-selected={createTab === "entry" ? "true" : "false"}
       aria-controls="create-entry-panel"
@@ -136,6 +168,53 @@
     >Note</button>
   </div>
   <div class="create-tabs__panels">
+    <div role="tabpanel" id="create-diary-panel" aria-labelledby="create-diary-tab" hidden={createTab === "diary" ? undefined : "until-found"}>
+      <div class="create-tabs__panel">
+        <Form class="form-stack" form={diaryForm} aria-labelledby="create-diary" onpaste={(event) => diaryImages.onPaste(event)}>
+          <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="diary-title">Title</label>
+            <div class="dads-form-control-label__field">
+              <span class="dads-input-text">
+                <input id="diary-title" class="dads-input-text__input" name="title" type="text" data-size="md" bind:value={diaryForm.data.title} />
+              </span>
+            </div>
+          </div>
+          <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="diary-body">Markdown</label>
+            <div class="dads-form-control-label__field">
+              <span class="dads-textarea">
+                <textarea id="diary-body" class="dads-textarea__textarea" name="body" rows="16" bind:value={diaryForm.data.body} bind:this={diaryBody}></textarea>
+              </span>
+            </div>
+          </div>
+          <EntryImages
+            inputId="diary-image"
+            getBody={() => diaryForm.data.body}
+            setBody={(value) => (diaryForm.data.body = value)}
+            getTextarea={() => diaryBody}
+            register={(api) => (diaryImages = api)}
+            serverCode={diaryForm.errors.entryImages ?? ""}
+          />
+          <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="diary-visibility">Visibility</label>
+            <div class="dads-form-control-label__field">
+              <span class="dads-select">
+                <span class="dads-select__control">
+                  <select id="diary-visibility" class="dads-select__select" name="visibility" data-size="md" bind:value={diaryForm.data.visibility}>
+                    <option value="public">Public</option>
+                    <option value="draft">Draft</option>
+                  </select>
+                  <svg class="dads-select__chevron" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentcolor"/>
+                  </svg>
+                </span>
+              </span>
+            </div>
+          </div>
+          <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={diaryForm.pending}>Save diary</button>
+        </Form>
+      </div>
+    </div>
     <div role="tabpanel" id="create-entry-panel" aria-labelledby="create-entry-tab" hidden={createTab === "entry" ? undefined : "until-found"}>
       <div class="create-tabs__panel">
         <Form class="form-stack" form={articleForm} aria-labelledby="create-entry" onpaste={(event) => articleImages.onPaste(event)}>

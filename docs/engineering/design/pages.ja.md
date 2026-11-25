@@ -93,7 +93,7 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /entries/{id}` | 所有者の一件。 |
 | `POST /tokens` | Bearer によるトークンの再発行。 |
 
-フィードの続きは、フィードの経路に残す。種類別の JSON Feed は無い。page は、所有者が種類を変えるまでフィードに入らない。
+フィードの続きは、フィードの経路に残す。種類別の JSON Feed は無い。公開の diary はフィードに入る。page は diary として保存するまでフィードに入らない。
 
 `GET /e/{id}` は URL 一つである。Activity Streams の Accept は、Svelte のページより前に判定する。HTML のページは、活動文書を描かない。
 

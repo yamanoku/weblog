@@ -93,7 +93,7 @@ These handlers live under `routes/`. They are outside the browser move between S
 | `GET /entries/{id}` | The owner's get-one. |
 | `POST /tokens` | Reissue a token with a Bearer token. |
 
-Feed cursors stay on the feed path. There is no per-kind JSON Feed. A page entry stays out of the feeds until the owner changes its kind.
+Feed cursors stay on the feed path. There is no per-kind JSON Feed. A public diary is in the feeds. A page entry stays out of the feeds until it is stored as diary.
 
 `GET /e/{id}` is one URL. The Activity Streams Accept check runs before the Svelte page. The HTML page does not render the activity document.
 

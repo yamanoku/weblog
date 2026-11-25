@@ -131,6 +131,6 @@
   </div>
   {/if}
   <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={editForm.pending}>
-    {entry.kind === "bookmark" ? "Save bookmark" : entry.kind === "page" ? "Save page" : "Save article"}
+    {entry.kind === "bookmark" ? "Save bookmark" : entry.kind === "page" ? "Save page" : entry.kind === "diary" ? "Save diary" : "Save article"}
   </button>
 </Form>

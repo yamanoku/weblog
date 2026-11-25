@@ -7,7 +7,8 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
 import { asc, eq } from "void/db";
 import { noteImages, pathRedirects } from "../db/schema.ts";
-import { publicArticleFields } from "../domain/edit-article.ts";
+import { diaryFromEditForm, publicArticleFields } from "../domain/edit-article.ts";
+import { tokyoDateTitle } from "../domain/tokyo-date.ts";
 import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.ts";
 import { acceptNoteImage, encodeNoteImage, noteActivityAttachment, noteImageIsPublic } from "../domain/note-image.ts";
 import { entryImageViews, type EntryImageObjects } from "../store/entry-images.ts";
@@ -24,6 +25,8 @@ import {
 } from "../store/entries.ts";
 import {
   listArticlesForEdit,
+  listDiariesForEdit,
+  submitDiaryFromEdit,
   listPublicArticles,
   submitArticleFromEdit,
   updateArticleFromEdit,
@@ -130,6 +133,10 @@ test("the create form posts the markdown body to the article submit", () => {
   assert.equal(list.includes("useForm"), false);
   assert.match(list, /href=\{"\/edit\/" \+ article\.id\}/);
   assert.match(list, /article\.visibility/);
+  assert.match(list, /<h2\b[^>]*>Diaries<\/h2>[\s\S]*<h2\b[^>]*>Entries<\/h2>[\s\S]*<h2\b[^>]*>Bookmarks<\/h2>[\s\S]*<h2\b[^>]*>Notes<\/h2>/);
+  assert.match(readRoot("pages/edit/index.server.ts"), /submitDiaryFromEdit\(/);
+  assert.match(page, /id="create-diary-tab"/);
+  assert.match(page, /Save diary/);
 });
 
 test("the edit screen lists draft and public articles, newest first", async () => {
@@ -354,17 +361,20 @@ test("a missing title links the owner to a new article with that title", () => {
   assert.match(loader, /requestedTitle: title/);
   assert.match(loader, /requestedTitle: entry \? "" : title/);
   const created = readRoot("pages/new/index.svelte");
-  assert.match(created, /let \{ presetTitle = "" \} = \$props\(\)/);
+  assert.match(created, /let \{ presetTitle = "", diaryTitle = "" \} = \$props\(\)/);
+  assert.match(created, /useForm\("\/edit\?diary", \{ title: diaryTitle, body: "", visibility: "public" \}\)/);
   assert.match(created, /useForm\("\/edit", \{ title: presetTitle, body: "", visibility: "public" \}\)/);
+  assert.match(created, /presetTitle\.trim\(\)\.length > 0 \? "entry" : "diary"/);
   const createdLoader = readRoot("pages/new/index.server.ts");
   assert.match(createdLoader, /query\("title"\)/);
   assert.match(createdLoader, /presetTitle: typeof title === "string" \? title : ""/);
+  assert.match(createdLoader, /diaryTitle: tokyoDateTitle\(\)/);
 });
 
 test("a public article or bookmark shows an edit link for the owner", () => {
   for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const page = readRoot(path);
-    assert.match(page, /owner && \(entry\.kind === "article" \|\| entry\.kind === "bookmark" \|\| entry\.kind === "page"\)/);
+    assert.match(page, /owner && \(entry\.kind === "article" \|\| entry\.kind === "diary" \|\| entry\.kind === "bookmark" \|\| entry\.kind === "page"\)/);
     assert.match(page, /href=\{`\/edit\/\$\{entry\.id\}`\}>edit<\/Link>/);
   }
   const title = readRoot("pages/[title].server.ts");
@@ -692,5 +702,117 @@ test("an article stores many images, allows an empty alt, and can place one in t
   const left = await database.select().from(noteImages).where(eq(noteImages.entryId, saved.id));
   assert.equal(left.length, 1);
   assert.equal(left[0]?.id, secondImage);
+  sqlite.close();
+});
+
+test("a public diary is deliverable and a draft diary is not", async () => {
+  assert.equal(tokyoDateTitle(new Date("2026-11-24T15:00:00.000Z")), "2026-11-25");
+  assert.equal(tokyoDateTitle(new Date("2026-11-24T14:59:00.000Z")), "2026-11-24");
+  assert.equal("error" in diaryFromEditForm({ title: "2026-11-25", body: "", visibility: "public" }), true);
+
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  const saved = await submitDiaryFromEdit(database, {
+    title: "2026-11-25",
+    body: "today",
+    visibility: "public",
+  });
+  assert.equal("error" in saved, false);
+  if ("error" in saved) return;
+  assert.equal(saved.kind, "diary");
+  assert.equal(saved.publishedAt !== null, true);
+  assert.deepEqual(
+    (await listDiariesForEdit(database)).map((diary) => diary.id),
+    [saved.id],
+  );
+  assert.equal((await listArticlesForEdit(database)).length, 0);
+  assert.deepEqual(
+    (await listDeliverableEntries(database)).map((entry) => entry.id),
+    [saved.id],
+  );
+
+  const draft = await submitDiaryFromEdit(database, {
+    title: "2026-11-24",
+    body: "",
+    visibility: "draft",
+  });
+  assert.equal("error" in draft, false);
+  if ("error" in draft) return;
+  assert.equal(draft.publishedAt, null);
+  assert.equal((await listDeliverableEntries(database)).length, 1);
+
+  const edited = await updateArticleFromEdit(
+    database,
+    saved.id,
+    { title: "2026-11-25", body: "tonight", visibility: "public" },
+    "2026-11-25T12:00:00.000Z",
+  );
+  assert.equal("entry" in edited, true);
+  if (!("entry" in edited)) return;
+  assert.equal(edited.entry.kind, "diary");
+  assert.equal(edited.entry.body, "tonight");
+  sqlite.close();
+});
+
+test("stored pages and date-titled articles become diaries without a delivery row", async () => {
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  await commitEntry(database, {
+    id: "page-old",
+    kind: "page",
+    title: "2022-01-27",
+    body: "imported",
+    visibility: "public",
+    createdAt: "2022-01-27T00:00:00.000Z",
+    updatedAt: "2026-11-01T00:00:00.000Z",
+  });
+  await commitEntry(database, {
+    id: "page-draft",
+    kind: "page",
+    title: "draft page",
+    body: "hidden",
+    visibility: "draft",
+    createdAt: "2026-11-02T00:00:00.000Z",
+    updatedAt: "2026-11-02T00:00:00.000Z",
+  });
+  await commitEntry(database, {
+    id: "date-article",
+    kind: "article",
+    title: "2026-11-07",
+    body: "day",
+    visibility: "public",
+    publishedAt: "2026-11-07T01:00:00.000Z",
+    createdAt: "2026-11-07T01:00:00.000Z",
+    updatedAt: "2026-11-07T01:00:00.000Z",
+  });
+  await commitEntry(database, {
+    id: "long-article",
+    kind: "article",
+    title: "2026-11-07-test",
+    body: "kept",
+    visibility: "public",
+    publishedAt: "2026-11-07T02:00:00.000Z",
+    createdAt: "2026-11-07T02:00:00.000Z",
+    updatedAt: "2026-11-07T02:00:00.000Z",
+  });
+
+  const sqlFile = readFileSync(join(rootDir, "db/migrations/20261125120000_diary_kind.sql"), "utf8");
+  for (const statement of sqlFile.split("--> statement-breakpoint")) {
+    const text = statement.trim();
+    if (text.length > 0) sqlite.exec(text);
+  }
+
+  assert.equal((await readStoredEntry(database, "page-old"))?.kind, "diary");
+  assert.equal((await readStoredEntry(database, "page-old"))?.publishedAt, "2022-01-27T00:00:00.000Z");
+  assert.equal((await readStoredEntry(database, "page-draft"))?.kind, "diary");
+  assert.equal((await readStoredEntry(database, "page-draft"))?.publishedAt, null);
+  assert.equal((await readStoredEntry(database, "date-article"))?.kind, "diary");
+  assert.equal((await readStoredEntry(database, "date-article"))?.publishedAt, "2026-11-07T01:00:00.000Z");
+  assert.equal((await readStoredEntry(database, "long-article"))?.kind, "article");
+  const delivered = await listDeliverableEntries(database);
+  assert.deepEqual(
+    delivered.map((entry) => entry.id).sort(),
+    ["date-article", "long-article", "page-old"],
+  );
   sqlite.close();
 });

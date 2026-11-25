@@ -36,7 +36,7 @@
       {/if}
     {/if}
   </article>
-  {#if owner && (entry.kind === "article" || entry.kind === "bookmark" || entry.kind === "page")}
+  {#if owner && (entry.kind === "article" || entry.kind === "diary" || entry.kind === "bookmark" || entry.kind === "page")}
     <p><Link class="dads-link" href={`/edit/${entry.id}`}>edit</Link></p>
   {/if}
 {:else}

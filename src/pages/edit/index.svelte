@@ -2,7 +2,7 @@
   import { Link } from "@void/svelte";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
 
-  let { articles = [], notes = [], bookmarks = [] } = $props();
+  let { diaries = [], articles = [], notes = [], bookmarks = [] } = $props();
 </script>
 
 <svelte:head>
@@ -17,6 +17,23 @@
 <p><Link class="dads-link" href="/new">新規</Link></p>
 
 <div class="edit-lists">
+  <div>
+    <div class="dads-heading" data-size="24">
+      <h2 class="dads-heading__heading">Diaries</h2>
+    </div>
+    {#if diaries.length === 0}
+      <p>No diaries yet.</p>
+    {:else}
+      <ul class="dads-list" data-spacing="8">
+        {#each diaries as diary (diary.id)}
+          <li>
+            <Link class="dads-link" href={"/edit/" + diary.id}>{diary.title || diary.id}</Link>
+            {diary.visibility}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
   <div>
     <div class="dads-heading" data-size="24">
       <h2 class="dads-heading__heading">Entries</h2>

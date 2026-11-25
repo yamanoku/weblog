@@ -2,8 +2,8 @@
 //
 // Source: requirements.md in this directory, plus the activity planner and
 // send-time skip in design.md ("Which change plans an activity", "Who receives
-// the POST"). Owner writing defines deliverable: a public article, note, or
-// bookmark that is not a reply. This file is the executable model. The
+// the POST"). Owner writing defines deliverable: a public article, diary, note,
+// or bookmark that is not a reply. This file is the executable model. The
 // requirements prose stays the product source.
 //
 // Scope: one host. Remote instances are ids. A verified Follow stores one
@@ -23,7 +23,7 @@
 // skipped. failSend covers both a failed POST and a free-allowance deferral:
 // the activity id, the follower list, and the entry stay as they are.
 //
-// A kind change among article, note, and bookmark that keeps the entry
+// A kind change among article, diary, note, and bookmark that keeps the entry
 // deliverable and does not change the body emits nothing. design.md lists
 // Update only for a body change.
 //
@@ -53,7 +53,7 @@ module followDelivery {
   type RemoteId = int
   type EntryId = int
 
-  type Kind = Article | Note | Bookmark | Page
+  type Kind = Article | Diary | Note | Bookmark | Page
   type Visibility = Public | Draft
   type ActivityKind = Create | Update | Delete
 
@@ -137,7 +137,7 @@ module followDelivery {
 
   pure def deliverable(e: Entry): bool =
     (not(e.deleted)) and (not(e.reply)) and e.visibility == Public
-      and (e.kind == Article or e.kind == Note or e.kind == Bookmark)
+      and (e.kind == Article or e.kind == Diary or e.kind == Note or e.kind == Bookmark)
 
   pure def storedEntry(before: Entry, after: Entry): Entry =
     if (deliverable(after) and not(before.open))
@@ -193,6 +193,11 @@ module followDelivery {
       acceptJobs' = acceptJobs,
       posts' = posts,
     }
+  }
+
+  action publishDiary(id: EntryId): bool = {
+    val before = entries.get(id)
+    commitEntry(id, { ...before, kind: Diary, visibility: Public, reply: false, deleted: false }, trace)
   }
 
   action publishArticle(id: EntryId): bool = {
@@ -379,6 +384,7 @@ module followDelivery {
       followAgain(remote),
       undo(remote),
       publishArticle(id),
+      publishDiary(id),
       publishNote(id),
       publishBookmark(id),
       publishPage(id),

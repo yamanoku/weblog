@@ -15,7 +15,7 @@ export type ArticleEditForm = {
 };
 
 export type ArticleCreate =
-  | { kind: "article"; title: string; body: string; visibility: ArticleVisibility }
+  | { kind: "article" | "diary"; title: string; body: string; visibility: ArticleVisibility }
   | { error: "invalid_visibility" | "empty_body" };
 
 export type ArticleUpdate =
@@ -36,6 +36,13 @@ export function articleFromEditForm(form: EditArticleForm): ArticleCreate {
     body: form.body,
     visibility: form.visibility,
   };
+}
+
+// The diary form uses the same visibility rules as an article.
+export function diaryFromEditForm(form: EditArticleForm): ArticleCreate {
+  const article = articleFromEditForm(form);
+  if ("error" in article) return article;
+  return { ...article, kind: "diary" };
 }
 
 // The article edit form changes title, body, and visibility. Kind stays article.

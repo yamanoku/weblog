@@ -374,7 +374,7 @@ Scenario: コードの中、または note の場合、ソースの文字を残�
 
 公開エントリの公開状態は public である。未認証の応答、ホームの一覧、フィード、閲覧用パスには draft の本文を出さない。所有者の GET `/e/{id}` は、その draft の本文を含み、エントリが draft だと示す。未認証のクライアントにとって、draft は無いエントリと同じである。閲覧だけではエントリを作らない。
 
-種類は article、note、bookmark、page である。公開の page は、その URL で読める。配送対象、フィードへ載せる条件、`publishedAt` は [所有者の書き込み](../owner-writing/requirements.ja.md) が定義する。この機能は活動を送らない。
+種類は article、diary、note、bookmark、page である。公開の page と公開の diary は、その URL で読める。配送対象、フィードへ載せる条件、`publishedAt` は [所有者の書き込み](../owner-writing/requirements.ja.md) が定義する。この機能は活動を送らない。
 
 正規 URL は `https://weblog.yamanoku.net/e/{id}` である。タイトルを変えても、この URL は変えない。生きているエントリの Activity Streams は、ActivityPub の機能が決める。この機能は、Activity Streams を求めない要求へ HTML を返す。
 
@@ -443,11 +443,11 @@ bookmark の閲覧用パスと正規 URL では、メディアの埋め込みで
 
 ##### フィード
 
-`GET /` は HTML である。`GET /feed.xml` は Atom である。`GET /feed.json` は JSON Feed である。二つのフィードは同じ配送対象を並べる。必須の形式は Atom である。JSON Feed は、同じ項目の追加の表現である。ホームの HTML は、その配送対象に公開の page を加える。
+`GET /` は HTML である。`GET /feed.xml` は Atom である。`GET /feed.json` は JSON Feed である。二つのフィードは同じ配送対象を並べる。必須の形式は Atom である。JSON Feed は、同じ項目の追加の表現である。ホームの HTML は、その配送対象に、まだ diary ではない公開の page を加える。公開の diary は、はじめから配送対象である。
 
 `GET /feed/articles.xml`、`GET /feed/notes.xml`、`GET /feed/bookmarks.xml` は、その種類だけの Atom である。種類別の JSON Feed は無い。
 
-フィードに載せるのは配送対象だけである。順序は `updatedAt` の新しい順である。`updatedAt` が同じときは、不変 ID の降順で分ける。page はフィードに含めない。他の note への返信である note は配送対象ではないので、GET `/` とこれらのフィードには出さない。取り込んだ page は、所有者が種類を変えるまでフィードに載せない。GET `/` は、配送対象に公開の page を加える。ホームの順序は、その page にソース更新時刻があるときはその時刻、それ以外は `updatedAt` の新しい順である。同じ時刻は不変 ID の降順である。各項目は本文を含み、項目の ID に正規 URL を使う。外部 URL が `http://` または `https://` で始まる bookmark では、エントリへのリンクはその URL である。それ以外のエントリでは、閲覧用パスがあればそれを使う。無ければ正規 URL を使う。
+フィードに載せるのは配送対象だけである。順序は `updatedAt` の新しい順である。`updatedAt` が同じときは、不変 ID の降順で分ける。公開の diary はフィードに含める。種類が page のままのものはフィードに含めない。他の note への返信である note は配送対象ではないので、GET `/` とこれらのフィードには出さない。GET `/` は、配送対象に、種類が page のままの公開ページを加える。ホームの順序は、ソース更新時刻があるエントリはその時刻、それ以外は `updatedAt` の新しい順である。同じ時刻は不変 ID の降順である。各項目は本文を含み、項目の ID に正規 URL を使う。外部 URL が `http://` または `https://` で始まる bookmark では、エントリへのリンクはその URL である。それ以外のエントリでは、閲覧用パスがあればそれを使う。無ければ正規 URL を使う。
 
 所有者向け API の 50 件は、別の一覧である。フィードの 10 件とも、ホームの 12 件とも、件数を共有しない。
 

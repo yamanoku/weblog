@@ -39,7 +39,7 @@ No diagram. The sections below are the schema. A picture would repeat the same n
 
 Columns are `id`, `kind`, `title`, `body`, `visibility`, `bookmark_url`, `published_at`, `cosense_page_id`, `created_at`, `updated_at`, `view_path`, `last_imported_body`, `source_updated_at`, `in_reply_to_id`, and `thread_root_id`.
 
-`id` is the primary key. `kind` is article, note, bookmark, or page. `visibility` is draft or public. `view_path` is unique, and many rows may be NULL. `cosense_page_id` is unique and may be NULL. The owner's HTTP API does not accept `cosense_page_id`. Owner update SQL does not write it.
+`id` is the primary key. `kind` is article, diary, note, bookmark, or page. `visibility` is draft or public. `view_path` is unique, and many rows may be NULL. `cosense_page_id` is unique and may be NULL. The owner's HTTP API does not accept `cosense_page_id`. Owner update SQL does not write it.
 
 `last_imported_body` and `source_updated_at` may be NULL. Only an import commit writes them. `source_updated_at` is an integer number of Unix seconds. It is not `updated_at`.
 

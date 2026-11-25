@@ -87,7 +87,7 @@ Scenario: 活動が Follow でも Undo でもない場合、成功を返し何�
 
 ### 配送されたエントリを受け取る
 
-フォロワーとして、新しい公開の記事、ミニブログ、ブックマークを受け取りたい。それによって、フォローのあとで受け取り、このホストの過去の page は受け取らない。
+フォロワーとして、新しい公開の記事、日記、ミニブログ、ブックマークを受け取りたい。それによって、フォローのあとで受け取る。保存済み page の付け替えでは、その page を送らない。
 
 **受け入れ条件:**
 
@@ -95,7 +95,7 @@ Scenario: エントリが配送対象になった場合、フォロワーへ Cre
 
 - Given: エントリは配送対象ではなく、配送されたことも無い。所有者が、公開の article、note、bookmark のいずれかにする。フォロワーが一人以上いる。
 - When: 所有者の保存が成功する。
-- Then: 保存の応答は、フォロワーへの POST を待たない。Create は一つである。宛先は Public とフォロワー一覧である。article のオブジェクト型は Article である。note と bookmark のオブジェクト型は Note である。オブジェクト ID は `https://weblog.yamanoku.net/e/{id}` である。article を Note として重ねては送らない。エントリは配送済みになる。
+- Then: 保存の応答は、フォロワーへの POST を待たない。Create は一つである。宛先は Public とフォロワー一覧である。article と diary のオブジェクト型は Article である。note と bookmark のオブジェクト型は Note である。オブジェクト ID は `https://weblog.yamanoku.net/e/{id}` である。article を Note として重ねては送らない。エントリは配送済みになる。
 
 Scenario: 配送対象の note に画像がある場合、Note は画像の添付を一つ持つ
 
@@ -108,6 +108,12 @@ Scenario: まだ誰もフォローしていない場合、Create は公開のま
 - Given: フォロワー一覧は空である。所有者がエントリを配送対象にする。
 - When: 所有者の保存が成功する。
 - Then: Create の宛先は Public である。outbox はその活動を含む。エントリは配送済みになる。フォロワーへの POST は要らない。
+
+Scenario: 保存済みの page を diary へ付け替えた場合、活動を送らない
+
+- Given: 公開の page がある。Cosense から取り込んだ page を含む。配送の記録は無い。
+- When: ホストが種類を diary にし、`publishedAt` が空ならそれを入れる。
+- Then: 公開の行は配送対象になり、人間向けフィードに入る。Create は送らない。outbox に活動は増えない。この付け替えでは配送の記録を足さない。
 
 Scenario: page のまま保存した場合、活動を送らない
 

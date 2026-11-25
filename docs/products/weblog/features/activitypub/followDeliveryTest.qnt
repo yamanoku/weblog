@@ -48,6 +48,18 @@ module followDeliveryTest {
       .then(publishNote(1))
       .expect(activities.size() == 1 and jobs.size() == 0 and entries.get(1).delivered and trace.didPublicOnly)
 
+  run diarySendsCreateTest =
+    init
+      .then(follow(1))
+      .then(publishDiary(1))
+      .expect(activities.size() == 1 and activities.exists(a => a.kind == Create and a.objectId == 1) and entries.get(1).delivered)
+
+  run diaryKindChangeSendsNothingTest =
+    init
+      .then(publishArticle(1))
+      .then(publishDiary(1))
+      .expect(activities.size() == 1 and not(activities.exists(a => a.kind == Update)))
+
   run pageSendsNothingTest =
     init
       .then(publishPage(1))

@@ -78,6 +78,19 @@ module ownerWritingTest {
       .then(write(1, Note, 1, 1, Public, 0))
       .expect(entries.get(1).publishedAt == 2 and entries.get(1).delivered and trace.didRepublish)
 
+  run diaryIsDeliverableLikeAnArticleTest =
+    init
+      .then(createDiary(1, 1, 1, Public))
+      .expect(deliverable(entries.get(1)) and entries.get(1).kind == Diary and entries.get(1).publishedAt == 1)
+      .then(write(1, Diary, 1, 1, Draft, 0))
+      .expect(not(deliverable(entries.get(1))) and entries.get(1).publishedAt == 0 and entries.get(1).kind == Diary)
+
+  run publicEmptyDiaryStoresNothingTest =
+    init
+      .then(createDiary(1, 1, 1, Public))
+      .expect(entries.get(1).body == 1)
+      .then(write(1, Diary, 1, 0, Public, 0).fail())
+
   run pageIsPublicButNotDeliverableTest =
     init
       .then(createPage(1, 1, 1, Public))

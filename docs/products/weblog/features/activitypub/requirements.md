@@ -87,15 +87,15 @@ Scenario: When the activity is not Follow or Undo, the host accepts it and store
 
 ### Receive a delivered entry
 
-As a follower, I want a new public article, short post, or bookmark so that I receive it after I follow, without receiving this host's old pages.
+As a follower, I want a new public article, diary, short post, or bookmark so that I receive it after I follow. A reclassification of an already stored page does not send that page.
 
 **Acceptance criteria:**
 
 Scenario: When an entry becomes deliverable, followers are sent one Create
 
-- Given: The entry was not deliverable and had not been delivered. The owner makes it a public article, note, or bookmark. At least one follower exists.
+- Given: The entry was not deliverable and had not been delivered. The owner makes it a public article, diary, note, or bookmark. At least one follower exists.
 - When: The owner save succeeds.
-- Then: The save response does not wait for the follower POST. One Create addresses the Public audience and the followers collection. An article object has type Article. A note or bookmark object has type Note. The object id is `https://weblog.yamanoku.net/e/{id}`. The host does not also send the article as a Note. The entry is recorded as delivered.
+- Then: The save response does not wait for the follower POST. One Create addresses the Public audience and the followers collection. An article object has type Article. A diary object has type Article. A note or bookmark object has type Note. The object id is `https://weblog.yamanoku.net/e/{id}`. The host does not also send the article as a Note. The entry is recorded as delivered.
 
 Scenario: When a deliverable note has an image, the Note has one image attachment
 
@@ -108,6 +108,12 @@ Scenario: When nobody follows yet, the Create is still public
 - Given: The followers collection is empty. The owner makes an entry deliverable.
 - When: The owner save succeeds.
 - Then: The Create addresses Public. The outbox includes that activity. The entry is recorded as delivered. No follower POST is required.
+
+Scenario: When stored pages are reclassified as diary, no activity is sent
+
+- Given: Public pages exist, including pages imported from Cosense. They have no delivery record.
+- When: The host stores them as kind diary and sets `publishedAt` when it was empty.
+- Then: Each public row is deliverable and is included in the human-readable feeds. No Create is sent. The outbox does not gain an activity. No delivery record is added for that reclassification.
 
 Scenario: When a page stays a page, no activity is sent
 
