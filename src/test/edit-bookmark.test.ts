@@ -40,12 +40,18 @@ function applyShippedMigrations() {
 }
 
 test("a bookmark form refuses an empty title or a missing URL", () => {
-  assert.deepEqual(bookmarkFromEditForm({ title: "  ", body: "c", bookmarkUrl: "https://example.com" }), {
-    error: "missing_title",
-  });
-  assert.deepEqual(bookmarkFromEditForm({ title: "Clip", body: "c", bookmarkUrl: "  " }), {
-    error: "missing_bookmark_url",
-  });
+  assert.deepEqual(
+    bookmarkFromEditForm({ title: "  ", body: "c", bookmarkUrl: "https://example.com", visibility: "public" }),
+    { error: "missing_title" },
+  );
+  assert.deepEqual(
+    bookmarkFromEditForm({ title: "Clip", body: "c", bookmarkUrl: "  ", visibility: "draft" }),
+    { error: "missing_bookmark_url" },
+  );
+  assert.deepEqual(
+    bookmarkFromEditForm({ title: "Clip", body: "c", bookmarkUrl: "https://example.com", visibility: "secret" }),
+    { error: "invalid_visibility" },
+  );
   assert.deepEqual(bookmarkDeleteId({}), { error: "not_found" });
   assert.deepEqual(bookmarkDeleteId({ bookmarkId: "abc" }), { id: "abc" });
 });
@@ -57,20 +63,30 @@ test("the bookmark form stores a draft and leaves articles and notes out of that
     title: "",
     body: "comment",
     bookmarkUrl: "https://example.com/a",
+    visibility: "public",
   });
   assert.deepEqual(refused, { error: "missing_title" });
   const missingUrl = await submitBookmarkFromEdit(database, {
     title: "Clip",
     body: "comment",
     bookmarkUrl: "",
+    visibility: "public",
   });
   assert.deepEqual(missingUrl, { error: "missing_bookmark_url" });
+  const invalid = await submitBookmarkFromEdit(database, {
+    title: "Clip",
+    body: "comment",
+    bookmarkUrl: "https://example.com/a",
+    visibility: "secret",
+  });
+  assert.deepEqual(invalid, { error: "invalid_visibility" });
   assert.equal((await listBookmarksForEdit(database)).length, 0);
 
   const saved = await submitBookmarkFromEdit(database, {
     title: "Clip",
     body: "a comment",
     bookmarkUrl: "  https://example.com/a  ",
+    visibility: "draft",
   });
   assert.ok(!("error" in saved));
   const entry = await readStoredEntry(database, saved.id);
@@ -87,6 +103,20 @@ test("the bookmark form stores a draft and leaves articles and notes out of that
   const listed = await listBookmarksForEdit(database);
   assert.equal(listed.length, 1);
   assert.equal(listed[0]?.id, saved.id);
+
+  const published = await submitBookmarkFromEdit(database, {
+    title: "Open clip",
+    body: "",
+    bookmarkUrl: "https://example.com/open",
+    visibility: "public",
+  });
+  assert.equal("error" in published, false);
+  if ("error" in published) return;
+  assert.equal(published.visibility, "public");
+  assert.equal(published.body, "");
+  assert.equal(published.bookmarkUrl, "https://example.com/open");
+  assert.equal(published.publishedAt !== null, true);
+  assert.equal(published.viewPath, "Open_clip");
   sqlite.close();
 });
 
@@ -292,7 +322,8 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.match(list, /href=\{"\/edit\/" \+ bookmark\.id\}/);
   const server = readFileSync(join(rootDir, "pages/edit/index.server.ts"), "utf8");
   assert.match(server, /submitBookmarkFromEdit\(/);
-  assert.match(server, /savedEntryHref\(\{ id: result\.id, visibility: "draft", viewPath: null \}\)/);
+  assert.match(server, /visibility:\s*postedText\(\s*posted\.visibility\s*\)/);
+  assert.match(server, /savedEntryHref\(result\)/);
   assert.match(server, /listBookmarksForEdit\(/);
   assert.match(server, /deleteBookmarkFromEdit\(/);
   assert.match(server, /bookmark:/);
@@ -339,7 +370,12 @@ test("a bookmark stores an image with an empty alt and delete removes it", async
   const database = drizzle(sqlite);
   const saved = await submitBookmarkFromEdit(
     database,
-    { title: "Clip", body: "![x](/note-images/" + imageId + ")", bookmarkUrl: "https://example.com/a" },
+    {
+      title: "Clip",
+      body: "![x](/note-images/" + imageId + ")",
+      bookmarkUrl: "https://example.com/a",
+      visibility: "public",
+    },
     [{ id: imageId, alt: "", image: accepted.image }],
     objects,
   );

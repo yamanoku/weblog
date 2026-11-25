@@ -4,6 +4,7 @@ export type BookmarkCreateForm = {
   title: string;
   body: string;
   bookmarkUrl: string;
+  visibility: string;
 };
 
 export type BookmarkEditForm = {
@@ -19,6 +20,7 @@ export type BookmarkFields = {
   title: string;
   body: string;
   bookmarkUrl: string;
+  visibility: BookmarkVisibility;
 };
 
 export type BookmarkUpdate =
@@ -41,11 +43,14 @@ function presentUrl(url: string): string | null {
 
 export function bookmarkFromEditForm(
   form: BookmarkCreateForm,
-): BookmarkFields | { error: "missing_title" | "missing_bookmark_url" } {
+): BookmarkFields | { error: "missing_title" | "missing_bookmark_url" | "invalid_visibility" } {
+  if (form.visibility !== "draft" && form.visibility !== "public") {
+    return { error: "invalid_visibility" };
+  }
   if (!presentTitle(form.title)) return { error: "missing_title" };
   const bookmarkUrl = presentUrl(form.bookmarkUrl);
   if (!bookmarkUrl) return { error: "missing_bookmark_url" };
-  return { title: form.title, body: form.body, bookmarkUrl };
+  return { title: form.title, body: form.body, bookmarkUrl, visibility: form.visibility };
 }
 
 export function bookmarkUpdateFromEditForm(form: BookmarkEditForm): BookmarkUpdate {

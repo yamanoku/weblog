@@ -75,7 +75,9 @@ export async function submitBookmarkFromEdit(
   form: BookmarkCreateForm,
   images: EntryImageDraft[] | null = null,
   objects: EntryImageObjects | null = null,
-): Promise<{ id: string } | { error: "missing_title" | "missing_bookmark_url" | BookmarkImageError }> {
+): Promise<
+  StoredEntry | { error: "missing_title" | "missing_bookmark_url" | "invalid_visibility" | BookmarkImageError }
+> {
   const bookmark = bookmarkFromEditForm(form);
   if ("error" in bookmark) return bookmark;
   const now = new Date().toISOString();
@@ -85,21 +87,24 @@ export async function submitBookmarkFromEdit(
     kind: "bookmark",
     title: bookmark.title,
     body: bookmark.body,
-    visibility: "draft",
+    visibility: bookmark.visibility,
     bookmarkUrl: bookmark.bookmarkUrl,
-    publishedAt: null,
+    publishedAt: bookmark.visibility === "public" ? now : null,
     createdAt: now,
     updatedAt: now,
-    viewPath: null,
+    viewPath: await bookmarkViewPath(database, id, bookmark.title, bookmark.visibility),
   });
-  if (!images) return { id };
-  const written = await replaceEntryImages(database, id, images, objects ?? failingObjects);
-  if ("error" in written) {
-    await deleteEntryImages(database, id, objects);
-    await database.delete(entries).where(eq(entries.id, id));
-    return written;
+  if (images) {
+    const written = await replaceEntryImages(database, id, images, objects ?? failingObjects);
+    if ("error" in written) {
+      await deleteEntryImages(database, id, objects);
+      await database.delete(entries).where(eq(entries.id, id));
+      return written;
+    }
   }
-  return { id };
+  const saved = await readStoredEntry(database, id);
+  if (!saved) throw new Error("entry was not stored");
+  return saved;
 }
 
 export async function updateBookmarkFromEdit(

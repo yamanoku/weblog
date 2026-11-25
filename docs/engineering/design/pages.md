@@ -56,9 +56,9 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 | `GET /edit` | Lists of stored articles, notes, and bookmarks. No create form and no note field. |
 | `GET /new` | Article, bookmark, and note create forms, one tab at a time. No lists. |
 | `GET /edit/{id}` | Edit form for that article, bookmark, or page. A note ID is 404. |
-| `POST /edit` | Create a draft article. The form may send many images. Success redirects to that entry's page. |
+| `POST /edit` | Create an article at the submitted visibility. The create form starts on Public and can select Draft. The form may send many images. Success redirects to that entry's page. |
 | `POST /edit?note` | Create a public note from the note field. The field sends the body and at most one image. Success redirects to GET `/e/{id}`. |
-| `POST /edit?bookmark` | Create a draft bookmark. The form may send many images. Success redirects to GET `/e/{id}`. |
+| `POST /edit?bookmark` | Create a bookmark at the submitted visibility. The create form starts on Public and can select Draft. The form may send many images. Success redirects to that entry's page. |
 | `POST /edit/{id}` | Update that article, bookmark, or page, including its images. A page keeps its kind and visibility. Success redirects to that entry's page. |
 | `GET /edit/images/{id}` | Image bytes for the verified owner, including a draft. |
 | `POST /edit?deleteNote` | Delete one note from the edit screen. |

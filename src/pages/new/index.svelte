@@ -7,8 +7,8 @@
 
   let { presetTitle = "" } = $props();
 
-  const articleForm = useForm("/edit", { title: presetTitle, body: "" });
-  const bookmarkForm = useForm("/edit?bookmark", { title: "", body: "", bookmarkUrl: "" });
+  const articleForm = useForm("/edit", { title: presetTitle, body: "", visibility: "public" });
+  const bookmarkForm = useForm("/edit?bookmark", { title: "", body: "", bookmarkUrl: "", visibility: "public" });
   let createTab = $state<"entry" | "bookmark" | "note">("entry");
   let articleBody = $state<HTMLTextAreaElement | null>(null);
   let bookmarkBody = $state<HTMLTextAreaElement | null>(null);
@@ -23,6 +23,7 @@
       data: {
         title: articleForm.data.title,
         body: articleForm.data.body,
+        visibility: articleForm.data.visibility,
         entryImages: articleImages.payload(),
       },
     });
@@ -38,6 +39,7 @@
         title: bookmarkForm.data.title,
         body: bookmarkForm.data.body,
         bookmarkUrl: bookmarkForm.data.bookmarkUrl,
+        visibility: bookmarkForm.data.visibility,
         entryImages: bookmarkImages.payload(),
       },
     });
@@ -161,6 +163,22 @@
             register={(api) => (articleImages = api)}
             serverCode={articleForm.errors.entryImages ?? ""}
           />
+          <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="article-visibility">Visibility</label>
+            <div class="dads-form-control-label__field">
+              <span class="dads-select">
+                <span class="dads-select__control">
+                  <select id="article-visibility" class="dads-select__select" name="visibility" data-size="md" bind:value={articleForm.data.visibility}>
+                    <option value="public">Public</option>
+                    <option value="draft">Draft</option>
+                  </select>
+                  <svg class="dads-select__chevron" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentcolor"/>
+                  </svg>
+                </span>
+              </span>
+            </div>
+          </div>
           <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={articleForm.pending}>Save article</button>
         </Form>
       </div>
@@ -211,6 +229,22 @@
             register={(api) => (bookmarkImages = api)}
             serverCode={bookmarkForm.errors.entryImages ?? ""}
           />
+          <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="bookmark-visibility">Visibility</label>
+            <div class="dads-form-control-label__field">
+              <span class="dads-select">
+                <span class="dads-select__control">
+                  <select id="bookmark-visibility" class="dads-select__select" name="visibility" data-size="md" bind:value={bookmarkForm.data.visibility}>
+                    <option value="public">Public</option>
+                    <option value="draft">Draft</option>
+                  </select>
+                  <svg class="dads-select__chevron" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 17L3 8L4 7L12 15L20 7L21 8L12 17Z" fill="currentcolor"/>
+                  </svg>
+                </span>
+              </span>
+            </div>
+          </div>
           <button class="dads-button" data-size="md" data-type="solid-fill" type="submit" disabled={bookmarkForm.pending}>Save bookmark</button>
         </Form>
       </div>

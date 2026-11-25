@@ -70,8 +70,13 @@ const markdown = [
 test("the edit create submit stores markdown as an article body", async () => {
   const sqlite = applyShippedMigrations();
   const database = drizzle(sqlite);
-  const saved = await submitArticleFromEdit(database, { title, body: markdown });
+  const saved = await submitArticleFromEdit(database, { title, body: markdown, visibility: "public" });
+  assert.equal("error" in saved, false);
+  if ("error" in saved) return;
   assert.equal(saved.kind, "article");
+  assert.equal(saved.visibility, "public");
+  assert.equal(saved.viewPath, "Markdown_morning");
+  assert.equal(saved.publishedAt !== null, true);
   assert.equal(saved.title, title);
   assert.equal(saved.body, markdown);
   assert.equal(saved.body.includes("<h1>"), false);
@@ -85,6 +90,10 @@ test("the edit create submit stores markdown as an article body", async () => {
   assert.equal(again.kind, "article");
   assert.equal(again.title, title);
   assert.equal(again.body, markdown);
+  const empty = await submitArticleFromEdit(database, { title: "Empty", body: "", visibility: "public" });
+  assert.deepEqual(empty, { error: "empty_body" });
+  const weird = await submitArticleFromEdit(database, { title: "Nope", body: "text", visibility: "secret" });
+  assert.deepEqual(weird, { error: "invalid_visibility" });
   sqlite.close();
 });
 
@@ -109,8 +118,13 @@ test("the create form posts the markdown body to the article submit", () => {
   assert.match(server, /parseBody\s*\(/);
   assert.match(
     server,
-    /submitArticleFromEdit\([\s\S]*title:\s*postedText\(\s*posted\.title\s*\)[\s\S]*body:\s*postedText\(\s*posted\.body\s*\)/,
+    /submitArticleFromEdit\([\s\S]*title:\s*postedText\(\s*posted\.title\s*\)[\s\S]*body:\s*postedText\(\s*posted\.body\s*\)[\s\S]*visibility:\s*postedText\(\s*posted\.visibility\s*\)/,
   );
+  assert.match(page, /id="article-visibility"/);
+  assert.match(page, /id="bookmark-visibility"/);
+  assert.match(page, /visibility:\s*"public"/);
+  assert.match(page, /visibility:\s*articleForm\.data\.visibility/);
+  assert.match(page, /visibility:\s*bookmarkForm\.data\.visibility/);
   assert.match(server, /listArticlesForEdit\(/);
   const list = readRoot("pages/edit/index.svelte");
   assert.equal(list.includes("useForm"), false);
@@ -165,7 +179,11 @@ test("the edit screen lists draft and public articles, newest first", async () =
 test("publishing an article keeps the markdown and records publishedAt", async () => {
   const sqlite = applyShippedMigrations();
   const database = drizzle(sqlite);
-  const saved = await submitArticleFromEdit(database, { title, body: markdown });
+  const saved = await submitArticleFromEdit(database, { title, body: markdown, visibility: "draft" });
+  assert.equal("error" in saved, false);
+  if ("error" in saved) return;
+  assert.equal(saved.visibility, "draft");
+  assert.equal(saved.publishedAt, null);
   const published = await updateArticleFromEdit(
     database,
     saved.id,
@@ -230,7 +248,10 @@ test("public articles are listed for the home page and matched by the title path
   const saved = await submitArticleFromEdit(database, {
     title: "Spaced title",
     body: markdown,
+    visibility: "draft",
   });
+  assert.equal("error" in saved, false);
+  if ("error" in saved) return;
   const published = await updateArticleFromEdit(
     database,
     saved.id,
@@ -334,7 +355,7 @@ test("a missing title links the owner to a new article with that title", () => {
   assert.match(loader, /requestedTitle: entry \? "" : title/);
   const created = readRoot("pages/new/index.svelte");
   assert.match(created, /let \{ presetTitle = "" \} = \$props\(\)/);
-  assert.match(created, /useForm\("\/edit", \{ title: presetTitle, body: "" \}\)/);
+  assert.match(created, /useForm\("\/edit", \{ title: presetTitle, body: "", visibility: "public" \}\)/);
   const createdLoader = readRoot("pages/new/index.server.ts");
   assert.match(createdLoader, /query\("title"\)/);
   assert.match(createdLoader, /presetTitle: typeof title === "string" \? title : ""/);
@@ -615,7 +636,7 @@ test("an article stores many images, allows an empty alt, and can place one in t
   const images = memoryImages();
   const saved = await submitArticleFromEdit(
     database,
-    { title: "With images", body: "text" },
+    { title: "With images", body: "text", visibility: "draft" },
     "images" in parsed ? parsed.images : [],
     images.objects,
   );

@@ -56,9 +56,9 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | `GET /edit` | 保存済みの article、note、bookmark の一覧。作成フォームと note 欄は無い。 |
 | `GET /new` | 記事、bookmark、note の作成フォーム。タブは一つずつ出す。一覧は無い。 |
 | `GET /edit/{id}` | その article、bookmark、または page の編集フォーム。note の ID は 404。 |
-| `POST /edit` | 下書きの article を作成する。フォームは画像を何枚でも送れる。成功すると、そのエントリのページへ移る。 |
+| `POST /edit` | 送った公開状態で article を作成する。作成フォームの初期値は Public で、Draft も選べる。フォームは画像を何枚でも送れる。成功すると、そのエントリのページへ移る。 |
 | `POST /edit?note` | note 欄から公開の note を作成する。欄は本文と、画像を多くて 1 枚送る。成功すると GET `/e/{id}` へ移る。 |
-| `POST /edit?bookmark` | 下書きの bookmark を作成する。フォームは画像を何枚でも送れる。成功すると GET `/e/{id}` へ移る。 |
+| `POST /edit?bookmark` | 送った公開状態で bookmark を作成する。作成フォームの初期値は Public で、Draft も選べる。フォームは画像を何枚でも送れる。成功すると、そのエントリのページへ移る。 |
 | `POST /edit/{id}` | その article、bookmark、または page を、画像も含めて更新する。page は種類と公開状態を維持する。成功すると、そのエントリのページへ移る。 |
 | `GET /edit/images/{id}` | 確認できた所有者向けの画像のバイト列。下書きも含む。 |
 | `POST /edit?deleteNote` | 編集画面から note を一つ削除する。 |

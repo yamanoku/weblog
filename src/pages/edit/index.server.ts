@@ -70,11 +70,17 @@ export const actions = {
       {
         title: postedText(posted.title),
         body: postedText(posted.body),
+        visibility: postedText(posted.visibility),
       },
       images && "images" in images ? images.images : null,
       noteImageObjects,
     );
-    if ("error" in result) imageFailure(result.error);
+    if ("error" in result) {
+      if (result.error === "empty_body" || result.error === "invalid_visibility") {
+        throw new HTTPException(422, { message: result.error });
+      }
+      imageFailure(result.error);
+    }
     return c.redirect(savedEntryHref(result));
   }),
   note: defineHandler(async (c) => {
@@ -148,6 +154,7 @@ export const actions = {
         title: postedText(posted.title),
         body: postedText(posted.body),
         bookmarkUrl: postedText(posted.bookmarkUrl),
+        visibility: postedText(posted.visibility),
       },
       images && "images" in images ? images.images : null,
       noteImageObjects,
@@ -158,7 +165,7 @@ export const actions = {
       }
       throw new HTTPException(422, { message: result.error });
     }
-    return c.redirect(savedEntryHref({ id: result.id, visibility: "draft", viewPath: null }));
+    return c.redirect(savedEntryHref(result));
   }),
   deleteBookmark: defineHandler(async (c) => {
     const posted = await c.req.parseBody();
