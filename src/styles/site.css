@@ -200,14 +200,14 @@ ol.dads-breadcrumb__list {
 }
 
 @supports (rule: 1px solid var(--color-neutral-solid-gray-200)) {
-  .entry-body {
+  .entry--diary .entry-body {
     rule: 1px solid var(--color-neutral-solid-gray-200);
     gap: 5.5rem;
   }
 }
 
 @supports not (rule: 1px solid var(--color-neutral-solid-gray-200)) {
-  .entry-body {
+  .entry--diary .entry-body {
     gap: 1.5rem;
   }
 }

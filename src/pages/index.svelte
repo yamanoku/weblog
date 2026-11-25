@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Form, Link, useForm } from "@void/svelte";
   import { cardBodyExcerpt } from "../domain/card-excerpt.ts";
+  import { entryClass } from "../domain/entry-kind-class.ts";
   import { homePageHref, homePageNumbers } from "../domain/home-page.ts";
   import { acceptNoteImage, encodeNoteImage, noteImageAltLimit } from "../domain/note-image.ts";
 
@@ -229,7 +230,7 @@
 <div class="entry-grid">
   {#each entries as entry (entry.id)}
     {@const excerpt = cardBodyExcerpt(entry.body, entry.kind)}
-    <article class="entry-card">
+    <article class={entryClass("entry-card", entry.kind)}>
       {#if entry.title.length > 0 }
         <h2 class="entry-card__title dads-u-std-18B-160">{entry.title}</h2>
       {/if}

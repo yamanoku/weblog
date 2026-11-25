@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Link } from "@void/svelte";
   import { markdownToHtml } from "../domain/markdown-html.ts";
+  import { entryClass } from "../domain/entry-kind-class.ts";
   import { missingTitleCreateHref, publicArticleHref } from "../domain/public-article.ts";
   import Breadcrumb from "../ui/breadcrumb.svelte";
   import EntryHeading from "../ui/entry-heading.svelte";
@@ -17,7 +18,7 @@
     { href: "/", label: "トップ" },
     { href: publicArticleHref(entry), label: entry.title, current: true },
   ]} />
-  <article class="entry-article">
+  <article class={entryClass("entry-article", entry.kind)}>
     <EntryHeading
       title={entry.title}
       bookmarkUrl={entry.kind === "bookmark" ? entry.bookmarkUrl : null}

@@ -170,7 +170,7 @@
   <div class="create-tabs__panels">
     <div role="tabpanel" id="create-diary-panel" aria-labelledby="create-diary-tab" hidden={createTab === "diary" ? undefined : "until-found"}>
       <div class="create-tabs__panel">
-        <Form class="form-stack" form={diaryForm} aria-labelledby="create-diary" onpaste={(event) => diaryImages.onPaste(event)}>
+        <Form class="form-stack entry--diary" form={diaryForm} aria-labelledby="create-diary" onpaste={(event) => diaryImages.onPaste(event)}>
           <div class="dads-form-control-label" data-size="md">
             <label class="dads-form-control-label__label" for="diary-title">Title</label>
             <div class="dads-form-control-label__field">
@@ -217,7 +217,7 @@
     </div>
     <div role="tabpanel" id="create-entry-panel" aria-labelledby="create-entry-tab" hidden={createTab === "entry" ? undefined : "until-found"}>
       <div class="create-tabs__panel">
-        <Form class="form-stack" form={articleForm} aria-labelledby="create-entry" onpaste={(event) => articleImages.onPaste(event)}>
+        <Form class="form-stack entry--article" form={articleForm} aria-labelledby="create-entry" onpaste={(event) => articleImages.onPaste(event)}>
           <div class="dads-form-control-label" data-size="md">
             <label class="dads-form-control-label__label" for="article-title">Title</label>
             <div class="dads-form-control-label__field">

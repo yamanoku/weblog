@@ -43,7 +43,7 @@ test("the home page links the next twelve entries", () => {
   const page = readFileSync(join(rootDir, "pages/index.svelte"), "utf8");
   const loader = readFileSync(join(rootDir, "pages/index.server.ts"), "utf8");
   assert.match(page, /class="entry-grid"/);
-  assert.match(page, /class="entry-card"/);
+  assert.match(page, /entryClass\("entry-card", entry\.kind\)/);
   assert.equal(page.includes("groupByUpdatedDay"), false);
   assert.equal(page.includes("entry-list__date"), false);
   assert.match(page, /aria-label="ページ"/);

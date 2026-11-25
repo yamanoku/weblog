@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Form, useForm } from "@void/svelte";
+  import { entryClass } from "../../domain/entry-kind-class.ts";
   import EntryImages from "../../ui/entry-images-field.svelte";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
 
@@ -48,7 +49,7 @@
 <div class="dads-heading" data-size="32">
   <h1 id="edit-entry" class="dads-heading__heading">Edit {entry.title}</h1>
 </div>
-<Form class="form-stack" form={editForm} aria-labelledby="edit-entry" onpaste={(event) => entryImages.onPaste(event)}>
+<Form class={entryClass("form-stack", entry.kind)} form={editForm} aria-labelledby="edit-entry" onpaste={(event) => entryImages.onPaste(event)}>
   {#if entry.kind === "bookmark"}
     <div class="dads-form-control-label" data-size="md">
       <label class="dads-form-control-label__label" for="edit-title">Title</label>

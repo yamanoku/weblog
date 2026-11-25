@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Link } from "@void/svelte";
+  import { entryClass } from "../../domain/entry-kind-class.ts";
   import { markdownToHtml } from "../../domain/markdown-html.ts";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
   import EntryHeading from "../../ui/entry-heading.svelte";
@@ -62,7 +63,7 @@
   {#if draft}
     <p>下書き</p>
   {/if}
-  <article class="entry-article">
+  <article class={entryClass("entry-article", entry.kind)}>
     <EntryHeading
       title={entry.title}
       bookmarkUrl={entry.kind === "bookmark" ? entry.bookmarkUrl : null}
