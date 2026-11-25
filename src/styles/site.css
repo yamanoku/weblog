@@ -212,6 +212,10 @@ ol.dads-breadcrumb__list {
   }
 }
 
+.entry--article .entry-body {
+  gap: 1.5rem;
+}
+
 .entry-body > * {
   min-inline-size: 0;
   max-inline-size: 100%;
@@ -233,10 +237,10 @@ ol.dads-breadcrumb__list {
   font-size: inherit;
 }
 
-/* .entry-body h1 { font-size: 2rem; }
-.entry-body h2 { font-size: 1.5rem; }
-.entry-body h3 { font-size: 1.25rem; }
-.entry-body :is(h4, h5, h6) { font-size: 1.125rem; } */
+.entry--article .entry-body h1 { font-size: 2rem; }
+.entry--article .entry-body h2 { font-size: 1.5rem; }
+.entry--article .entry-body h3 { font-size: 1.25rem; }
+.entry--article .entry-body :is(h4, h5, h6) { font-size: 1.125rem; }
 
 .entry-body :is(p, ul, pre, blockquote) {
   margin: 0;
