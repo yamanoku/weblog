@@ -107,6 +107,12 @@ Scenario: When the entry is a draft, the response matches a missing entry
 - When: An unauthenticated client requests its canonical URL or its view path.
 - Then: The response matches a missing entry. It does not include the draft body. It does not say that the entry is a draft.
 
+Scenario: When the owner opens a draft canonical URL, the page shows the draft
+
+- Given: The request is verified as the owner. One entry is draft.
+- When: The owner requests its canonical URL and does not ask for Activity Streams. An unverified client requests the same URL and the view path.
+- Then: The owner's response is 200 HTML. It includes the body and says the entry is a draft. The unverified response matches a missing entry and does not say that the entry is a draft. The view path does not include the draft body.
+
 Scenario: When a delivered entry was deleted, the HTML does not include the deleted body
 
 - Given: The entry was delivered and then deleted. Owner writing defines the 410 response.
@@ -366,7 +372,7 @@ The parent product sets no percentage target for availability or delivery succes
 
 ##### Which entry is public
 
-A public entry has visibility public. Draft bodies stay out of these responses. A draft is indistinguishable from a missing entry for an unauthenticated client. Reading does not create an entry.
+A public entry has visibility public. Draft bodies stay out of unauthenticated responses, the home list, the feeds, and view paths. The owner's GET `/e/{id}` includes that draft body and says the entry is a draft. A draft is indistinguishable from a missing entry for an unauthenticated client. Reading does not create an entry.
 
 The kinds are article, note, bookmark, and page. A public page is readable at its URL. Deliverable entries, feeds, and `publishedAt` are defined by [Owner writing](../owner-writing/requirements.md). This feature does not send activities.
 

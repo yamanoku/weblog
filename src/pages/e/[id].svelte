@@ -4,7 +4,7 @@
   import Breadcrumb from "../../ui/breadcrumb.svelte";
   import EntryHeading from "../../ui/entry-heading.svelte";
 
-  let { entry = null, thread = null, owner = false, refused = null, headTitle = "weblog.yamanoku.net" } = $props();
+  let { entry = null, thread = null, owner = false, refused = null, draft = false, headTitle = "weblog.yamanoku.net" } = $props();
 </script>
 
 <svelte:head>
@@ -59,6 +59,9 @@
     { href: "/", label: "トップ" },
     { href: `/e/${entry.id}`, label: entry.title || "permalink", current: true },
   ]} />
+  {#if draft}
+    <p>下書き</p>
+  {/if}
   <article class="entry-article">
     <EntryHeading
       title={entry.title}

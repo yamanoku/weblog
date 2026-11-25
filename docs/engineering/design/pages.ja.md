@@ -51,15 +51,15 @@ Worker は、タイトルの経路より前に固定の経路を一致させる�
 | --- | --- |
 | `GET /` | 配送対象の HTML 一覧。所有者として確認できたとき、ナビゲーションの下に note 欄を出す。未確認の応答は出さない。続きは、この経路に `page` を付ける。2 ページ目は `/?page=2` である。 |
 | `GET /{タイトル}` | 公開エントリ。要件が空ページとするときは、空ページである。 |
-| `GET /e/{id}` | 正規 URL の HTML。下の Activity Streams の場合を除く。 |
+| `GET /e/{id}` | 正規 URL の HTML。下の Activity Streams の場合を除く。確認できた所有者は、draft もここで受け取る。確認できていない draft は、無いエントリと同じである。 |
 | `GET /login` | Cloudflare Access のログイン画面。確認できた応答は `/edit` と `/new` へ進むリンクを出し、draft の本文は含まない。 |
 | `GET /edit` | 保存済みの article、note、bookmark の一覧。作成フォームと note 欄は無い。 |
 | `GET /new` | 記事、bookmark、note の作成フォーム。タブは一つずつ出す。一覧は無い。 |
 | `GET /edit/{id}` | その article、bookmark、または page の編集フォーム。note の ID は 404。 |
-| `POST /edit` | 下書きの article を作成する。フォームは画像を何枚でも送れる。 |
-| `POST /edit?note` | note 欄から公開の note を作成する。欄は本文と、画像を多くて 1 枚送る。 |
-| `POST /edit?bookmark` | 下書きの bookmark を作成する。フォームは画像を何枚でも送れる。 |
-| `POST /edit/{id}` | その article、bookmark、または page を、画像も含めて更新する。page は種類と公開状態を維持する。 |
+| `POST /edit` | 下書きの article を作成する。フォームは画像を何枚でも送れる。成功すると、そのエントリのページへ移る。 |
+| `POST /edit?note` | note 欄から公開の note を作成する。欄は本文と、画像を多くて 1 枚送る。成功すると GET `/e/{id}` へ移る。 |
+| `POST /edit?bookmark` | 下書きの bookmark を作成する。フォームは画像を何枚でも送れる。成功すると GET `/e/{id}` へ移る。 |
+| `POST /edit/{id}` | その article、bookmark、または page を、画像も含めて更新する。page は種類と公開状態を維持する。成功すると、そのエントリのページへ移る。 |
 | `GET /edit/images/{id}` | 確認できた所有者向けの画像のバイト列。下書きも含む。 |
 | `POST /edit?deleteNote` | 編集画面から note を一つ削除する。 |
 | `POST /edit?deleteBookmark` | 編集画面から bookmark を一つ削除する。 |

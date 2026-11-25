@@ -292,6 +292,7 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.match(list, /href=\{"\/edit\/" \+ bookmark\.id\}/);
   const server = readFileSync(join(rootDir, "pages/edit/index.server.ts"), "utf8");
   assert.match(server, /submitBookmarkFromEdit\(/);
+  assert.match(server, /savedEntryHref\(\{ id: result\.id, visibility: "draft", viewPath: null \}\)/);
   assert.match(server, /listBookmarksForEdit\(/);
   assert.match(server, /deleteBookmarkFromEdit\(/);
   assert.match(server, /bookmark:/);
@@ -310,6 +311,7 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.equal(edit.includes("{@html"), false);
   const editServer = readFileSync(join(rootDir, "pages/edit/[id].server.ts"), "utf8");
   assert.match(editServer, /updateBookmarkFromEdit\(/);
+  assert.match(editServer, /savedEntryHref\(result\.entry\)/);
   assert.match(editServer, /updateArticleFromEdit\(/);
   assert.equal(editServer.includes("void/db"), false);
 });

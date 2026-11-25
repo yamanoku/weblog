@@ -227,7 +227,7 @@ test("the home page shows the note field to the owner and the edit screen keeps 
   assert.match(server, /deleteNoteFromEdit\(/);
   assert.match(server, /deleteNote:/);
   assert.match(server, /ValidationError\(\{\s*noteBody:\s*result\.error\s*\}\)/);
-  assert.match(server, /redirect\(`\/\?posted=\$\{result\.id\}`\)/);
+  assert.match(server, /savedEntryHref\(\{ id: result\.id, visibility: "public", viewPath: null \}\)/);
   assert.equal(server.includes("postedNoteUrl"), false);
   assert.equal(server.includes("void/db"), false);
   assert.match(server, /reply:/);
@@ -332,7 +332,7 @@ test("the note page shows the thread and a reply field for the owner", () => {
   assert.match(page, /name="replyTo"/);
   assert.match(page, /返信する/);
   assert.match(page, /本文が空です/);
-  assert.match(page, /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}\)/);
+  assert.match(page, /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{}/);
   const loader = readFileSync(join(rootDir, "pages/e/[id].server.ts"), "utf8");
   assert.match(loader, /listPublicNoteThread\(/);
   assert.match(loader, /verifiedOwner\(/);

@@ -2,6 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
 import { entryImagesFromField } from "../../domain/entry-image.ts";
+import { savedEntryHref } from "../../domain/public-article.ts";
 import { editArticleDatabase, updateArticleFromEdit } from "../../store/edit-article.ts";
 import { updatePageFromEdit } from "../../store/edit-page.ts";
 import { updateBookmarkFromEdit } from "../../store/edit-bookmark.ts";
@@ -92,4 +93,5 @@ export const action = defineHandler(async (c) => {
     const status = result.error === "not_found" ? 404 : 422;
     throw new HTTPException(status, { message: result.error });
   }
+  return c.redirect(savedEntryHref(result.entry));
 });

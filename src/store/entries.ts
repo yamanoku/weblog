@@ -31,6 +31,7 @@ export type StoredEntry = {
   publishedAt: string | null;
   inReplyToId: string | null;
   threadRootId: string | null;
+  viewPath: string | null;
 };
 
 // A deleted delivered id remains as a tombstone. The row has no body.
@@ -60,6 +61,7 @@ export async function readStoredEntry(
     publishedAt: saved.publishedAt,
     inReplyToId: saved.inReplyToId ?? null,
     threadRootId: saved.threadRootId ?? null,
+    viewPath: saved.viewPath ?? null,
   };
 }
 

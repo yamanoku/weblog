@@ -49,3 +49,15 @@ export function externalBookmarkHref(url: string | null | undefined): string | n
 export function publicArticleMatchesPath(title: string, pathTitle: string): boolean {
   return articlePathTitle(title) === pathTitle;
 }
+
+// After a successful save, a public entry with a view path opens that path.
+// A draft, a note, and a public entry with no view path open the canonical URL.
+export function savedEntryHref(entry: {
+  id: string;
+  visibility: string;
+  viewPath?: string | null;
+}): string {
+  const path = entry.viewPath ?? "";
+  if (entry.visibility === "public" && path.length > 0) return `/${encodeURIComponent(path)}`;
+  return `/e/${entry.id}`;
+}

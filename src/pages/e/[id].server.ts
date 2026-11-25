@@ -9,7 +9,7 @@ import { resolveSpeakerDeckPlayers } from "../../domain/speakerdeck.ts";
 import { gyazoIndexForBody } from "../../store/gyazo-objects.ts";
 import { pageIconsForBody } from "../../store/page-icons.ts";
 import { listPublicNoteThread } from "../../store/edit-note.ts";
-import { hasTombstone, readStoredEntry } from "../../store/entries.ts";
+import { hasTombstone, readStoredEntry, type StoredEntry } from "../../store/entries.ts";
 import { readsDevCatalog } from "../../store/read-source.ts";
 
 function editableKind(kind: string | undefined): boolean {
@@ -19,6 +19,30 @@ function editableKind(kind: string | undefined): boolean {
 function privateOwner(c: { header: (name: string, value: string) => void }) {
   c.header("cache-control", "private, no-store");
   c.header("vary", "Cookie");
+}
+
+async function renderedEntry(stored: StoredEntry) {
+  const images =
+    stored.kind === "bookmark"
+      ? ((await entryImageViews(editArticleDatabase(), [stored.id])).get(stored.id) ?? [])
+      : [];
+  const gyazo = stored.kind === "note" ? {} : await gyazoIndexForBody(editArticleDatabase(), stored.body);
+  const icons = stored.kind === "note" ? {} : await pageIconsForBody(editArticleDatabase(), stored.body);
+  const speakerdeck =
+    stored.kind === "note"
+      ? {}
+      : await resolveSpeakerDeckPlayers([stored.body, stored.bookmarkUrl ?? ""]);
+  return {
+    id: stored.id,
+    title: stored.title,
+    kind: stored.kind,
+    body: stored.body,
+    bookmarkUrl: stored.bookmarkUrl,
+    images,
+    gyazo,
+    icons,
+    speakerdeck,
+  };
 }
 
 export const loader = defineHandler(async (c) => {
@@ -38,12 +62,13 @@ export const loader = defineHandler(async (c) => {
       };
     }
     const showEdit = owner && editableKind(entry?.kind);
-    if (showEdit) privateOwner(c);
+    if (showEdit || entry?.visibility === "draft") privateOwner(c);
     return {
       entry,
       thread: null,
       owner: showEdit,
       refused: null,
+      draft: entry?.visibility === "draft",
       headTitle: publicDocumentTitle(entry),
     };
   }
@@ -55,34 +80,19 @@ export const loader = defineHandler(async (c) => {
       thread: await listPublicNoteThread(editArticleDatabase(), id),
       owner,
       refused,
+      draft: false,
       headTitle: publicDocumentTitle({ title: stored.title, id }),
     };
   }
-  if (stored?.visibility === "public") {
+  if (stored && (stored.visibility === "public" || (stored.visibility === "draft" && owner))) {
     const showEdit = owner && editableKind(stored.kind);
-    if (showEdit) privateOwner(c);
-    const images =
-      stored.kind === "bookmark"
-        ? ((await entryImageViews(editArticleDatabase(), [id])).get(id) ?? [])
-        : [];
-    const gyazo = await gyazoIndexForBody(editArticleDatabase(), stored.body);
-    const icons = await pageIconsForBody(editArticleDatabase(), stored.body);
-    const speakerdeck = await resolveSpeakerDeckPlayers([stored.body, stored.bookmarkUrl ?? ""]);
+    if (showEdit || stored.visibility === "draft") privateOwner(c);
     return {
-      entry: {
-        id,
-        title: stored.title,
-        kind: stored.kind,
-        body: stored.body,
-        bookmarkUrl: stored.bookmarkUrl,
-        images,
-        gyazo,
-        icons,
-        speakerdeck,
-      },
+      entry: await renderedEntry(stored),
       thread: null,
       owner: showEdit,
       refused: null,
+      draft: stored.visibility === "draft",
       headTitle: publicDocumentTitle({ title: stored.title, id }),
     };
   }

@@ -2,6 +2,7 @@ import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
 import { ValidationError } from "void/handler";
 import { bookmarkDeleteId } from "../../domain/edit-bookmark.ts";
+import { savedEntryHref } from "../../domain/public-article.ts";
 import { noteBodyField, noteDeleteId, replyToField } from "../../domain/edit-note.ts";
 import { entryImagesFromField } from "../../domain/entry-image.ts";
 import { noteImageAlt, noteImageFromField } from "../../domain/note-image.ts";
@@ -74,6 +75,7 @@ export const actions = {
       noteImageObjects,
     );
     if ("error" in result) imageFailure(result.error);
+    return c.redirect(savedEntryHref(result));
   }),
   note: defineHandler(async (c) => {
     const type = (c.req.header("content-type") ?? "").toLowerCase();
@@ -106,7 +108,7 @@ export const actions = {
       }
       throw new ValidationError({ noteBody: result.error });
     }
-    return c.redirect(`/?posted=${result.id}`);
+    return c.redirect(savedEntryHref({ id: result.id, visibility: "public", viewPath: null }));
   }),
   reply: defineHandler(async (c) => {
     const type = (c.req.header("content-type") ?? "").toLowerCase();
@@ -156,6 +158,7 @@ export const actions = {
       }
       throw new HTTPException(422, { message: result.error });
     }
+    return c.redirect(savedEntryHref({ id: result.id, visibility: "draft", viewPath: null }));
   }),
   deleteBookmark: defineHandler(async (c) => {
     const posted = await c.req.parseBody();

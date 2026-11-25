@@ -38,7 +38,7 @@ The deliverable is the public routes on the same Worker that handles owner write
 
 The domain reads public rows, resolves public titles, and renders HTML. Adapters read D1 and the R2 bucket. The domain does not import the Cloudflare SDK, D1 types, R2 types, an ORM, or Fedify types. Replacing the host means replacing those adapters. Rendering is the render port. The object port is the image-fetch port. The store port is the entry store for these reads.
 
-Public routes do not read owner credentials, except GET `/`, GET `/{title}`, and GET `/e/{id}`. GET `/` reads the Access JWT only to include or omit the note field from owner writing. GET `/{title}` reads it only to include or omit the edit link on a public article, bookmark, or page, and to include or omit the `作成` link when no public entry has the title. GET `/e/{id}` reads it only to include or omit the reply fields on a public note, and to include or omit that edit link on a public article, bookmark, or page. The deliverable list is the same for every caller. A draft is absent from every response this feature returns. The owner reads a draft at GET `/entries/{id}` and GET `/edit/{id}`, which belong to owner writing.
+Public routes do not read owner credentials, except GET `/`, GET `/{title}`, and GET `/e/{id}`. GET `/` reads the Access JWT only to include or omit the note field from owner writing. GET `/{title}` reads it only to include or omit the edit link on a public article, bookmark, or page, and to include or omit the `作成` link when no public entry has the title. GET `/e/{id}` reads it to include or omit the reply fields on a public note, to include or omit that edit link on a public article, bookmark, or page, and to return a draft body to the owner. The deliverable list is the same for every caller. An unverified response does not include a draft. GET `/e/{id}`, when the request is verified as the owner, returns that draft's HTML and says the entry is a draft. A view path, the home list, and the feeds still omit the draft. GET `/entries/{id}` and GET `/edit/{id}` remain owner-writing paths.
 
 The read flow is as follows.
 
@@ -319,7 +319,7 @@ The Gyazo index is loaded by an owner command, not by a reader. The command read
 
 The listing counted on 2026-11-01 had 15686 image files. That row count fits the free daily row-write allowance. The command uses `batch()` calls small enough to finish, and it can be run again.
 
-Public bodies, titles, and bookmark URLs may name a person. They are world-readable because the owner set visibility to public. Drafts are not read here. This feature collects no account data. Image bytes at the public image URL are world-readable. There is no extra consent step.
+Public bodies, titles, and bookmark URLs may name a person. They are world-readable because the owner set visibility to public. An unverified response does not read a draft. The verified owner's GET `/e/{id}` does. This feature collects no account data. Image bytes at the public image URL are world-readable. There is no extra consent step.
 
 ## Authentication and authorization notes
 

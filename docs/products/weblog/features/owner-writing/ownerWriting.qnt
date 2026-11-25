@@ -19,6 +19,8 @@
 // stays across draft, kind changes, and delete. A deleted id is not reused.
 // No delivered record means the public get is a miss. A delivered delete keeps
 // the id with an empty body. A draft body is not publicly readable.
+// The verified owner may read that body at the canonical URL. This reader
+// is the public reader, so readerSeesBody stays limited to public entries.
 //
 // Coverage:
 //   Create stores one entry and a fixed id. Empty title, missing bookmark URL,

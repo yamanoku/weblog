@@ -12,7 +12,7 @@ import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.
 import { acceptNoteImage, encodeNoteImage, noteActivityAttachment, noteImageIsPublic } from "../domain/note-image.ts";
 import { entryImageViews, type EntryImageObjects } from "../store/entry-images.ts";
 import type { NoteImageBytes } from "../domain/note-image.ts";
-import { missingTitleCreateHref, publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath } from "../domain/public-article.ts";
+import { missingTitleCreateHref, publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath, savedEntryHref } from "../domain/public-article.ts";
 import {
   commitEntry,
   listDeliverableEntries,
@@ -247,6 +247,16 @@ test("public articles are listed for the home page and matched by the title path
   assert.equal(publicArticleMatchesPath("Spaced title", "Spaced_title"), true);
   assert.equal(publicArticleMatchesPath("Spaced title", "Spaced title"), false);
   assert.equal(publicArticleHref({ id: saved.id, title: "Spaced title" }), "/Spaced_title");
+  assert.equal(savedEntryHref({ id: "draft-1", visibility: "draft", viewPath: "Hidden" }), "/e/draft-1");
+  assert.equal(savedEntryHref({ id: "pub-1", visibility: "public", viewPath: "Spaced_title" }), "/Spaced_title");
+  assert.equal(
+    savedEntryHref({ id: "note-1", visibility: "public", viewPath: null }),
+    "/e/note-1",
+  );
+  assert.equal(
+    savedEntryHref({ id: "ja-1", visibility: "public", viewPath: "ぼくのなつやすみ" }),
+    "/%E3%81%BC%E3%81%8F%E3%81%AE%E3%81%AA%E3%81%A4%E3%82%84%E3%81%99%E3%81%BF",
+  );
   assert.equal(
     publicEntryHref({
       id: "bookmark-1",
@@ -374,6 +384,7 @@ test("the article edit form posts visibility", () => {
   assert.match(server, /visibility:\s*postedText\(\s*posted\.visibility\s*\)/);
   assert.match(server, /updateArticleFromEdit\(/);
   assert.match(server, /updatePageFromEdit\(/);
+  assert.match(server, /savedEntryHref\(result\.entry\)/);
   assert.match(page, /entry\.kind !== "page"/);
   assert.match(page, /Save page/);
 
@@ -382,6 +393,7 @@ test("the article edit form posts visibility", () => {
   assert.match(canonical, /readsDevCatalog\(/);
   assert.match(canonical, /readStoredEntry\(/);
   assert.match(canonical, /visibility === "public"/);
+  assert.match(canonical, /visibility === "draft" && owner/);
   assert.match(canonical, /hasTombstone\(/);
   assert.match(canonical, /410/);
   assert.match(canonical, /entryById\(/);
