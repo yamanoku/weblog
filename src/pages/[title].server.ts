@@ -1,6 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { isReservedTitle, publicEntryByTitle } from "../domain/catalog.ts";
-import { publicDocumentTitle } from "../domain/public-article.ts";
+import { publicAbsoluteHref, publicDocumentTitle } from "../domain/public-article.ts";
 import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
 import { editArticleDatabase } from "../store/edit-article.ts";
@@ -8,7 +8,7 @@ import { entryImageViews } from "../store/entry-images.ts";
 import { resolveSpeakerDeckPlayers } from "../domain/speakerdeck.ts";
 import { gyazoIndexForBody } from "../store/gyazo-objects.ts";
 import { pageIconsForBody } from "../store/page-icons.ts";
-import { readPublicEntryByPath } from "../store/entries.ts";
+import { readPublicEntryByPath, readPublicPathRedirect } from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
 function editableKind(kind: string | undefined): boolean {
@@ -37,6 +37,11 @@ export const loader = defineHandler(async (c) => {
   }
   const entry = await readPublicEntryByPath(editArticleDatabase(), title);
   if (!entry) {
+    const redirect = await readPublicPathRedirect(editArticleDatabase(), title);
+    if (redirect) {
+      c.header("cache-control", "no-cache");
+      return c.redirect(publicAbsoluteHref(redirect), 301);
+    }
     if (owner) {
       c.header("cache-control", "private, no-store");
       c.header("vary", "Cookie");

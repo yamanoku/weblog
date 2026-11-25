@@ -61,3 +61,10 @@ export function savedEntryHref(entry: {
   if (entry.visibility === "public" && path.length > 0) return `/${encodeURIComponent(path)}`;
   return `/e/${entry.id}`;
 }
+
+// A renamed public path sends the reader to the current view path, or the canonical URL.
+export function publicAbsoluteHref(entry: { id: string; viewPath?: string | null }): string {
+  const path = entry.viewPath ?? "";
+  if (path.length > 0) return `https://${documentHost}/${encodeURIComponent(path)}`;
+  return `https://${documentHost}/e/${entry.id}`;
+}

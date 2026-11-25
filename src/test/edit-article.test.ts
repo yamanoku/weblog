@@ -6,19 +6,20 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
 import { asc, eq } from "void/db";
-import { noteImages } from "../db/schema.ts";
+import { noteImages, pathRedirects } from "../db/schema.ts";
 import { publicArticleFields } from "../domain/edit-article.ts";
 import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.ts";
 import { acceptNoteImage, encodeNoteImage, noteActivityAttachment, noteImageIsPublic } from "../domain/note-image.ts";
 import { entryImageViews, type EntryImageObjects } from "../store/entry-images.ts";
 import type { NoteImageBytes } from "../domain/note-image.ts";
-import { missingTitleCreateHref, publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath, savedEntryHref } from "../domain/public-article.ts";
+import { missingTitleCreateHref, publicAbsoluteHref, publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath, savedEntryHref } from "../domain/public-article.ts";
 import {
   commitEntry,
   listDeliverableEntries,
   listDeliverableEntryPage,
   listHomeEntryPage,
   readPublicEntryByPath,
+  readPublicPathRedirect,
   readStoredEntry,
 } from "../store/entries.ts";
 import {
@@ -299,6 +300,8 @@ test("public articles are listed for the home page and matched by the title path
   assert.match(home, /homeEntries/);
   assert.match(title, /readsDevCatalog\(/);
   assert.match(title, /readPublicEntryByPath\(/);
+  assert.match(title, /readPublicPathRedirect\(/);
+  assert.match(title, /301/);
   assert.match(title, /publicEntryByTitle\(/);
   assert.match(readRoot("pages/index.svelte"), /\{entry\.title\}/);
   assert.match(readRoot("pages/index.svelte"), /\/e\/\$\{entry\.id\}/);
@@ -453,6 +456,13 @@ test("deployed public reads use D1 rows and skip drafts and pages", async () => 
   const byPath = await readPublicEntryByPath(database, "Spaced_title");
   assert.equal(byPath?.id, "article-1");
   assert.equal(await readPublicEntryByPath(database, "draft-thought"), null);
+  await database.insert(pathRedirects).values({ pathKey: "2022/1/27", entryId: "article-1" });
+  await database.insert(pathRedirects).values({ pathKey: "old-draft", entryId: "draft-1" });
+  const renamed = await readPublicPathRedirect(database, "2022/1/27");
+  assert.deepEqual(renamed, { id: "article-1", viewPath: "Spaced_title" });
+  assert.equal(publicAbsoluteHref(renamed!), "https://weblog.yamanoku.net/Spaced_title");
+  assert.equal(await readPublicPathRedirect(database, "old-draft"), null);
+  assert.equal(await readPublicPathRedirect(database, "missing"), null);
   sqlite.close();
 });
 

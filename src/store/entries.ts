@@ -1,6 +1,6 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { and, count, desc, eq, isNotNull, isNull, or, sql } from "void/db";
-import { entries, tombstones } from "../db/schema.ts";
+import { entries, pathRedirects, tombstones } from "../db/schema.ts";
 import { homePageCount } from "../domain/home-page.ts";
 
 export type EntryCommit = {
@@ -189,6 +189,26 @@ export async function listHomeEntryPage(
     .limit(size)
     .offset((page - 1) * size);
   return { total, rows: rows.map(publicEntryRow) };
+}
+
+// A former view path of a public entry. Drafts and missing rows do not redirect.
+export async function readPublicPathRedirect(
+  database: BetterSQLite3Database,
+  pathKey: string,
+): Promise<{ id: string; viewPath: string | null } | null> {
+  const redirects = await database
+    .select({ entryId: pathRedirects.entryId })
+    .from(pathRedirects)
+    .where(eq(pathRedirects.pathKey, pathKey));
+  const entryId = redirects[0]?.entryId;
+  if (!entryId) return null;
+  const rows = await database
+    .select({ id: entries.id, viewPath: entries.viewPath, visibility: entries.visibility })
+    .from(entries)
+    .where(eq(entries.id, entryId));
+  const row = rows[0];
+  if (!row || row.visibility !== "public") return null;
+  return { id: row.id, viewPath: row.viewPath };
 }
 
 // One public row for a title path. A view path wins over a raw title.
