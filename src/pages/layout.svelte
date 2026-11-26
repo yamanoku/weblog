@@ -15,6 +15,7 @@
   import "../styles/dads/breadcrumb.css";
   import "../styles/dads/disclosure.css";
   import "../styles/dads/utility-link.css";
+  import "../styles/dads/table.css";
   import "../styles/site.css";
 
   let { children } = $props();
