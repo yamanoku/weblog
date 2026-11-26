@@ -75,4 +75,15 @@
     display: flex;
     justify-content: space-between;
   }
+
+  table {
+    a {
+      font-weight: bold;
+    }
+
+    time {
+      font-weight: normal;
+      color: var(--color-neutral-solid-gray-100);
+    }
+  }
 </style>
