@@ -11,6 +11,8 @@ The parent product is [weblog.yamanoku.net](../../product.md). Write rules are i
 ### Scope
 
 - Unauthenticated HTML for `GET /`, `GET /{title}`, and `GET /e/{id}`
+- The month calendar on the home page
+- Links, under a date-titled diary, to the public entries created on that day
 - Human-readable feeds
 - Empty pages for titles that have public inbound edges and no public entry
 - The public Gyazo image URL and the bytes it returns
@@ -125,12 +127,6 @@ Scenario: When a bookmark is public, the HTML includes its external URL beside t
 - When: An unauthenticated client requests the bookmark's view path and its canonical URL, and does not ask for Activity Streams. The client also requests the article's view path.
 - Then: On the bookmark's view path and canonical URL, the HTML shows that URL beside the title. When the URL starts with `http://` or `https://`, it is an external link whose text is the URL. Any other non-empty value is text, and it is not a link. The title text stays the stored title. The stored body is unchanged. The article page does not show a bookmark URL.
 
-Scenario: When a public bookmark is listed, its title opens the external URL
-
-- Given: A public bookmark has an external URL that starts with `http://` or `https://`. It also has a view path.
-- When: An unauthenticated client opens GET `/`.
-- Then: The title's link is that external URL. It is not the view path and not the canonical URL. A direct request for the canonical URL still returns that entry's HTML.
-
 Scenario: When a body link is a YouTube or Spotify URL, the page shows an embed
 
 - Given: A public article, bookmark, or page contains a Markdown link, or a bare `http` or `https` URL, for a YouTube video, short, live video, or playlist, or for a Spotify track, album, playlist, episode, show, or artist. The same URL also appears in fenced code. A public note contains that URL in its body.
@@ -140,8 +136,8 @@ Scenario: When a body link is a YouTube or Spotify URL, the page shows an embed
 Scenario: When a bookmark URL is a YouTube or Spotify URL, the page shows that embed in the article
 
 - Given: A public bookmark's external URL is one of those media URLs. The bookmark also has a view path.
-- When: An unauthenticated client requests the bookmark's view path and its canonical URL, and also opens GET `/`.
-- Then: The article shows that embed after the heading. The heading does not contain the iframe. The page does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
+- When: An unauthenticated client requests the bookmark's view path and its canonical URL.
+- Then: The article shows that embed after the heading. The heading does not contain the iframe. The page does not show an anchor whose text is the URL. The stored bookmark URL is unchanged.
 
 Scenario: When a body link is a Speaker Deck URL, the page shows an embed
 
@@ -158,8 +154,8 @@ Scenario: When Speaker Deck does not name a player, the deck URL stays a link
 Scenario: When a bookmark URL is a Speaker Deck URL, the page shows that embed in the article
 
 - Given: A public bookmark's external URL is a Speaker Deck deck URL. Speaker Deck names a player for it. The bookmark also has a view path.
-- When: An unauthenticated client requests the bookmark's view path and its canonical URL, and also opens GET `/`.
-- Then: The article shows that embed after the heading. The heading does not contain the iframe. The page does not show an anchor whose text is the URL. The home list title still links to the external URL. The stored bookmark URL is unchanged.
+- When: An unauthenticated client requests the bookmark's view path and its canonical URL.
+- Then: The article shows that embed after the heading. The heading does not contain the iframe. The page does not show an anchor whose text is the URL. The stored bookmark URL is unchanged.
 
 Scenario: When a link href is http or https, its underline is dotted and its background is yellow
 
@@ -197,17 +193,89 @@ Scenario: When a public page stores an image, the image URL returns the bytes
 - When: An unauthenticated client requests `GET /note-images/{id}` for that image.
 - Then: The response is those bytes. The page HTML does not list the image under the body. The image appears only where the stored Markdown places it.
 
+### Open a dated diary from the month calendar
+
+As an unauthenticated reader, I want the home page to show one month of dates so that I can open that day's diary.
+
+**Acceptance criteria:**
+
+Scenario: When the query is absent, the page shows the current month in Tokyo
+
+- Given: Today's date in Tokyo is 2026-11-26. One public diary is titled `2026-11-26` and has a view path. Another public diary is titled `2026-11-01` and has a view path. A public article, a public note that is not a reply, a public bookmark, a public diary whose title is not a date, and a public page also exist. A draft diary is titled `2026-11-20`. A public article is titled `2026-11-21`. A public diary is titled `2026-11-22` and has no view path.
+- When: An unauthenticated client requests `GET /`.
+- Then: The response is 200 HTML. The month shown is November 2026, and the page lists every date from the first through the last day of that month. It marks the 26th as today. The dates `2026-11-26` and `2026-11-01` are links to those diaries' view paths. The 22nd and every other date are not links. The page does not show the body or title of the article, note, bookmark, non-date diary, page, or draft. It does not show a card grid. Dates outside the month are not links.
+
+Scenario: When the reader moves to another month, a month with no diary is still shown
+
+- Given: Today's date in Tokyo is 2026-11-26. No public diary is titled with a date in October 2026.
+- When: An unauthenticated client requests `GET /?month=2026-10`.
+- Then: The response is 200. The month shown is October 2026. No date in that month is a link. The HTML includes a link to September 2026 with the text `前の月` and a link to November 2026 with the text `次の月`. The November link target is `/`. The September link target is `/?month=2026-09`.
+
+Scenario: When the month query is the current Tokyo month, the page matches GET /
+
+- Given: Today's date in Tokyo is 2026-11-26.
+- When: An unauthenticated client requests `GET /?month=2026-11`.
+- Then: The response is 200. The month and the linked dates match `GET /`.
+
+Scenario: When month is not a calendar month, the response is 400
+
+- Given: One public diary exists.
+- When: An unauthenticated client requests `GET /?month=2026-13`, `GET /?month=2026-1`, or `GET /?month=2026-11-26`.
+- Then: The response is 400. The body is `invalid_month`. The response is not a calendar.
+
+Scenario: When a page query is present, the calendar ignores it
+
+- Given: Today's date in Tokyo is 2026-11-26. Twenty-five deliverable entries exist.
+- When: An unauthenticated client requests `GET /?page=2`, `GET /?page=0`, or `GET /?page=2a`. Another request is `GET /?month=2020-01&page=2`.
+- Then: Each response that has only `page` is 200 and shows the same month as `GET /`. It does not list items from the thirteenth onward. The body is not `invalid_page`. The response that has both `month` and `page` is 200 and shows January 2020.
+
+### Open the same day's writing under a dated diary
+
+As an unauthenticated reader, I want to open the article, short post, or bookmark written on a diary's date from below that diary, so that I can move between the diary and the other public entries from that day.
+
+**Acceptance criteria:**
+
+Scenario: When a public entry's creation date in Tokyo matches the diary title, the diary page lists it below the body
+
+- Given: A public diary is titled `2026-11-26` and has a view path. Public article A has `created_at` `2026-11-25T15:00:00.000Z`, which is 2026-11-26 00:00 in Tokyo. Public bookmark C has a non-empty title and a view path, and its `created_at` is `2026-11-26T03:00:00.000Z`. Public note B is not a reply to another note, has no view path, and its `created_at` is `2026-11-26T14:59:59.999Z`, which is 2026-11-26 23:59:59.999 in Tokyo. Public article D has `created_at` `2026-11-26T15:00:00.000Z`, which is 2026-11-27 00:00 in Tokyo.
+- When: An unauthenticated client requests that diary's view path and its canonical URL.
+- Then: Both responses are 200. After the diary body, the heading is `当日書いたコンテンツ`. The links under it are A, then C, then B. An equal creation time is ordered by the immutable id ascending. The links for A and C are their view paths. The link for B is its canonical URL. Each link's text is that entry's non-empty title. D is absent. C's link is not the bookmark's external URL.
+
+Scenario: When a same-day entry has an empty title, the link text is the canonical URL
+
+- Given: A public diary is titled `2026-11-26`. A public note is not a reply, and its title is empty. The Tokyo date of its `created_at` is 2026-11-26.
+- When: An unauthenticated client requests that diary's view path.
+- Then: The same-day link's text is that note's canonical URL. The link target is the path of that canonical URL.
+
+Scenario: When the only same-day rows are a reply, a draft, another diary, or a page, the heading is absent
+
+- Given: A public diary is titled `2026-11-26`. Each of the following has a Tokyo creation date of 2026-11-26: a public note that replies to another note, a draft article, a public diary whose title is not a date, and a public page. No other public article, note, or bookmark was created that day.
+- When: An unauthenticated client requests that dated diary's view path.
+- Then: The response is 200 and includes the diary body. The heading `当日書いたコンテンツ` is absent. The reply, the draft, the other diary, and the page are absent.
+
+Scenario: When the diary title is not a date, the page omits the same-day list
+
+- Given: A public diary's title is not a date. A public article's Tokyo creation date matches the Tokyo date of that diary's `created_at`.
+- When: An unauthenticated client requests that diary's view path.
+- Then: The response is 200 and includes the diary body. The heading `当日書いたコンテンツ` is absent.
+
+Scenario: When the owner opens a draft diary whose title is a date, the page lists the public entries from that day
+
+- Given: The request is verified as the owner. The diary is a draft titled `2026-11-26`. A public article's Tokyo creation date is 2026-11-26.
+- When: The owner requests that canonical URL without asking for Activity Streams. An unverified client requests the same URL.
+- Then: The owner's response is 200. It includes the draft body, says the entry is a draft, and includes the heading `当日書いたコンテンツ` plus a link to that article. The unverified response matches a missing entry and omits that list.
+
 ### Read the human-readable feeds
 
 As an unauthenticated reader, I want to read a feed of deliverable entries so that I can follow new articles, short posts, and bookmarks.
 
 **Acceptance criteria:**
 
-Scenario: When deliverable entries exist, the first home page lists twelve of them
+Scenario: When deliverable entries exist, the first feed page lists ten of them
 
-- Given: More than twelve deliverable entries exist. A page is public and is not deliverable.
-- When: An unauthenticated client requests `GET /`, `GET /feed.xml`, or `GET /feed.json`.
-- Then: `GET /` lists twelve entries from the deliverable entries and the public pages together. On the home list, a public page with a source updated time uses that time, and every other entry uses `updatedAt`, newest first. An equal time breaks the tie by the immutable id descending. `GET /feed.xml` and `GET /feed.json` list ten deliverable entries. Feed order is `updatedAt` descending, then the immutable id descending. A public page is absent from the feeds. Each item includes the body. On the `GET /` card, that body shows at most 100 characters. A longer body shows those 100 characters followed by `…`. The title and the images are outside that count. A page card counts the words a reader would see, the same way an article card does. A feed still includes the full body. The item id is the canonical URL. The HTML for `GET /` places those items in one wrapping grid of cards. The column count follows the width of the list. The list does not divide items by date. The feeds are not divided by date.
+- Given: More than ten deliverable entries exist. A page is public and is not deliverable.
+- When: An unauthenticated client requests `GET /feed.xml` or `GET /feed.json`.
+- Then: Each response lists ten deliverable entries. Order is `updatedAt` descending, then the immutable id descending. A public page is absent. Each item includes the full body. The item id is the canonical URL. The feeds are not divided by date.
 
 Scenario: When more than ten deliverable entries exist, the response offers the next page
 
@@ -215,35 +283,11 @@ Scenario: When more than ten deliverable entries exist, the response offers the 
 - When: An unauthenticated client requests the first feed page.
 - Then: The response includes the URL of the next page. That page contains the remaining entry and no URL for a further page.
 
-Scenario: When the reader opens the second page of the home list
-
-- Given: Twenty-five deliverable entries exist.
-- When: An unauthenticated client requests `GET /?page=2`.
-- Then: The response is 200 and lists the thirteenth through the twenty-fourth entries, in the same order as `GET /`. The HTML links to `/` with the text `前へ` and to `/?page=3` with the text `次へ`. The link to the first page is `/` and has no `page` query.
-
-Scenario: When `page` is not a page number
-
-- Given: A deliverable entry exists.
-- When: An unauthenticated client requests `GET /?page=0` or `GET /?page=2a`.
-- Then: The response is 400. The body is `invalid_page`. The response is not an empty HTML list.
-
-Scenario: When `page` is past the last home page
-
-- Given: Eleven deliverable entries exist.
-- When: An unauthenticated client requests `GET /?page=3`.
-- Then: The response is 404.
-
 Scenario: When no deliverable entry exists, the feed is an empty success
 
-- Given: No deliverable entry exists. No public page exists.
-- When: An unauthenticated client requests `GET /`.
-- Then: The response is 200. The list is empty. The response is not 404.
-
-Scenario: When no deliverable entry exists and a public page does, the home list shows that page
-
-- Given: No deliverable entry exists. One public page exists.
-- When: An unauthenticated client requests `GET /`.
-- Then: The response is 200. The list includes that page. The response is not 404. The feeds omit that page.
+- Given: No deliverable entry exists.
+- When: An unauthenticated client requests `GET /feed.xml` or `GET /feed.json`.
+- Then: The response is 200. It has no items. The response is not 404.
 
 Scenario: When the reader asks for one kind, the Atom feed contains only that kind
 
@@ -372,7 +416,7 @@ The parent product sets no percentage target for availability or delivery succes
 
 ##### Which entry is public
 
-A public entry has visibility public. Draft bodies stay out of unauthenticated responses, the home list, the feeds, and view paths. The owner's GET `/e/{id}` includes that draft body and says the entry is a draft. A draft is indistinguishable from a missing entry for an unauthenticated client. Reading does not create an entry.
+A public entry has visibility public. Draft bodies stay out of unauthenticated responses, the home calendar, the feeds, and view paths. The owner's GET `/e/{id}` includes that draft body and says the entry is a draft. A draft is indistinguishable from a missing entry for an unauthenticated client. Reading does not create an entry.
 
 The kinds are article, diary, note, bookmark, and page. A public page and a public diary are readable at their URLs. Deliverable entries, feeds, and `publishedAt` are defined by [Owner writing](../owner-writing/requirements.md). This feature does not send activities.
 
@@ -404,7 +448,7 @@ On a public HTML page, an anchor whose href starts with `http://` or `https://` 
 
 Public HTML for a note keeps the stored lines.
 
-On a bookmark's view path and canonical page, an external URL that is not a media embed is shown beside the title. An `http` or `https` value that is a YouTube or Spotify media URL from the rule above, or a Speaker Deck URL whose player is known, is that embed, not an anchor. The article contains that embed after the heading, and the heading does not contain the iframe. Any other `http` or `https` value is an external link whose text is the URL, beside the title. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body. The home list title of a bookmark still opens the external URL.
+On a bookmark's view path and canonical page, an external URL that is not a media embed is shown beside the title. An `http` or `https` value that is a YouTube or Spotify media URL from the rule above, or a Speaker Deck URL whose player is known, is that embed, not an anchor. The article contains that embed after the heading, and the heading does not contain the iframe. Any other `http` or `https` value is an external link whose text is the URL, beside the title. Any other non-empty value is text, and it is not a link. The host does not insert that URL into the stored body.
 
 When the request is verified as the owner, the view path and the canonical page of a public article, a public bookmark, or a public page include, after the entry, a link whose visible text is `edit` and whose target is GET `/edit/{id}` for that entry. An unverified request omits that link. A public note omits it. The stored body does not change. Owner writing defines the edit screen that link opens.
 
@@ -424,38 +468,75 @@ When no public entry has the title and no public inbound edge points at it, the 
 
 When no public entry has the title and the request is verified as the owner, the title path includes a link whose visible text is `作成`. The target is GET `/new?title=` plus the path title percent-encoded. An unverified request omits the link. The host stores no entry. Owner writing defines the create form that link opens.
 
+### Show the month calendar
+
+**Overview:** The home page shows the dates of one month. A date is a link only when a public diary is titled with that `YYYY-MM-DD` and has a view path. The link target is that view path.
+
+**Input:** `GET /`. Another month is `GET /?month=YYYY-MM`.
+
+**Output:** HTML for that month. When `month` is not a calendar month, the response is 400 `invalid_month`.
+
+#### Applicable conditions
+
+`GET /` is HTML. When the `month` query is absent or empty, the month is the month that contains today's date in `Asia/Tokyo`. `month` is a four-digit year, a hyphen, and a two-digit month. The month is 01 through 12. The leading zero is required. Any other `month` is 400 `invalid_month`. The body is `text/plain; charset=utf-8`, and the response is not a calendar. A `page` query is ignored. When both `month` and `page` are present, the response shows the `month`. When `month` is not a calendar month, the response is 400 even if `page` is also present.
+
+The response lists every date from the first through the last day of that month. The year and the month are identifiable. When today falls in that month, the page marks that date as today. Dates outside the month are not links.
+
+A date is a link when a public diary meets all of the following. Its visibility is public. Its kind is diary. Its title equals that date written as `YYYY-MM-DD`. It has a view path. The link target is that view path. A draft, an article, a note, a bookmark, a page, a diary whose title is not a date, and a diary with no view path are not links. The home page does not show their bodies or titles. It is not a card grid.
+
+The page links to the previous month and the next month. The texts are `前の月` and `次の月`. When the target month is the current month in Tokyo, the href is `/`. Otherwise the href is `/?month=` plus `YYYY-MM`. A month with no diary is still 200, and its dates are not links.
+
+Stored rows are unchanged. No new column is required.
+
+### Add the same day's entries under a dated diary
+
+**Overview:** The HTML for a diary whose title is `YYYY-MM-DD` lists, after the body, the public articles, notes, and bookmarks created on that Tokyo date.
+
+**Input:** That diary's view path, or its canonical URL.
+
+**Output:** The diary HTML. When same-day entries exist, the heading is `当日書いたコンテンツ` and the links follow it. When none exist, that heading is absent.
+
+#### Applicable conditions
+
+The subject is a diary whose whole title is a real calendar date written `YYYY-MM-DD`. For a public diary, both the view path and the canonical URL include this list. For a draft diary, only the owner's canonical URL includes this list. An unverified request treats that draft as a missing entry. A diary whose title is not this shape omits the list.
+
+The list includes an article, a note, or a bookmark whose visibility is public. The note is not a reply to another note. The Tokyo date of `created_at` equals the date in the diary title. A draft, a reply, another diary, and a page are excluded. The diary itself is excluded.
+
+Order is `created_at` ascending. An equal time is ordered by the immutable id ascending. The link target is the view path when one exists, and otherwise the canonical URL. It is not a bookmark's external URL. The link text is the non-empty title. When the title is empty, the link text is the canonical URL. The list does not include the body. When no entry qualifies, the heading `当日書いたコンテンツ` is absent.
+
+This list is not in the feeds. It is not on the home calendar.
+
 ### List feeds
 
-**Overview:** Human-readable feeds list deliverable entries. A feed page contains ten items. The home HTML list contains twelve.
+**Overview:** Human-readable feeds list deliverable entries. A feed page contains ten items.
 
 **Input:** One of the following paths. A later page uses the next-page URL from the previous response.
 
-- `GET /`
 - `GET /feed.xml`
 - `GET /feed.json`
 - `GET /feed/articles.xml`
 - `GET /feed/notes.xml`
 - `GET /feed/bookmarks.xml`
 
-**Output:** A feed page of ten items, or a home page of twelve, with fewer on the last page. The response includes the next page's URL when more items exist.
+**Output:** A feed page of ten items, with fewer on the last page. The response includes the next page's URL when more items exist.
 
 #### Applicable conditions
 
 ##### Feeds
 
-`GET /` is HTML. `GET /feed.xml` is Atom. `GET /feed.json` is JSON Feed. The two feeds list the same deliverable entries. Atom is required. JSON Feed is an additional representation of the same items. The home HTML adds public pages that are not diaries to those deliverable entries. A public diary is already deliverable.
+`GET /feed.xml` is Atom. `GET /feed.json` is JSON Feed. The two feeds list the same deliverable entries. Atom is required. JSON Feed is an additional representation of the same items. A public diary is already deliverable.
 
 `GET /feed/articles.xml`, `GET /feed/notes.xml`, and `GET /feed/bookmarks.xml` are Atom feeds for that kind only. There is no per-kind JSON Feed.
 
-A feed includes only deliverable entries, ordered by `updatedAt` descending. When `updatedAt` is equal, the immutable id descending breaks the tie. A public diary is included in the feeds. A page that is still kind page is excluded from the feeds. A note that replies to another note is not deliverable, so it is absent from GET `/` and from these feeds. `GET /` adds a public page that is still kind page to the deliverable entries. On that list, an entry with a source updated time uses that time, and every other entry uses `updatedAt`, newest first. An equal time breaks the tie by the immutable id descending. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
+A feed includes only deliverable entries, ordered by `updatedAt` descending. When `updatedAt` is equal, the immutable id descending breaks the tie. A public diary is included in the feeds. A page that is still kind page is excluded from the feeds. A note that replies to another note is not deliverable, so it is absent from these feeds. Each item includes the body and uses the canonical URL as its item id. For a bookmark whose external URL starts with `http://` or `https://`, the link to the entry is that URL. For every other entry, the link is the view path when one exists, and otherwise the canonical URL.
 
-The owner's API list of 50 entries is a different list. It is not this page size.
+The owner's API list of 50 entries is a different list. It does not share this page size.
 
-##### Pages of ten and twelve
+##### Pages of ten
 
-A feed response returns ten items. `GET /` returns twelve. The last page may be shorter. When no item exists, the response is 200 and the list is empty. When more items exist, the response includes the URL of the next page. The last page omits that URL. The pages partition the ordered list. They do not repeat an item or skip an item.
+A feed response returns ten items. The last page may be shorter. When no item exists, the response is 200 and the list is empty. When more items exist, the response includes the URL of the next page. The last page omits that URL. The pages partition the ordered list. They do not repeat an item or skip an item.
 
-For `GET /`, the next page is `/?page=` plus the 1-based page number. The second page is `/?page=2`. The first page omits `page`. `page=1` lists the same entries as the URL without `page`. A feed's next-page URL is the shape Design records for that feed.
+A feed's next-page URL is the shape Design records for that feed.
 
 ### Return a Gyazo image
 

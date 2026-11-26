@@ -1,12 +1,17 @@
 <script lang="ts">
-  import { Form, Link, useForm } from "@void/svelte";
-  import { cardBodyExcerpt } from "../domain/card-excerpt.ts";
-  import { entryClass } from "../domain/entry-kind-class.ts";
-  import { homePageHref, homePageNumbers } from "../domain/home-page.ts";
+  import { Form, useForm } from "@void/svelte";
   import { acceptNoteImage, encodeNoteImage, noteImageAltLimit } from "../domain/note-image.ts";
+  import type { CalendarDay } from "../domain/home-calendar.ts";
 
-  let { entries, owner = false, postedNote = null, page = 1, pageCount = 1 } = $props();
-  const pageNumbers = $derived(homePageNumbers(page, pageCount));
+  let {
+    owner = false,
+    postedNote = null,
+    documentTitle = "weblog.yamanoku.net",
+    label = "",
+    previousHref = "/",
+    nextHref = "/",
+    weeks = [] as Array<Array<CalendarDay | null>>,
+  } = $props();
   const noteForm = useForm("/edit?note", { noteBody: "" }, { resetOnSuccess: true });
   let attachedBase64 = "";
   let previewUrl = $state("");
@@ -128,13 +133,7 @@
 </script>
 
 <svelte:head>
-  <title>weblog.yamanoku.net</title>
-  {#if page > 1}
-    <link rel="prev" href={homePageHref(page - 1)} />
-  {/if}
-  {#if page < pageCount}
-    <link rel="next" href={homePageHref(page + 1)} />
-  {/if}
+  <title>{documentTitle}</title>
 </svelte:head>
 
 <div class="dads-heading" data-size="32">
@@ -227,54 +226,44 @@
 </div>
 {/if}
 
-<div class="entry-grid">
-  {#each entries as entry (entry.id)}
-    {@const excerpt = cardBodyExcerpt(entry.body, entry.kind)}
-    <article class={entryClass("entry-card", entry.kind)}>
-      {#if entry.title.length > 0 }
-        <h2 class="entry-card__title dads-u-std-18B-160">{entry.title}</h2>
-      {/if}
-      {#if excerpt}
-        <p class="entry-body">{excerpt}</p>
-      {/if}
-      {#if entry.kind === "note" && entry.imageHref}
-        <img src={entry.imageHref} alt={entry.imageAlt ?? ""} />
-      {/if}
-      {#if entry.kind === "bookmark"}
-        {#each entry.images ?? [] as image (image.href)}
-          <img src={image.href} alt={image.alt} />
-        {/each}
-      {/if}
-      <footer>
-        <p><Link class="dads-link" href={`/e/${entry.id}`}>permalink</Link></p>
-      </footer>
-    </article>
-  {/each}
+<div class="dads-heading" data-size="24">
+  <h2 id="month-label" class="dads-heading__heading">{label}</h2>
 </div>
-
-{#if pageCount > 1}
-  <nav class="home-pages" aria-label="ページ">
-    {#if page > 1}
-      <Link class="dads-link" href={homePageHref(page - 1)} rel="prev">前へ</Link>
-    {/if}
-    <ol>
-      {#each pageNumbers as item, index (typeof item === "number" ? item : `gap-${index}`)}
-        <li>
-          {#if item === "gap"}
-            <span aria-hidden="true">…</span>
-          {:else if item === page}
-            <span aria-current="page">{item}</span>
-          {:else}
-            <Link class="dads-link" href={homePageHref(item)}>{item}</Link>
-          {/if}
-        </li>
-      {/each}
-    </ol>
-    {#if page < pageCount}
-      <Link class="dads-link" href={homePageHref(page + 1)} rel="next">次へ</Link>
-    {/if}
-  </nav>
-{/if}
+<nav class="month-nav" aria-label="月">
+  <a class="dads-link" href={previousHref}>前の月</a>
+  <a class="dads-link" href={nextHref}>次の月</a>
+</nav>
+<table class="month-calendar">
+  <caption class="dads-u-visually-hidden">{label}</caption>
+  <thead>
+    <tr>
+      <th scope="col">日</th>
+      <th scope="col">月</th>
+      <th scope="col">火</th>
+      <th scope="col">水</th>
+      <th scope="col">木</th>
+      <th scope="col">金</th>
+      <th scope="col">土</th>
+    </tr>
+  </thead>
+  <tbody>
+    {#each weeks as week, weekIndex (weekIndex)}
+      <tr>
+        {#each week as cell, dayIndex (`${weekIndex}-${cell?.date ?? dayIndex}`)}
+          <td>
+            {#if cell}
+              {#if cell.href}
+                <a class="dads-link" href={cell.href} aria-label={cell.accessibleName} aria-current={cell.current ? "date" : undefined}>{cell.day}</a>
+              {:else}
+                <time datetime={cell.date} aria-current={cell.current ? "date" : undefined}>{cell.day}</time>
+              {/if}
+            {/if}
+          </td>
+        {/each}
+      </tr>
+    {/each}
+  </tbody>
+</table>
 
 <style>
   h1 {
@@ -285,83 +274,49 @@
     overflow-wrap: anywhere;
   }
 
-  :global(main.site-main):has(.entry-grid) {
-    max-inline-size: 72rem;
-  }
-
   .post-note {
     max-inline-size: 40rem;
   }
 
-  .entry-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-    gap: 1rem;
-  }
-
-  .entry-card {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    min-inline-size: 0;
-    margin: 0;
-    padding: 1.25rem;
-    border: 1px solid var(--color-neutral-solid-gray-200);
-    border-radius: 0.5rem;
-    background-color: var(--color-neutral-white);
-    box-sizing: border-box;
-  }
-
-  .entry-card__title {
-    margin: 0;
-    text-wrap: balance;
-    overflow-wrap: anywhere;
-  }
-
-  .entry-card .entry-body {
-    text-wrap: pretty;
-    overflow-wrap: anywhere;
-  }
-
-  .entry-card > img {
-    display: block;
-    max-inline-size: 100%;
-    block-size: auto;
-  }
-
-  .entry-card footer {
-    margin-block-start: auto;
-    padding-inline: 0;
-  }
-
-  .entry-card footer p {
-    margin: 0;
-    text-align: right;
-  }
-
-  .home-pages {
+  .month-nav {
     display: flex;
     flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    margin-block: 0.5rem 1rem;
+  }
+
+  .month-calendar {
+    width: 100%;
+    max-inline-size: 40rem;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .month-calendar th,
+  .month-calendar td {
+    padding: 0.25rem;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .month-calendar a,
+  .month-calendar time {
+    display: inline-flex;
     align-items: center;
-    gap: 0.75rem 1rem;
+    justify-content: center;
+    min-inline-size: 2.75rem;
+    min-block-size: 2.75rem;
   }
 
-  .home-pages ol {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .home-pages [aria-current="page"] {
+  .month-calendar [aria-current="date"] {
     font-weight: 700;
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
   }
 
   @media (forced-colors: active) {
-    .entry-card {
-      border-color: CanvasText;
+    .month-calendar [aria-current="date"] {
+      outline-color: CanvasText;
     }
   }
 </style>

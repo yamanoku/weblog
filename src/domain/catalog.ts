@@ -1,3 +1,10 @@
+import {
+  monthDiaryHrefs,
+  sameDayLinks,
+  type CalendarSource,
+  type YearMonth,
+} from "./home-calendar.ts";
+
 // Mock entries for the page map. This module does not import void, Svelte, or a store.
 
 export type CatalogEntry = {
@@ -10,6 +17,9 @@ export type CatalogEntry = {
   publishedAt: string | null;
   updatedAt?: string | null;
   bookmarkUrl?: string;
+  createdAt?: string | null;
+  viewPath?: string | null;
+  inReplyToId?: string | null;
 };
 
 export const reservedTitles = [
@@ -34,7 +44,19 @@ const reserved = new Set<string>(reservedTitles);
 // Local `vp dev` sample. Newest updatedAt first. These rows set no separate updatedAt,
 // so the order follows publishedAt. Tokyo noon is 03:00Z, so a day holds
 // an article at 15:00 JST (06:00Z), a note at 12:00 JST (03:00Z), and a bookmark at 09:00 JST (00:00Z).
+// Those three set createdAt to that instant so the 2026-11-21 diary lists them.
 const sourceEntries: CatalogEntry[] = [
+  {
+    id: "entry-diary-20261121",
+    title: "2026-11-21",
+    kind: "diary",
+    body: "この日の日記です。同じ東京の日付に書いた article、note、bookmark を本文の下に並べます。",
+    visibility: "public",
+    deliverable: true,
+    publishedAt: "2026-11-21T09:00:00.000Z",
+    createdAt: "2026-11-21T09:00:00.000Z",
+    viewPath: "2026-11-21",
+  },
   {
     id: "entry-article-20261121",
     title: "見出しはページに一つ",
@@ -55,6 +77,7 @@ const sourceEntries: CatalogEntry[] = [
     visibility: "public",
     deliverable: true,
     publishedAt: "2026-11-21T06:00:00.000Z",
+    createdAt: "2026-11-21T06:00:00.000Z",
   },
   {
     id: "entry-note-20261121",
@@ -64,6 +87,7 @@ const sourceEntries: CatalogEntry[] = [
     visibility: "public",
     deliverable: true,
     publishedAt: "2026-11-21T03:00:00.000Z",
+    createdAt: "2026-11-21T03:00:00.000Z",
   },
   {
     id: "entry-bookmark-20261121",
@@ -73,6 +97,7 @@ const sourceEntries: CatalogEntry[] = [
     visibility: "public",
     deliverable: true,
     publishedAt: "2026-11-21T00:00:00.000Z",
+    createdAt: "2026-11-21T00:00:00.000Z",
     bookmarkUrl: "https://html.spec.whatwg.org/",
   },
   {
@@ -442,13 +467,13 @@ D1 の1日の書き込み上限に当たったら、その仕事は 00:00 UTC �
     id: "entry-article-20261110",
     title: "ページは配信しない",
     kind: "article",
-    body: `kind が page の公開エントリは、ホームの一覧に出ます。フィードと配送には出しません。配信対象は article、note、bookmark で、\`publishedAt\` があるものだけです。
+    body: `kind が page の公開エントリは、ホームのカレンダーには出ません。フィードと配送には出しません。配信対象は article、note、bookmark で、\`publishedAt\` があるものだけです。
 
 下書きも公開面には出ません。オーナーは \`/edit\` で読みます。
 
 ## サンプルに残しているもの
 
-- \`index-only\` は公開の page で、ホームには出て、配信はしません
+- \`index-only\` は公開の page で、ホームのカレンダーには出ず、配信はしません
 - \`draft-thought\` は下書きの note で、公開一覧に入りません`,
     visibility: "public",
     deliverable: true,
@@ -527,11 +552,25 @@ export function deliverableEntries(): CatalogEntry[] {
   return entries.filter((entry) => entry.deliverable).sort(byUpdatedThenId);
 }
 
-// The local home list. Public pages join the deliverable entries. Feeds do not.
-export function homeEntries(): CatalogEntry[] {
-  return entries
-    .filter((entry) => entry.visibility === "public" && (entry.deliverable || entry.kind === "page"))
-    .sort(byUpdatedThenId);
+function calendarSource(entry: CatalogEntry): CalendarSource {
+  return {
+    id: entry.id,
+    title: entry.title,
+    kind: entry.kind,
+    visibility: entry.visibility,
+    viewPath: entry.viewPath ?? null,
+    createdAt: entry.createdAt ?? null,
+    inReplyToId: entry.inReplyToId ?? null,
+  };
+}
+
+// Local `vp dev` calendar. The sample rows are not date-titled diaries.
+export function catalogMonthHrefs(month: YearMonth): Record<string, string> {
+  return monthDiaryHrefs(entries.map(calendarSource), month);
+}
+
+export function catalogSameDayLinks(date: string) {
+  return sameDayLinks(entries.map(calendarSource), date);
 }
 
 export function publicEntries(): CatalogEntry[] {

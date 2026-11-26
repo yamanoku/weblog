@@ -1,7 +1,15 @@
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { and, count, desc, eq, isNotNull, isNull, or, sql } from "void/db";
+import { and, asc, count, desc, eq, isNotNull, isNull, or, sql } from "void/db";
 import { entries, pathRedirects, tombstones } from "../db/schema.ts";
-import { homePageCount } from "../domain/home-page.ts";
+import {
+  monthDiaryHrefs,
+  monthTitleBounds,
+  sameDayLinks,
+  tokyoDayBounds,
+  type CalendarSource,
+  type SameDayLink,
+  type YearMonth,
+} from "../domain/home-calendar.ts";
 
 export type EntryCommit = {
   id: string;
@@ -35,10 +43,7 @@ export type StoredEntry = {
 };
 
 // A deleted delivered id remains as a tombstone. The row has no body.
-export async function hasTombstone(
-  database: BetterSQLite3Database,
-  id: string,
-): Promise<boolean> {
+export async function hasTombstone(database: BetterSQLite3Database, id: string): Promise<boolean> {
   const found = await database.select().from(tombstones).where(eq(tombstones.entryId, id));
   return found.length > 0;
 }
@@ -117,11 +122,10 @@ const deliverableWhere = and(
   deliverableKind,
 );
 
-// The home list adds public pages that are not yet diaries. A row with a
-// source time uses that time, so a reclassified diary keeps its Cosense order.
-// Feeds stay on deliverableWhere.
-const homeWhere = or(deliverableWhere, and(eq(entries.visibility, "public"), eq(entries.kind, "page")));
-const homeMoment = sql`CASE WHEN ${entries.sourceUpdatedAt} IS NOT NULL THEN ${entries.sourceUpdatedAt} ELSE CAST(strftime('%s', ${entries.updatedAt}) AS INTEGER) END`;
+function pageCount(total: number, size: number): number {
+  if (total <= 0) return 1;
+  return Math.ceil(total / size);
+}
 
 function publicEntryRow(row: {
   id: string;
@@ -155,7 +159,7 @@ export async function listDeliverableEntries(
   return rows.map(publicEntryRow);
 }
 
-// One home page. The caller turns a page past the end into 404.
+// One page of the deliverable list. The home calendar does not use this offset.
 export async function listDeliverableEntryPage(
   database: BetterSQLite3Database,
   page: number,
@@ -163,7 +167,7 @@ export async function listDeliverableEntryPage(
 ): Promise<{ rows: PublicEntryRow[]; total: number }> {
   const counted = await database.select({ total: count() }).from(entries).where(deliverableWhere);
   const total = Number(counted[0]?.total ?? 0);
-  if (page > homePageCount(total, size)) return { rows: [], total };
+  if (page > pageCount(total, size)) return { rows: [], total };
   const rows = await database
     .select()
     .from(entries)
@@ -174,23 +178,88 @@ export async function listDeliverableEntryPage(
   return { total, rows: rows.map(publicEntryRow) };
 }
 
-// Home HTML. Deliverable entries plus public pages. Feeds do not use this list.
-export async function listHomeEntryPage(
+// Public date-titled diaries that have a view path. The home table links these.
+export async function listMonthDiaryHrefs(
   database: BetterSQLite3Database,
-  page: number,
-  size: number,
-): Promise<{ rows: PublicEntryRow[]; total: number }> {
-  const counted = await database.select({ total: count() }).from(entries).where(homeWhere);
-  const total = Number(counted[0]?.total ?? 0);
-  if (page > homePageCount(total, size)) return { rows: [], total };
+  month: YearMonth,
+): Promise<Record<string, string>> {
+  const bounds = monthTitleBounds(month);
   const rows = await database
-    .select()
+    .select({ id: entries.id, title: entries.title, viewPath: entries.viewPath })
     .from(entries)
-    .where(homeWhere)
-    .orderBy(desc(homeMoment), desc(entries.id))
-    .limit(size)
-    .offset((page - 1) * size);
-  return { total, rows: rows.map(publicEntryRow) };
+    .where(
+      and(
+        eq(entries.visibility, "public"),
+        eq(entries.kind, "diary"),
+        isNotNull(entries.viewPath),
+        sql`${entries.title} >= ${bounds.start} AND ${entries.title} < ${bounds.end}`,
+      ),
+    )
+    .orderBy(asc(entries.id));
+  return monthDiaryHrefs(rows.map(calendarDiary), month);
+}
+
+// Public articles, notes, and bookmarks created on that Tokyo date.
+export async function listSameDayLinks(
+  database: BetterSQLite3Database,
+  date: string,
+): Promise<SameDayLink[]> {
+  const bounds = tokyoDayBounds(date);
+  const rows = await database
+    .select({
+      id: entries.id,
+      title: entries.title,
+      kind: entries.kind,
+      createdAt: entries.createdAt,
+      viewPath: entries.viewPath,
+      inReplyToId: entries.inReplyToId,
+    })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.visibility, "public"),
+        or(eq(entries.kind, "article"), eq(entries.kind, "note"), eq(entries.kind, "bookmark")),
+        isNull(entries.inReplyToId),
+        sql`${entries.createdAt} >= ${bounds.start} AND ${entries.createdAt} < ${bounds.end}`,
+      ),
+    )
+    .orderBy(asc(entries.createdAt), asc(entries.id));
+  return sameDayLinks(rows.map(calendarSameDay), date);
+}
+
+function calendarDiary(row: {
+  id: string;
+  title: string;
+  viewPath: string | null;
+}): CalendarSource {
+  return {
+    id: row.id,
+    title: row.title,
+    kind: "diary",
+    visibility: "public",
+    viewPath: row.viewPath,
+    createdAt: null,
+    inReplyToId: null,
+  };
+}
+
+function calendarSameDay(row: {
+  id: string;
+  title: string;
+  kind: string;
+  createdAt: string;
+  viewPath: string | null;
+  inReplyToId: string | null;
+}): CalendarSource {
+  return {
+    id: row.id,
+    title: row.title,
+    kind: row.kind,
+    visibility: "public",
+    viewPath: row.viewPath,
+    createdAt: row.createdAt,
+    inReplyToId: row.inReplyToId,
+  };
 }
 
 // A former view path of a public entry. Drafts and missing rows do not redirect.

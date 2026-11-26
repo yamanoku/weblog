@@ -177,7 +177,7 @@ After the move, the owner does not update the public project. The replace rules 
 
 ##### Fields a create sets
 
-A create sets kind to diary and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched lines converted to Markdown. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. The bookmark URL is empty. `publishedAt` is the commit time, so the entry is deliverable. The home HTML list includes it. The human-readable feeds include it. This feature does not send an activity and does not add a delivery record. Public reading states the list rules.
+A create sets kind to diary and visibility to public. The immutable ID and the canonical URL follow owner writing. The Cosense page ID is stored and is unique among entries. The body is the fetched lines converted to Markdown. A first line that is only `YYYY-MM-DD` is omitted, together with one blank line after it. Any other first line remains, including when it equals the title. The bookmark URL is empty. `publishedAt` is the commit time, so the entry is deliverable. The human-readable feeds include it. Public reading decides whether the home calendar links to it. This feature does not send an activity and does not add a delivery record.
 
 The entry's created time is the time the create commits. The entry's updated time is the time a later write commits. Those times are not replaced by the Cosense timestamps. The source updated time is stored beside them and is used only to decide whether a later source copy is newer.
 

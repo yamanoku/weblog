@@ -1,5 +1,6 @@
 import { HTTPException } from "hono/http-exception";
-import { isReservedTitle, publicEntryByTitle } from "../domain/catalog.ts";
+import { catalogSameDayLinks, isReservedTitle, publicEntryByTitle } from "../domain/catalog.ts";
+import { isDatedDiaryTitle } from "../domain/home-calendar.ts";
 import { publicAbsoluteHref, publicDocumentTitle } from "../domain/public-article.ts";
 import { defineHandler } from "void";
 import { verifiedOwner } from "../middleware/01.access.ts";
@@ -8,7 +9,11 @@ import { entryImageViews } from "../store/entry-images.ts";
 import { resolveSpeakerDeckPlayers } from "../domain/speakerdeck.ts";
 import { gyazoIndexForBody } from "../store/gyazo-objects.ts";
 import { pageIconsForBody } from "../store/page-icons.ts";
-import { readPublicEntryByPath, readPublicPathRedirect } from "../store/entries.ts";
+import {
+  listSameDayLinks,
+  readPublicEntryByPath,
+  readPublicPathRedirect,
+} from "../store/entries.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
 function editableKind(kind: string | undefined): boolean {
@@ -33,6 +38,7 @@ export const loader = defineHandler(async (c) => {
       owner,
       headTitle: publicDocumentTitle(entry),
       requestedTitle: entry ? "" : title,
+      sameDay: entry && isDatedDiaryTitle(entry) ? catalogSameDayLinks(entry.title) : [],
     };
   }
   const entry = await readPublicEntryByPath(editArticleDatabase(), title);
@@ -46,7 +52,13 @@ export const loader = defineHandler(async (c) => {
       c.header("cache-control", "private, no-store");
       c.header("vary", "Cookie");
     }
-    return { entry: null, owner, headTitle: publicDocumentTitle(null), requestedTitle: title };
+    return {
+      entry: null,
+      owner,
+      headTitle: publicDocumentTitle(null),
+      requestedTitle: title,
+      sameDay: [],
+    };
   }
   if (owner && editableKind(entry.kind)) {
     c.header("cache-control", "private, no-store");
@@ -57,7 +69,8 @@ export const loader = defineHandler(async (c) => {
       ? ((await entryImageViews(editArticleDatabase(), [entry.id])).get(entry.id) ?? [])
       : [];
   const gyazo = await gyazoIndexForBody(editArticleDatabase(), entry.body);
-  const icons = entry.kind === "note" ? {} : await pageIconsForBody(editArticleDatabase(), entry.body);
+  const icons =
+    entry.kind === "note" ? {} : await pageIconsForBody(editArticleDatabase(), entry.body);
   const speakerdeck =
     entry.kind === "note"
       ? {}
@@ -66,5 +79,8 @@ export const loader = defineHandler(async (c) => {
     entry: { ...entry, images, gyazo, speakerdeck, icons },
     owner,
     headTitle: publicDocumentTitle(entry),
+    sameDay: isDatedDiaryTitle(entry)
+      ? await listSameDayLinks(editArticleDatabase(), entry.title)
+      : [],
   };
 });

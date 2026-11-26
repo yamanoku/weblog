@@ -5,8 +5,9 @@
   import { missingTitleCreateHref, publicArticleHref } from "../domain/public-article.ts";
   import Breadcrumb from "../ui/breadcrumb.svelte";
   import EntryHeading from "../ui/entry-heading.svelte";
+  import SameDay from "../ui/same-day.svelte";
 
-  let { entry, owner = false, headTitle = "weblog.yamanoku.net", requestedTitle = "" } = $props();
+  let { entry, owner = false, headTitle = "weblog.yamanoku.net", requestedTitle = "", sameDay = [] } = $props();
 </script>
 
 <svelte:head>
@@ -36,6 +37,7 @@
         {/each}
       {/if}
     {/if}
+    <SameDay links={sameDay} />
   </article>
   {#if owner && (entry.kind === "article" || entry.kind === "diary" || entry.kind === "bookmark" || entry.kind === "page")}
     <p><Link class="dads-link" href={`/edit/${entry.id}`}>edit</Link></p>

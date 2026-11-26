@@ -49,7 +49,7 @@ These files live under `src/pages/`. The first response is HTML. After that, a m
 
 | Path | Role |
 | --- | --- |
-| `GET /` | HTML list of deliverable entries. When the request is verified as the owner, the note field is under the navigation. An unverified response omits it. A later page sets `page` on this path. The second page is `/?page=2`. |
+| `GET /` | A month calendar. Another month sets `month`. When the request is verified as the owner, the note field is under the navigation. An unverified response omits it. `page` is ignored. |
 | `GET /{title}` | Public entry HTML, or the empty page when the requirements say so. |
 | `GET /e/{id}` | HTML for the canonical URL when the request is not the Activity Streams case below. A verified owner also receives a draft here. An unverified draft matches a missing entry. |
 | `GET /login` | The Cloudflare Access login page. A verified response links to `/edit` and `/new` and includes no draft body. |

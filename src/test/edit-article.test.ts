@@ -10,15 +10,28 @@ import { noteImages, pathRedirects } from "../db/schema.ts";
 import { diaryFromEditForm, publicArticleFields } from "../domain/edit-article.ts";
 import { tokyoDateTitle } from "../domain/tokyo-date.ts";
 import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.ts";
-import { acceptNoteImage, encodeNoteImage, noteActivityAttachment, noteImageIsPublic } from "../domain/note-image.ts";
+import {
+  acceptNoteImage,
+  encodeNoteImage,
+  noteActivityAttachment,
+  noteImageIsPublic,
+} from "../domain/note-image.ts";
 import { entryImageViews, type EntryImageObjects } from "../store/entry-images.ts";
 import type { NoteImageBytes } from "../domain/note-image.ts";
-import { missingTitleCreateHref, publicAbsoluteHref, publicArticleHref, publicDocumentTitle, publicEntryHref, publicArticleMatchesPath, savedEntryHref } from "../domain/public-article.ts";
+import {
+  missingTitleCreateHref,
+  publicAbsoluteHref,
+  publicArticleHref,
+  publicDocumentTitle,
+  publicEntryHref,
+  publicArticleMatchesPath,
+  savedEntryHref,
+} from "../domain/public-article.ts";
 import {
   commitEntry,
   listDeliverableEntries,
   listDeliverableEntryPage,
-  listHomeEntryPage,
+  listMonthDiaryHrefs,
   readPublicEntryByPath,
   readPublicPathRedirect,
   readStoredEntry,
@@ -73,7 +86,11 @@ const markdown = [
 test("the edit create submit stores markdown as an article body", async () => {
   const sqlite = applyShippedMigrations();
   const database = drizzle(sqlite);
-  const saved = await submitArticleFromEdit(database, { title, body: markdown, visibility: "public" });
+  const saved = await submitArticleFromEdit(database, {
+    title,
+    body: markdown,
+    visibility: "public",
+  });
   assert.equal("error" in saved, false);
   if ("error" in saved) return;
   assert.equal(saved.kind, "article");
@@ -93,9 +110,17 @@ test("the edit create submit stores markdown as an article body", async () => {
   assert.equal(again.kind, "article");
   assert.equal(again.title, title);
   assert.equal(again.body, markdown);
-  const empty = await submitArticleFromEdit(database, { title: "Empty", body: "", visibility: "public" });
+  const empty = await submitArticleFromEdit(database, {
+    title: "Empty",
+    body: "",
+    visibility: "public",
+  });
   assert.deepEqual(empty, { error: "empty_body" });
-  const weird = await submitArticleFromEdit(database, { title: "Nope", body: "text", visibility: "secret" });
+  const weird = await submitArticleFromEdit(database, {
+    title: "Nope",
+    body: "text",
+    visibility: "secret",
+  });
   assert.deepEqual(weird, { error: "invalid_visibility" });
   sqlite.close();
 });
@@ -134,7 +159,10 @@ test("the create form posts the markdown body to the article submit", () => {
   assert.match(list, /heading="Entries"/);
   assert.match(list, /entry\.visibility/);
   assert.match(list, /path=\{\(id\) => "\/edit\/" \+ id\}/);
-  assert.match(list, /heading="Diaries"[\s\S]*heading="Entries"[\s\S]*heading="Bookmarks"[\s\S]*heading="Notes"/);
+  assert.match(
+    list,
+    /heading="Diaries"[\s\S]*heading="Entries"[\s\S]*heading="Bookmarks"[\s\S]*heading="Notes"/,
+  );
   const jump = readRoot("ui/edit-jump.svelte");
   assert.match(jump, /<h2\b[^>]*>/);
   assert.match(jump, /<select\b/);
@@ -192,7 +220,11 @@ test("the edit screen lists draft and public articles, newest first", async () =
 test("publishing an article keeps the markdown and records publishedAt", async () => {
   const sqlite = applyShippedMigrations();
   const database = drizzle(sqlite);
-  const saved = await submitArticleFromEdit(database, { title, body: markdown, visibility: "draft" });
+  const saved = await submitArticleFromEdit(database, {
+    title,
+    body: markdown,
+    visibility: "draft",
+  });
   assert.equal("error" in saved, false);
   if ("error" in saved) return;
   assert.equal(saved.visibility, "draft");
@@ -278,16 +310,22 @@ test("public articles are listed for the home page and matched by the title path
     articles.map((article) => article.title),
     ["Spaced title", "Older public"],
   );
-  assert.equal(articles.some((article) => article.title === "Hidden draft"), false);
+  assert.equal(
+    articles.some((article) => article.title === "Hidden draft"),
+    false,
+  );
   assert.equal(publicArticleMatchesPath("Spaced title", "Spaced_title"), true);
   assert.equal(publicArticleMatchesPath("Spaced title", "Spaced title"), false);
   assert.equal(publicArticleHref({ id: saved.id, title: "Spaced title" }), "/Spaced_title");
-  assert.equal(savedEntryHref({ id: "draft-1", visibility: "draft", viewPath: "Hidden" }), "/e/draft-1");
-  assert.equal(savedEntryHref({ id: "pub-1", visibility: "public", viewPath: "Spaced_title" }), "/Spaced_title");
   assert.equal(
-    savedEntryHref({ id: "note-1", visibility: "public", viewPath: null }),
-    "/e/note-1",
+    savedEntryHref({ id: "draft-1", visibility: "draft", viewPath: "Hidden" }),
+    "/e/draft-1",
   );
+  assert.equal(
+    savedEntryHref({ id: "pub-1", visibility: "public", viewPath: "Spaced_title" }),
+    "/Spaced_title",
+  );
+  assert.equal(savedEntryHref({ id: "note-1", visibility: "public", viewPath: null }), "/e/note-1");
   assert.equal(
     savedEntryHref({ id: "ja-1", visibility: "public", viewPath: "ぼくのなつやすみ" }),
     "/%E3%81%BC%E3%81%8F%E3%81%AE%E3%81%AA%E3%81%A4%E3%82%84%E3%81%99%E3%81%BF",
@@ -330,22 +368,28 @@ test("public articles are listed for the home page and matched by the title path
   assert.equal(home.includes("void/db"), false);
   assert.equal(title.includes("void/db"), false);
   assert.match(home, /readsDevCatalog\(/);
-  assert.match(home, /listHomeEntryPage\(/);
-  assert.match(home, /homeEntries/);
+  assert.match(home, /listMonthDiaryHrefs\(/);
+  assert.match(home, /catalogMonthHrefs/);
   assert.match(title, /readsDevCatalog\(/);
   assert.match(title, /readPublicEntryByPath\(/);
   assert.match(title, /readPublicPathRedirect\(/);
   assert.match(title, /301/);
   assert.match(title, /publicEntryByTitle\(/);
-  assert.match(readRoot("pages/index.svelte"), /\{entry\.title\}/);
-  assert.match(readRoot("pages/index.svelte"), /\/e\/\$\{entry\.id\}/);
+  assert.match(readRoot("pages/index.svelte"), /aria-label="月"/);
+  assert.match(readRoot("pages/index.svelte"), /前の月/);
   assert.match(readRoot("pages/[title].svelte"), /entry\.body/);
   sqlite.close();
 });
 
 test("a missing title page and a note page keep a document title", () => {
-  assert.equal(publicDocumentTitle({ title: "朝のメモ", id: "entry-1" }), "朝のメモ - weblog.yamanoku.net");
-  assert.equal(publicDocumentTitle({ title: "  ", id: "entry-1" }), "https://weblog.yamanoku.net/e/entry-1");
+  assert.equal(
+    publicDocumentTitle({ title: "朝のメモ", id: "entry-1" }),
+    "朝のメモ - weblog.yamanoku.net",
+  );
+  assert.equal(
+    publicDocumentTitle({ title: "  ", id: "entry-1" }),
+    "https://weblog.yamanoku.net/e/entry-1",
+  );
   assert.equal(publicDocumentTitle(null), "weblog.yamanoku.net");
   for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const page = readRoot(path);
@@ -353,7 +397,10 @@ test("a missing title page and a note page keep a document title", () => {
     assert.equal(/<title>\{entry\.title\}/.test(page), false);
   }
   assert.match(readRoot("pages/[title].server.ts"), /publicDocumentTitle\(null\)/);
-  assert.match(readRoot("pages/e/[id].server.ts"), /publicDocumentTitle\(\{ title: stored\.title, id \}\)/);
+  assert.match(
+    readRoot("pages/e/[id].server.ts"),
+    /publicDocumentTitle\(\{ title: stored\.title, id \}\)/,
+  );
 });
 
 test("a missing title links the owner to a new article with that title", () => {
@@ -362,14 +409,23 @@ test("a missing title links the owner to a new article with that title", () => {
     "/new?title=" + encodeURIComponent("ぼくのなつやすみ"),
   );
   const page = readRoot("pages/[title].svelte");
-  assert.match(page, /Empty page[\s\S]*\{#if owner\}[\s\S]*missingTitleCreateHref\(requestedTitle\)\}>作成<\/Link>/);
+  assert.match(
+    page,
+    /Empty page[\s\S]*\{#if owner\}[\s\S]*missingTitleCreateHref\(requestedTitle\)\}>作成<\/Link>/,
+  );
   const loader = readRoot("pages/[title].server.ts");
   assert.match(loader, /requestedTitle: title/);
   assert.match(loader, /requestedTitle: entry \? "" : title/);
   const created = readRoot("pages/new/index.svelte");
   assert.match(created, /let \{ presetTitle = "", diaryTitle = "" \} = \$props\(\)/);
-  assert.match(created, /useForm\("\/edit\?diary", \{ title: diaryTitle, body: "", visibility: "public" \}\)/);
-  assert.match(created, /useForm\("\/edit", \{ title: presetTitle, body: "", visibility: "public" \}\)/);
+  assert.match(
+    created,
+    /useForm\("\/edit\?diary", \{ title: diaryTitle, body: "", visibility: "public" \}\)/,
+  );
+  assert.match(
+    created,
+    /useForm\("\/edit", \{ title: presetTitle, body: "", visibility: "public" \}\)/,
+  );
   assert.match(created, /presetTitle\.trim\(\)\.length > 0 \? "entry" : "diary"/);
   const createdLoader = readRoot("pages/new/index.server.ts");
   assert.match(createdLoader, /query\("title"\)/);
@@ -380,7 +436,10 @@ test("a missing title links the owner to a new article with that title", () => {
 test("a public article or bookmark shows an edit link for the owner", () => {
   for (const path of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const page = readRoot(path);
-    assert.match(page, /owner && \(entry\.kind === "article" \|\| entry\.kind === "diary" \|\| entry\.kind === "bookmark" \|\| entry\.kind === "page"\)/);
+    assert.match(
+      page,
+      /owner && \(entry\.kind === "article" \|\| entry\.kind === "diary" \|\| entry\.kind === "bookmark" \|\| entry\.kind === "page"\)/,
+    );
     assert.match(page, /href=\{`\/edit\/\$\{entry\.id\}`\}>edit<\/Link>/);
   }
   const title = readRoot("pages/[title].server.ts");
@@ -554,14 +613,17 @@ test("the home list orders a later update before a later publish", async () => {
     ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1", "cccccccc-cccc-4ccc-8ccc-ccccccccccc3"],
   );
   const next = await listDeliverableEntryPage(database, 2, 2);
-  assert.deepEqual(next.rows.map((entry) => entry.id), ["bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2"]);
+  assert.deepEqual(
+    next.rows.map((entry) => entry.id),
+    ["bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2"],
+  );
   const past = await listDeliverableEntryPage(database, 3, 2);
   assert.deepEqual(past.rows, []);
   assert.equal(past.total, 3);
   sqlite.close();
 });
 
-test("the home list includes a public page at its source time and leaves feeds unchanged", async () => {
+test("a public page stays out of the month calendar and out of the deliverable list", async () => {
   const sqlite = applyShippedMigrations();
   const database = drizzle(sqlite);
   await commitEntry(database, {
@@ -603,12 +665,8 @@ test("the home list includes a public page at its source time and leaves feeds u
     deliverable.map((entry) => entry.id),
     ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1"],
   );
-  const home = await listHomeEntryPage(database, 1, 12);
-  assert.equal(home.total, 2);
-  assert.deepEqual(
-    home.rows.map((entry) => entry.id),
-    ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1", "dddddddd-dddd-4ddd-8ddd-ddddddddddd4"],
-  );
+  const home = await listMonthDiaryHrefs(database, { year: 2025, month: 12 });
+  assert.deepEqual(home, {});
   sqlite.close();
 });
 
@@ -639,11 +697,19 @@ test("an article stores many images, allows an empty alt, and can place one in t
     { id: firstImage, alt: "  ", data: encodeNoteImage(png) },
     { id: secondImage, alt: " second ", data: encodeNoteImage(png) },
   ]);
-  assert.deepEqual("images" in parsed ? parsed.images.map((image) => image.alt) : parsed, ["", "second"]);
+  assert.deepEqual("images" in parsed ? parsed.images.map((image) => image.alt) : parsed, [
+    "",
+    "second",
+  ]);
   assert.equal(entryImageMarkdown("a]b", firstImage), `![a b](/note-images/${firstImage})`);
-  assert.deepEqual(await entryImagesFromField([{ id: firstImage, alt: "x".repeat(1501), data: encodeNoteImage(png) }]), {
-    error: "image_alt_length",
-  });
+  assert.deepEqual(
+    await entryImagesFromField([
+      { id: firstImage, alt: "x".repeat(1501), data: encodeNoteImage(png) },
+    ]),
+    {
+      error: "image_alt_length",
+    },
+  );
   const accepted = acceptNoteImage(png);
   assert.ok(!("error" in accepted));
 
@@ -714,7 +780,10 @@ test("an article stores many images, allows an empty alt, and can place one in t
 test("a public diary is deliverable and a draft diary is not", async () => {
   assert.equal(tokyoDateTitle(new Date("2026-11-24T15:00:00.000Z")), "2026-11-25");
   assert.equal(tokyoDateTitle(new Date("2026-11-24T14:59:00.000Z")), "2026-11-24");
-  assert.equal("error" in diaryFromEditForm({ title: "2026-11-25", body: "", visibility: "public" }), true);
+  assert.equal(
+    "error" in diaryFromEditForm({ title: "2026-11-25", body: "", visibility: "public" }),
+    true,
+  );
 
   const sqlite = applyShippedMigrations();
   const database = drizzle(sqlite);
@@ -802,23 +871,33 @@ test("stored pages and date-titled articles become diaries without a delivery ro
     updatedAt: "2026-11-07T02:00:00.000Z",
   });
 
-  const sqlFile = readFileSync(join(rootDir, "db/migrations/20261125120000_diary_kind.sql"), "utf8");
+  const sqlFile = readFileSync(
+    join(rootDir, "db/migrations/20261125120000_diary_kind.sql"),
+    "utf8",
+  );
   for (const statement of sqlFile.split("--> statement-breakpoint")) {
     const text = statement.trim();
     if (text.length > 0) sqlite.exec(text);
   }
 
   assert.equal((await readStoredEntry(database, "page-old"))?.kind, "diary");
-  assert.equal((await readStoredEntry(database, "page-old"))?.publishedAt, "2022-01-27T00:00:00.000Z");
+  assert.equal(
+    (await readStoredEntry(database, "page-old"))?.publishedAt,
+    "2022-01-27T00:00:00.000Z",
+  );
   assert.equal((await readStoredEntry(database, "page-draft"))?.kind, "diary");
   assert.equal((await readStoredEntry(database, "page-draft"))?.publishedAt, null);
   assert.equal((await readStoredEntry(database, "date-article"))?.kind, "diary");
-  assert.equal((await readStoredEntry(database, "date-article"))?.publishedAt, "2026-11-07T01:00:00.000Z");
+  assert.equal(
+    (await readStoredEntry(database, "date-article"))?.publishedAt,
+    "2026-11-07T01:00:00.000Z",
+  );
   assert.equal((await readStoredEntry(database, "long-article"))?.kind, "article");
   const delivered = await listDeliverableEntries(database);
-  assert.deepEqual(
-    delivered.map((entry) => entry.id).sort(),
-    ["date-article", "long-article", "page-old"],
-  );
+  assert.deepEqual(delivered.map((entry) => entry.id).sort(), [
+    "date-article",
+    "long-article",
+    "page-old",
+  ]);
   sqlite.close();
 });

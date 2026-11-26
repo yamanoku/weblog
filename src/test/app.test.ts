@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 import { test } from "vitest";
 import {
   deliverableEntries,
-  homeEntries,
   entryById,
   isReservedTitle,
   publicArticles,
@@ -127,7 +126,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     false,
   );
   assert.equal(
-    homeEntries().some((entry) => entry.title === "index-only"),
+    publicEntries().some((entry) => entry.title === "index-only" && entry.kind === "page"),
     true,
   );
   const titles = publicEntries().map((entry) => entry.title);
@@ -135,8 +134,14 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.equal(titles.includes("draft-thought"), false);
   const articles = publicArticles();
   assert.equal(articles.length >= 12, true);
-  assert.equal(articles.every((entry) => entry.kind === "article" && entry.visibility === "public"), true);
-  assert.equal(articles.some((entry) => entry.title === "morning-note"), true);
+  assert.equal(
+    articles.every((entry) => entry.kind === "article" && entry.visibility === "public"),
+    true,
+  );
+  assert.equal(
+    articles.some((entry) => entry.title === "morning-note"),
+    true,
+  );
   for (const article of articles) {
     for (const other of articles) {
       if (other.id === article.id) continue;
@@ -154,7 +159,10 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
     true,
   );
   const updated = deliverable.map((entry) => entry.updatedAt ?? entry.publishedAt ?? "");
-  assert.deepEqual(updated, [...updated].sort((left, right) => (left < right ? 1 : left > right ? -1 : 0)));
+  assert.deepEqual(
+    updated,
+    [...updated].sort((left, right) => (left < right ? 1 : left > right ? -1 : 0)),
+  );
   const sample = deliverable[0];
   if (!sample) throw new Error("deliverable catalog is empty");
   const found = publicEntryByTitle(sample.title);
@@ -192,7 +200,7 @@ test("pages render the shipped mock and leave reserved keys off the title entry"
   assert.match(titlePage, /Empty page/);
   assert.match(titlePage, /entry\.body/);
   const homeLoader = readRoot("pages/index.server.ts");
-  assert.match(homeLoader, /homeEntries/);
+  assert.match(homeLoader, /catalogMonthHrefs/);
   assert.match(homeLoader, /readsDevCatalog\(/);
   assert.equal(existsSync(join(rootDir, "pages/pages.svelte")), false);
   assert.equal(existsSync(join(rootDir, "pages/pages.server.ts")), false);

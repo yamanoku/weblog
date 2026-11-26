@@ -24,7 +24,7 @@ test("the public entry and the owner forms use the kind class", () => {
   const canonical = readFileSync(join(rootDir, "pages/e/[id].svelte"), "utf8");
   const edit = readFileSync(join(rootDir, "pages/edit/[id].svelte"), "utf8");
   const create = readFileSync(join(rootDir, "pages/new/index.svelte"), "utf8");
-  assert.match(home, /entryClass\("entry-card", entry\.kind\)/);
+  assert.equal(home.includes('entryClass("entry-card"'), false);
   assert.match(title, /entryClass\("entry-article", entry\.kind\)/);
   assert.match(canonical, /entryClass\("entry-article", entry\.kind\)/);
   assert.match(canonical, /class="entry-article" id="note-/);
@@ -32,7 +32,18 @@ test("the public entry and the owner forms use the kind class", () => {
   assert.match(create, /class="form-stack entry--diary"/);
   assert.match(create, /class="form-stack entry--article"/);
   const css = readFileSync(join(rootDir, "styles/site.css"), "utf8");
-  assert.match(css, /@supports \(rule: 1px solid var\(--color-neutral-solid-gray-200\)\) \{\n {2}\.entry--diary \.entry-body \{/);
-  assert.match(css, /@supports not \(rule: 1px solid var\(--color-neutral-solid-gray-200\)\) \{\n {2}\.entry--diary \.entry-body \{/);
-  assert.equal(css.includes("@supports (rule: 1px solid var(--color-neutral-solid-gray-200)) {\n  .entry-body {"), false);
+  assert.match(
+    css,
+    /@supports \(rule: 1px solid var\(--color-neutral-solid-gray-200\)\) \{\n {2}\.entry--diary \.entry-body \{/,
+  );
+  assert.match(
+    css,
+    /@supports not \(rule: 1px solid var\(--color-neutral-solid-gray-200\)\) \{\n {2}\.entry--diary \.entry-body \{/,
+  );
+  assert.equal(
+    css.includes(
+      "@supports (rule: 1px solid var(--color-neutral-solid-gray-200)) {\n  .entry-body {",
+    ),
+    false,
+  );
 });
