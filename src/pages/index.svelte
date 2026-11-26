@@ -308,13 +308,25 @@
     min-block-size: 2.75rem;
   }
 
+  .month-calendar time {
+    color: var(--color-neutral-solid-gray-200);
+  }
+
   .month-calendar [aria-current="date"] {
     font-weight: 700;
     outline: 2px solid currentColor;
     outline-offset: 2px;
   }
 
+  .month-calendar time[aria-current="date"] {
+    outline-color: var(--color-neutral-black);
+  }
+
   @media (forced-colors: active) {
+    .month-calendar time {
+      color: GrayText;
+    }
+
     .month-calendar [aria-current="date"] {
       outline-color: CanvasText;
     }
