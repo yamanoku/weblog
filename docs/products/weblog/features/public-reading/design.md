@@ -261,6 +261,12 @@ Entry HTML has a canonical link, plus alternate links to `/feed.xml` and `/feed.
 
 A public note's GET `/e/{id}` lists the thread. The thread root is that note's `thread_root_id` when the column is set, and otherwise that note's id. The rows are the public note whose id is the root, plus public notes whose `thread_root_id` is the root. Order is `created_at` ascending, then `id` ascending. Each body is shown in that order. A reply whose `in_reply_to_id` is still in the thread has a same-page link to that note. A reply whose target is absent has no target link. An article, a bookmark, and a page load one entry and do not run the thread query.
 
+### Related pages
+
+The view path, the canonical URL, and the owner's canonical URL of a draft render the related-pages list from [Public reading](requirements.md) after the body. A dated diary renders it after the same-day list. The heading is an `h2` whose text is `関連ページ`. The entries are a `ul`. Each item is one `a` with class `dads-link`. The list is absent when it would be empty. `GET /` and the feeds do not render it.
+
+The host derives the titles from the stored Markdown with the page-link rules in that requirement. It does not write `edges` on this read, and it does not rewrite the stored body. Outbound titles use `WHERE title IN (...)`, chunked at 80 bound parameters. When no public row has that current title, the host reads `past_titles` for that string and keeps the public entry with the latest `recorded_at`. A tie drops the title. Inbound candidates are public rows other than the subject whose body contains `](/{path})`, `](/{path}#`, or `[{title}](/`. `{path}` is the title with spaces written as `_`, and also that path percent-encoded. The statement uses `instr`, in chunks of 20 needles. A candidate stays only when extraction resolves to the subject, so a fenced or external match drops out. This read does not add a query per edge. The inbound statement has no `LIMIT`.
+
 ### Feeds
 
 A feed row is `visibility = 'public'`, `published_at` is not null, `in_reply_to_id` is null, and `kind` is `article`, `note`, or `bookmark`. Order is `updated_at` descending, then `id` descending. Text comparison of the lowercase UUID is the tie-break. A public page is excluded. A kind feed adds `kind = ?`. There is no per-kind JSON Feed.

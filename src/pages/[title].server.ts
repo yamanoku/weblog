@@ -1,5 +1,5 @@
 import { HTTPException } from "hono/http-exception";
-import { catalogSameDayLinks, isReservedTitle, publicEntryByTitle } from "../domain/catalog.ts";
+import { catalogRelatedPages, catalogSameDayLinks, isReservedTitle, publicEntryByTitle } from "../domain/catalog.ts";
 import { isDatedDiaryTitle } from "../domain/home-calendar.ts";
 import { publicAbsoluteHref, publicDocumentTitle } from "../domain/public-article.ts";
 import { defineHandler } from "void";
@@ -14,6 +14,7 @@ import {
   readPublicEntryByPath,
   readPublicPathRedirect,
 } from "../store/entries.ts";
+import { listRelatedPages } from "../store/related-pages.ts";
 import { readsDevCatalog } from "../store/read-source.ts";
 
 function editableKind(kind: string | undefined): boolean {
@@ -39,6 +40,7 @@ export const loader = defineHandler(async (c) => {
       headTitle: publicDocumentTitle(entry),
       requestedTitle: entry ? "" : title,
       sameDay: entry && isDatedDiaryTitle(entry) ? catalogSameDayLinks(entry.title) : [],
+      related: entry ? catalogRelatedPages(entry) : [],
     };
   }
   const entry = await readPublicEntryByPath(editArticleDatabase(), title);
@@ -58,6 +60,7 @@ export const loader = defineHandler(async (c) => {
       headTitle: publicDocumentTitle(null),
       requestedTitle: title,
       sameDay: [],
+      related: [],
     };
   }
   if (owner && editableKind(entry.kind)) {
@@ -82,5 +85,6 @@ export const loader = defineHandler(async (c) => {
     sameDay: isDatedDiaryTitle(entry)
       ? await listSameDayLinks(editArticleDatabase(), entry.title)
       : [],
+    related: await listRelatedPages(editArticleDatabase(), entry),
   };
 });

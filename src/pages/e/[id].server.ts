@@ -1,6 +1,6 @@
 import { HTTPException } from "hono/http-exception";
 import { defineHandler } from "void";
-import { catalogSameDayLinks, entryById } from "../../domain/catalog.ts";
+import { catalogRelatedPages, catalogSameDayLinks, entryById } from "../../domain/catalog.ts";
 import { isDatedDiaryTitle } from "../../domain/home-calendar.ts";
 import { publicDocumentTitle } from "../../domain/public-article.ts";
 import { verifiedOwner } from "../../middleware/01.access.ts";
@@ -16,6 +16,7 @@ import {
   readStoredEntry,
   type StoredEntry,
 } from "../../store/entries.ts";
+import { listRelatedPages } from "../../store/related-pages.ts";
 import { readsDevCatalog } from "../../store/read-source.ts";
 
 function editableKind(kind: string | undefined): boolean {
@@ -73,6 +74,7 @@ export const loader = defineHandler(async (c) => {
         refused,
         headTitle: publicDocumentTitle(entry),
         sameDay: [],
+        related: catalogRelatedPages(entry),
       };
     }
     const showEdit = owner && editableKind(entry?.kind);
@@ -86,6 +88,7 @@ export const loader = defineHandler(async (c) => {
       draft: entry?.visibility === "draft",
       headTitle: publicDocumentTitle(entry),
       sameDay: date ? catalogSameDayLinks(date) : [],
+      related: entry ? catalogRelatedPages(entry) : [],
     };
   }
   const stored = await readStoredEntry(editArticleDatabase(), id);
@@ -99,6 +102,7 @@ export const loader = defineHandler(async (c) => {
       draft: false,
       headTitle: publicDocumentTitle({ title: stored.title, id }),
       sameDay: [],
+      related: await listRelatedPages(editArticleDatabase(), stored),
     };
   }
   if (stored && (stored.visibility === "public" || (stored.visibility === "draft" && owner))) {
@@ -113,6 +117,7 @@ export const loader = defineHandler(async (c) => {
       draft: stored.visibility === "draft",
       headTitle: publicDocumentTitle({ title: stored.title, id }),
       sameDay: date ? await listSameDayLinks(editArticleDatabase(), date) : [],
+      related: await listRelatedPages(editArticleDatabase(), stored),
     };
   }
   if (await hasTombstone(editArticleDatabase(), id)) {

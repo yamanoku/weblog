@@ -4,6 +4,7 @@ import {
   type CalendarSource,
   type YearMonth,
 } from "./home-calendar.ts";
+import { normalizeLinkTitle, relatedPageLinks, type RelatedLink, type RelatedSource } from "./related-pages.ts";
 
 // Mock entries for the page map. This module does not import void, Svelte, or a store.
 
@@ -571,6 +572,32 @@ export function catalogMonthHrefs(month: YearMonth): Record<string, string> {
 
 export function catalogSameDayLinks(date: string) {
   return sameDayLinks(entries.map(calendarSource), date);
+}
+
+function relatedSource(entry: CatalogEntry): RelatedSource {
+  return {
+    id: entry.id,
+    title: entry.title,
+    body: entry.body,
+    viewPath: entry.viewPath ?? null,
+    updatedAt: entry.updatedAt ?? entry.publishedAt ?? "",
+  };
+}
+
+// Local `vp dev` related pages. Drafts are not targets.
+export function catalogRelatedPages(entry: { id: string; title: string; body: string }): RelatedLink[] {
+  const rows = publicEntries().map(relatedSource);
+  const byTitle = new Map<string, RelatedSource[]>();
+  for (const row of rows) {
+    const key = normalizeLinkTitle(row.title);
+    const list = byTitle.get(key) ?? [];
+    list.push(row);
+    byTitle.set(key, list);
+  }
+  return relatedPageLinks(entry, (title) => {
+    const found = byTitle.get(normalizeLinkTitle(title)) ?? [];
+    return found.length === 1 ? (found[0] ?? null) : null;
+  }, rows);
 }
 
 export function publicEntries(): CatalogEntry[] {

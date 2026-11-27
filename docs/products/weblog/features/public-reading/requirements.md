@@ -13,6 +13,7 @@ The parent product is [weblog.yamanoku.net](../../product.md). Write rules are i
 - Unauthenticated HTML for `GET /`, `GET /{title}`, and `GET /e/{id}`
 - The month calendar on the home page
 - Links, under a date-titled diary, to the public entries created on that day
+- A related-pages list on an individual entry
 - Human-readable feeds
 - Empty pages for titles that have public inbound edges and no public entry
 - The public Gyazo image URL and the bytes it returns
@@ -295,6 +296,36 @@ Scenario: When the reader asks for one kind, the Atom feed contains only that ki
 - When: An unauthenticated client requests `GET /feed/articles.xml`, `GET /feed/notes.xml`, or `GET /feed/bookmarks.xml`.
 - Then: Each feed contains only that kind, with the same page size and order as `GET /feed.xml`.
 
+### See related pages
+
+As an unauthenticated reader, I want each entry to list the public entries that link with it so that I can move between those pages by title.
+
+**Acceptance criteria:**
+
+Scenario: When public entries link to each other, each page lists the other as a related page
+
+- Given: Public page Alpha has view path `Alpha`. Its body contains `[Beta](/Beta)` and then `[Gamma](/Gamma)`. Public page Beta has view path `Beta` and its body contains `[Alpha](/Alpha)`. Public page Gamma has view path `Gamma` and does not link to Alpha. Public page Delta has view path `Delta`, its body contains `[Alpha](/Alpha)`, and its `updated_at` is later than public page Epsilon. Epsilon has view path `Epsilon` and its body contains `[Alpha](/Alpha)`. Alpha's body also repeats the link to Beta.
+- When: An unauthenticated client requests Alpha's view path and Alpha's canonical URL, and also requests Beta's view path.
+- Then: Each Alpha response is 200 HTML. After the body, the heading is `関連ページ`. The links under it are Beta, then Gamma, then Delta, then Epsilon. Each link's text is that entry's current title. Each href is that entry's view path. Beta appears once. Alpha does not list itself. Beta's response lists Alpha. The stored bodies stay unchanged. A bookmark in this list links to its view path or canonical URL, not to its external URL.
+
+Scenario: A link that is not a created public page is omitted
+
+- Given: Public page Host links to a title that has no public entry, to an `https` URL, to its own title, and to a draft. A fenced code block, an inline code span, and a pipe table in Host's body each contain a path link to a different public page. No other page links to Host.
+- When: An unauthenticated client requests Host's view path.
+- Then: The response does not include the heading `関連ページ`. It does not include the draft body. It does not create an entry.
+
+Scenario: A renamed public page is listed under its current title
+
+- Given: A public page's current title is `New` and it records the past title `Old`. Another public page's body contains `[Old](/Old)`.
+- When: An unauthenticated client requests that other page's view path.
+- Then: The related-pages list includes one link whose text is `New` and whose href is `New`'s view path.
+
+Scenario: The home page and the feeds omit the related-pages list
+
+- Given: Two public entries link to each other.
+- When: An unauthenticated client requests `GET /`, `GET /feed.xml`, and `GET /feed.json`.
+- Then: Those responses do not include the heading `関連ページ`.
+
 ### Walk titles
 
 As an unauthenticated reader, I want to open a title that has no entry yet so that public pages form a link graph.
@@ -467,6 +498,14 @@ When no public entry has the requested title, and a public entry has an inbound 
 When no public entry has the title and no public inbound edge points at it, the response is 404.
 
 When no public entry has the title and the request is verified as the owner, the title path includes a link whose visible text is `作成`. The target is GET `/new?title=` plus the path title percent-encoded. An unverified request omits the link. The host stores no entry. Owner writing defines the create form that link opens.
+
+##### Related pages
+
+The view path and the canonical URL of a public entry list the other public entries joined to it by one page link. The owner's canonical URL of a draft lists the same public entries and does not list a draft. The heading is `関連ページ`. It follows the body, and on a dated diary it follows the same-day links. When no entry qualifies, the heading is absent. The home page and the feeds do not include it.
+
+A page link is a `[label](/path)` in the stored body. The path starts with `/` and does not start with `//`. The title is the label, normalized the same way as an entry title. A `#` and a 24-hex line id at the end of the label are not part of the title. An `http` or `https` link is not a page link. A link inside a fenced code block, inside inline code, or inside a pipe table is not a page link. A title with no public entry is omitted. The entry itself is omitted. When two public entries have that current title, there is no single target. When no public entry has that current title, the public past title with the latest `recorded_at` is the target. A tie has no target.
+
+The link text is the other entry's current title. The href is that entry's view path, or its canonical URL when it has no view path. It is not a bookmark's external URL. Outgoing links stay in the order of their first appearance in the body. Inbound entries that are not already listed follow, ordered by `updated_at` descending and then by id descending. One entry appears once. The stored body stays unchanged. This read does not create an entry or an edge.
 
 ### Show the month calendar
 

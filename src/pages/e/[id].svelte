@@ -4,9 +4,10 @@
   import { markdownToHtml } from "../../domain/markdown-html.ts";
   import Breadcrumb from "../../ui/breadcrumb.svelte";
   import EntryHeading from "../../ui/entry-heading.svelte";
+  import RelatedPages from "../../ui/related-pages.svelte";
   import SameDay from "../../ui/same-day.svelte";
 
-  let { entry = null, thread = null, owner = false, refused = null, draft = false, headTitle = "weblog.yamanoku.net", sameDay = [] } = $props();
+  let { entry = null, thread = null, owner = false, refused = null, draft = false, headTitle = "weblog.yamanoku.net", sameDay = [], related = [] } = $props();
 </script>
 
 <svelte:head>
@@ -56,6 +57,7 @@
       {/if}
     </article>
   {/each}
+  <RelatedPages links={related} />
 {:else if entry}
   <Breadcrumb items={[
     { href: "/", label: "トップ" },
@@ -83,6 +85,7 @@
       {/if}
     {/if}
     <SameDay links={sameDay} />
+    <RelatedPages links={related} />
   </article>
   {#if owner && (entry.kind === "article" || entry.kind === "diary" || entry.kind === "bookmark" || entry.kind === "page")}
     <p><Link class="dads-link" href={`/edit/${entry.id}`}>edit</Link></p>
