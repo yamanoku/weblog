@@ -154,6 +154,13 @@ test("an x or twitter post embeds only for an entry created on or after 2026-11-
   assert.match(embedded, /https:\/\/x\.com\/yamanoku\/status\/20/);
   assert.match(embedded, /https:\/\/x\.com\/i\/status\/21/);
   assert.match(embedded, /src="https:\/\/platform\.x\.com\/widgets\.js"/);
+  assert.match(
+    embedded,
+    /<div class="twitter-embed"><blockquote class="twitter-tweet" data-dnt="true" data-lang="ja">/,
+  );
+  assert.equal(embedded.includes("<p><div class=\"twitter-embed\""), false);
+  assert.equal(embedded.includes("<p></p>"), false);
+  assert.equal(embedded.includes("<p><blockquote"), false);
   assert.equal(embedded.includes("Tweet.html"), false);
   assert.equal(embedded.includes("s=20"), false);
   assert.match(embedded, /<a href="https:\/\/x\.com\/yamanoku">profile<\/a>/);

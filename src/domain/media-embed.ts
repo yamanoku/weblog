@@ -212,7 +212,7 @@ export function mediaEmbedHtml(
   const caption = titled ? `<span class="media-embed__label">${escapeHtml(visible)}</span>` : "";
   if (embed.shape === "post") {
     const href = escapeHtml(embed.src);
-    return `${caption}<blockquote class="twitter-tweet" data-dnt="true" data-lang="ja"><a href="${href}">${href}</a></blockquote><script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>`;
+    return `${caption}<div class="twitter-embed"><blockquote class="twitter-tweet" data-dnt="true" data-lang="ja"><a href="${href}">${href}</a></blockquote><script async src="https://platform.x.com/widgets.js" charset="utf-8"></script></div>`;
   }
   return `${caption}<iframe class="media-embed" data-shape="${embed.shape}" src="${escapeHtml(embed.src)}" title="${escapeHtml(title)}" width="${embed.width}" height="${embed.height}" loading="${loading}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>`;
 }

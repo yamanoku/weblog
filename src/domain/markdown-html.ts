@@ -370,6 +370,31 @@ function renderTable(
 
 let tableSerial = 0;
 
+// A p cannot contain the tweet blockquote. The browser would close that p
+// early and leave an empty p on each side after the widget loads.
+function blocksFromInline(html: string): string[] {
+  const twitterEmbed =
+    /<div class="twitter-embed"><blockquote class="twitter-tweet"[\s\S]*?<\/script><\/div>/g;
+  const blocks: string[] = [];
+  let last = 0;
+  for (const match of html.matchAll(twitterEmbed)) {
+    const index = match.index ?? 0;
+    const before = html.slice(last, index);
+    const caption = /(?:<span class="media-embed__label">[^<]*<\/span>)$/.exec(before);
+    const text = caption ? before.slice(0, before.length - caption[0].length) : before;
+    pushTextBlock(blocks, text);
+    blocks.push(`${caption?.[0] ?? ""}${match[0]}`);
+    last = index + match[0].length;
+  }
+  pushTextBlock(blocks, html.slice(last));
+  return blocks;
+}
+
+function pushTextBlock(blocks: string[], text: string) {
+  if (text.trim() === "") return;
+  blocks.push(`<p>${text}</p>`);
+}
+
 export function markdownToHtml(
   source: string,
   gyazo?: GyazoIndex,
@@ -419,10 +444,12 @@ export function markdownToHtml(
     if (line.startsWith(">")) {
       const quotes: string[] = [];
       while (cursor.index < lines.length && (lines[cursor.index] ?? "").startsWith(">")) {
-        quotes.push(renderInline((lines[cursor.index] ?? "").replace(/^>\s?/, ""), decks, true, icons, xPosts));
+        quotes.push(
+          ...blocksFromInline(renderInline((lines[cursor.index] ?? "").replace(/^>\s?/, ""), decks, true, icons, xPosts)),
+        );
         cursor.index += 1;
       }
-      blocks.push(`<blockquote>${quotes.map((quote) => `<p>${quote}</p>`).join("")}</blockquote>`);
+      blocks.push(`<blockquote>${quotes.join("")}</blockquote>`);
       continue;
     }
     const caption = /^Table: (\S(?:.*\S)?)\s*$/.exec(line)?.[1];
@@ -446,7 +473,7 @@ export function markdownToHtml(
       paragraph.push(lines[cursor.index] ?? "");
       cursor.index += 1;
     }
-    blocks.push(`<p>${renderInline(paragraph.join(" "), decks, true, icons, xPosts)}</p>`);
+    blocks.push(...blocksFromInline(renderInline(paragraph.join(" "), decks, true, icons, xPosts)));
   }
   return blocks.join("\n");
 }

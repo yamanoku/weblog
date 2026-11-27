@@ -189,6 +189,10 @@ ol.dads-breadcrumb__list {
   display: block;
 }
 
+.twitter-embed {
+  display: block;
+}
+
 .entry-body {
   display: grid;
   min-inline-size: 0;
