@@ -1,14 +1,21 @@
-// Public HTML for a YouTube, Spotify, or Speaker Deck link. The stored text stays the original URL.
+// Public HTML for a YouTube, Spotify, Speaker Deck, or X post link.
+// The stored text stays the original URL.
+// An X post becomes an iframe only when the entry was created on or after
+// 2026-11-27 in Tokyo. Earlier entries keep the URL as an anchor.
 
 import { speakerDeckRef, type SpeakerDeckPlayers } from "./speakerdeck.ts";
+import { tokyoDateTitle } from "./tokyo-date.ts";
 
 export type MediaEmbed = {
   src: string;
   title: string;
-  shape: "video" | "compact" | "tall";
+  shape: "video" | "compact" | "tall" | "post";
   width: number;
   height: number;
 };
+
+// Do not move this earlier. Entries created before this Tokyo date stay links.
+export const xEmbedSince = "2026-11-27";
 
 export type { SpeakerDeckPlayers };
 
@@ -26,6 +33,17 @@ const spotifyTypes = new Set(["track", "album", "playlist", "episode", "show", "
 const videoId = /^[A-Za-z0-9_-]{11}$/;
 const playlistId = /^[A-Za-z0-9_-]{10,80}$/;
 const spotifyId = /^[A-Za-z0-9]{22}$/;
+const xHosts = new Set([
+  "x.com",
+  "www.x.com",
+  "mobile.x.com",
+  "twitter.com",
+  "www.twitter.com",
+  "mobile.twitter.com",
+]);
+const xUser = /^[A-Za-z0-9_]{1,15}$/;
+const xStatusId = /^[0-9]{1,20}$/;
+const xCreatedAt = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 
 function httpUrl(value: string): URL | null {
   try {
@@ -117,6 +135,37 @@ function speakerDeckSrc(base: string | undefined, slide: string | null): string 
   return slide ? `${base}?slide=${slide}` : base;
 }
 
+function xPostId(parts: string[]): string | null {
+  const user = parts[0] ?? "";
+  const kind = parts[1] ?? "";
+  const id = parts[2] ?? "";
+  if ((kind === "status" || kind === "statuses") && xUser.test(user) && xStatusId.test(id)) return id;
+  if (user === "i" && kind === "web" && id === "status" && xStatusId.test(parts[3] ?? "")) return parts[3] ?? null;
+  return null;
+}
+
+function xPostFrom(url: URL): MediaEmbed | null {
+  if (!xHosts.has(url.hostname.toLowerCase())) return null;
+  const parts = url.pathname.split("/").filter((part) => part.length > 0);
+  const id = xPostId(parts);
+  if (!id) return null;
+  const href = parts[1] === "web" ? `https://x.com/i/status/${id}` : `https://x.com/${parts[0]}/status/${id}`;
+  return {
+    src: href,
+    title: "X",
+    shape: "post",
+    width: 550,
+    height: 512,
+  };
+}
+
+export function xPostsFromCreatedAt(createdAt: string | null | undefined): boolean {
+  if (!createdAt || !xCreatedAt.test(createdAt)) return false;
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return false;
+  return tokyoDateTitle(date) >= xEmbedSince;
+}
+
 function speakerDeckFrom(value: string, players: SpeakerDeckPlayers): MediaEmbed | null {
   const ref = speakerDeckRef(value);
   if (!ref) return null;
@@ -125,10 +174,19 @@ function speakerDeckFrom(value: string, players: SpeakerDeckPlayers): MediaEmbed
   return { src, title: "Speaker Deck", shape: "video", width: 710, height: 399 };
 }
 
-export function mediaEmbed(value: string, players: SpeakerDeckPlayers = {}): MediaEmbed | null {
+export function mediaEmbed(
+  value: string,
+  players: SpeakerDeckPlayers = {},
+  xPosts = false,
+): MediaEmbed | null {
   const url = httpUrl(value.trim());
   if (!url) return null;
-  return youtubeFrom(url) ?? spotifyFrom(url) ?? speakerDeckFrom(value.trim(), players);
+  return (
+    youtubeFrom(url) ??
+    spotifyFrom(url) ??
+    speakerDeckFrom(value.trim(), players) ??
+    (xPosts ? xPostFrom(url) : null)
+  );
 }
 
 function escapeHtml(value: string): string {
@@ -144,12 +202,17 @@ export function mediaEmbedHtml(
   label: string | null,
   players: SpeakerDeckPlayers = {},
   loading: "lazy" | "eager" = "lazy",
+  xPosts = false,
 ): string | null {
-  const embed = mediaEmbed(value, players);
+  const embed = mediaEmbed(value, players, xPosts);
   if (!embed) return null;
   const visible = label?.trim() ?? "";
   const titled = visible.length > 0 && !/^https?:\/\//i.test(visible);
   const title = titled ? visible : embed.title;
   const caption = titled ? `<span class="media-embed__label">${escapeHtml(visible)}</span>` : "";
+  if (embed.shape === "post") {
+    const href = escapeHtml(embed.src);
+    return `${caption}<blockquote class="twitter-tweet" data-dnt="true" data-lang="ja"><a href="${href}">${href}</a></blockquote><script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>`;
+  }
   return `${caption}<iframe class="media-embed" data-shape="${embed.shape}" src="${escapeHtml(embed.src)}" title="${escapeHtml(title)}" width="${embed.width}" height="${embed.height}" loading="${loading}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen></iframe>`;
 }

@@ -37,6 +37,7 @@ export type StoredEntry = {
   visibility: string;
   bookmarkUrl: string | null;
   publishedAt: string | null;
+  createdAt: string;
   inReplyToId: string | null;
   threadRootId: string | null;
   viewPath: string | null;
@@ -64,6 +65,7 @@ export async function readStoredEntry(
     visibility: saved.visibility,
     bookmarkUrl: saved.bookmarkUrl ?? null,
     publishedAt: saved.publishedAt,
+    createdAt: saved.createdAt,
     inReplyToId: saved.inReplyToId ?? null,
     threadRootId: saved.threadRootId ?? null,
     viewPath: saved.viewPath ?? null,
@@ -105,6 +107,7 @@ export type PublicEntryRow = {
   body: string;
   bookmarkUrl: string | null;
   publishedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -134,6 +137,7 @@ function publicEntryRow(row: {
   body: string;
   bookmarkUrl: string | null;
   publishedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }): PublicEntryRow {
   return {
@@ -143,6 +147,7 @@ function publicEntryRow(row: {
     body: row.body,
     bookmarkUrl: row.bookmarkUrl ?? null,
     publishedAt: row.publishedAt,
+    createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
@@ -305,5 +310,7 @@ export async function readPublicEntryByPath(
     body: saved.body,
     bookmarkUrl: saved.bookmarkUrl ?? null,
     publishedAt: saved.publishedAt,
+    createdAt: saved.createdAt,
+    updatedAt: saved.updatedAt,
   };
 }

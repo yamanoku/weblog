@@ -58,7 +58,7 @@ test("a youtube or spotify link becomes an embed and the source url stays out of
   assert.match(other, /<a href="https:\/\/example\.com\/">site<\/a>/);
 
   const heading = readFileSync(join(rootDir, "ui/entry-heading.svelte"), "utf8");
-  assert.match(heading, /mediaEmbedHtml\(href, null, speakerdeck, "eager"\)/);
+  assert.match(heading, /mediaEmbedHtml\(href, null, speakerdeck, "eager", xPosts\)/);
   const headingEnd = heading.lastIndexOf("</div>");
   const embedHtml = heading.lastIndexOf("{@html embed}");
   assert.ok(headingEnd > 0 && embedHtml > headingEnd);
@@ -67,7 +67,11 @@ test("a youtube or spotify link becomes an embed and the source url stays out of
   for (const page of ["pages/[title].svelte", "pages/e/[id].svelte"]) {
     const source = readFileSync(join(rootDir, page), "utf8");
     assert.match(source, /speakerdeck=\{entry\.speakerdeck \?\? \{\}\}/);
-    assert.match(source, /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}, entry\.icons \?\? \{\}\)/);
+    assert.match(source, /createdAt=\{entry\.createdAt\}/);
+    assert.match(
+      source,
+      /markdownToHtml\(entry\.body, entry\.gyazo \?\? \{\}, entry\.speakerdeck \?\? \{\}, entry\.icons \?\? \{\}, entry\.createdAt\)/,
+    );
   }
 });
 
@@ -127,4 +131,45 @@ test("speaker deck oembed keeps only a player src on speakerdeck.com", async () 
     throw new Error("profile urls are not asked");
   });
   assert.deepEqual(profile, {});
+});
+
+const xPost = "https://x.com/rbuckton/status/1922364558426911039";
+const xCreated = "2026-11-26T15:00:00.000Z";
+const xEarlier = "2026-11-26T14:59:59.999Z";
+
+test("an x or twitter post embeds only for an entry created on or after 2026-11-27 in Tokyo", () => {
+  const embedded = markdownToHtml(
+    `[投稿](${xPost})\n\nhttps://twitter.com/yamanoku/status/20?s=20\n\nhttps://mobile.twitter.com/i/web/status/21\n\n[profile](https://x.com/yamanoku)\n\n\`https://x.com/jack/status/20\``,
+    {},
+    {},
+    {},
+    xCreated,
+  );
+  assert.match(embedded, /<blockquote class="twitter-tweet" data-dnt="true" data-lang="ja">/);
+  assert.match(
+    embedded,
+    /<a href="https:\/\/x\.com\/rbuckton\/status\/1922364558426911039">https:\/\/x\.com\/rbuckton\/status\/1922364558426911039<\/a>/,
+  );
+  assert.match(embedded, /<span class="media-embed__label">投稿<\/span>/);
+  assert.match(embedded, /https:\/\/x\.com\/yamanoku\/status\/20/);
+  assert.match(embedded, /https:\/\/x\.com\/i\/status\/21/);
+  assert.match(embedded, /src="https:\/\/platform\.x\.com\/widgets\.js"/);
+  assert.equal(embedded.includes("Tweet.html"), false);
+  assert.equal(embedded.includes("s=20"), false);
+  assert.match(embedded, /<a href="https:\/\/x\.com\/yamanoku">profile<\/a>/);
+  assert.match(embedded, /<code>https:\/\/x\.com\/jack\/status\/20<\/code>/);
+
+  const earlier = markdownToHtml(`[投稿](${xPost})\n\n${xPost}`, {}, {}, {}, xEarlier);
+  assert.equal(earlier.includes("twitter-tweet"), false);
+  assert.equal(earlier.includes("widgets.js"), false);
+  assert.match(earlier, new RegExp(`<a href="${xPost}">投稿</a>`));
+  assert.match(earlier, new RegExp(xPost));
+
+  const omitted = markdownToHtml(xPost);
+  assert.equal(omitted.includes("twitter-tweet"), false);
+
+  const official = mediaEmbedHtml(xPost, null, {}, "eager", true);
+  assert.match(official ?? "", /class="twitter-tweet"/);
+  assert.match(official ?? "", /platform\.x\.com\/widgets\.js/);
+  assert.equal(mediaEmbedHtml(xPost, null, {}, "eager", false), null);
 });

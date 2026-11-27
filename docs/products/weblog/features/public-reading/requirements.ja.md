@@ -158,6 +158,24 @@ Scenario: bookmark の URL が Speaker Deck の URL である場合、記事の�
 - When: 未認証のクライアントが、その bookmark の閲覧用パスと正規 URL を要求する。
 - Then: 記事は、見出しのあとにその埋め込みを出す。見出しは iframe を含まない。テキストをその URL としたアンカーは出さない。保存された bookmark の URL は変えない。
 
+Scenario: 本文のリンクが X の投稿であり、エントリの東京の作成日が 2026-11-27 以降である場合、ページは埋め込みを出す
+
+- Given: 公開の article、diary、bookmark、または page の `created_at` は `2026-11-26T15:00:00.000Z` である。これは東京の 2026-11-27 00:00 である。本文は、`https://x.com/{user}/status/{id}`、`https://twitter.com/{user}/status/{id}`、`https://twitter.com/{user}/statuses/{id}`、または `https://x.com/i/web/status/{id}` の一つの投稿への Markdown リンクか、裸の `http` または `https` の URL を含む。`www` と `mobile` のホストも含む。一つのリンクの表示は URL そのものではない。同じ投稿 URL が、コードブロックとインラインコードの中にもある。同じ時刻に作成された公開の note の本文にも、その URL がある。`created_at` が `2026-11-26T14:59:59.999Z` の公開 page もある。これは東京ではまだ 2026-11-26 である。その本文は、同じ投稿 URL を Markdown リンクと裸の URL で含む。
+- When: 未認証のクライアントが、各エントリの HTML を要求する。
+- Then: 2026-11-27 に作成された article、diary、bookmark、page は、class が `twitter-tweet` で `data-dnt="true"` と `data-lang="ja"` を持つ `blockquote` を出す。そのアンカーの href は `https://x.com/{user}/status/{id}` である。書いた URL が `/i/web/status/{id}` のときは `https://x.com/i/status/{id}` である。ページは `https://platform.x.com/widgets.js` を読む。そのスクリプトが blockquote を X の埋め込みへ置き換える。書いた URL は、そのアンカーへコピーしない。リンクの文字が URL そのものでないときは、その文字を blockquote の前のキャプションにする。保存された本文は変えない。コードブロックとインラインコードはテキストのままである。note は保存されたテキストを出し、blockquote は出さない。2026-11-26 に作成された page は、Markdown リンクをアンカーのままにし、裸の URL をテキストのままにする。その page は `widgets.js` を読まない。
+
+Scenario: X の URL が投稿でない場合、リンクのままである
+
+- Given: 公開の page は、東京の 2026-11-27 に作成された。本文は `https://x.com/yamanoku` への Markdown リンクと、`https://twitter.com/intent/tweet` への Markdown リンクを含む。
+- When: 未認証のクライアントが、その page の HTML を要求する。
+- Then: どちらの URL もアンカーである。その iframe は出さない。保存された本文は変えない。
+
+Scenario: bookmark の URL が X の投稿である場合、埋め込みはエントリの作成日に従う
+
+- Given: 一つの公開 bookmark の作成時刻は `2026-11-26T15:00:00.000Z` である。外部 URL は `https://twitter.com/yamanoku/status/20` である。もう一つの公開 bookmark の作成時刻は `2026-11-26T14:59:59.999Z` であり、同じ外部 URL を持つ。どちらにも閲覧用パスがある。
+- When: 未認証のクライアントが、各 bookmark の閲覧用パスと正規 URL を要求する。
+- Then: 後から作成された bookmark は、見出しのあとにその埋め込みを出す。見出しは iframe を含まない。テキストをその URL としたアンカーは出さない。先に作成された bookmark は、タイトルの横にその URL のアンカーを出し、iframe は出さない。保存された bookmark の URL は、どちらも変えない。
+
 Scenario: リンクの href が http または https の場合、下線を点線にし、背景を黄色にする
 
 - Given: 公開 HTML に、href が `https://example.com/a` のアンカーと、href がこのホストのパスであるアンカーがある。別のアンカーの href は `HTTPS://example.com/b` であり、画像を含む。
@@ -475,11 +493,13 @@ article、bookmark、page にある YouTube または Spotify のリンクは、
 
 article、bookmark、page にある Speaker Deck のリンクは、Speaker Deck がプレーヤーを名指ししたときに埋め込みになる。公開の形は `https://speakerdeck.com/{user}/{slug}` である。フレームのオリジンは `https://speakerdeck.com` である。src は `https://speakerdeck.com/player/` にプレーヤー id を足したものである。`slide` が正の整数で、桁は四つまでなら残す。それ以外のクエリはコピーしない。既にそのプレーヤーの URL であるものも、同じ埋め込みである。パスが一段のプロフィール URL は、アンカーのままである。Speaker Deck がプレーヤーを名指ししないとき、その URL はアンカーのままで、ページは 200 のままである。iframe の title は、リンクの文字が URL そのものでないときはその文字であり、それ以外は `Speaker Deck` である。インラインコードとコードブロックの中の URL は、テキストのままである。note は埋め込まない。保存された文字は、リンクのままである。1 ページで尋ねるデッキは、別々のもの 20 件までである。それを超えたデッキの URL は、アンカーのままである。
 
+article、diary、bookmark、page にある X または Twitter の投稿リンクは、そのエントリの `created_at` の東京の暦日が `2026-11-27` 以降のときだけ埋め込みになる。保存された文字は、リンクのままである。後からの編集は `created_at` を動かさない。それより前に作成されたエントリは、これまでどおりである。投稿の形は、`x.com` または `twitter.com` の `/{user}/status/{id}`、`/{user}/statuses/{id}`、`/i/web/status/{id}` である。`www` と `mobile` のホストも含む。`{id}` は、桁が 20 までの十進文字列である。ページは、X の埋め込みコードと同じ印を出す。class が `twitter-tweet` で `data-dnt="true"` と `data-lang="ja"` を持つ `blockquote`、`https://x.com/{user}/status/{id}` へのアンカー、そして `https://platform.x.com/widgets.js` である。書いた URL が `/i/web/status/{id}` のときは、アンカーを `https://x.com/i/status/{id}` にする。スクリプトが blockquote を埋め込みへ置き換える。書いた URL と、ユーザー名と、クエリは、アンカーへコピーしない。リンクの文字が URL そのものでないときは、その文字を blockquote の前のキャプションにする。プロフィール URL、intent の URL、それ以外のパスは、Markdown リンクならアンカーのままであり、裸の URL ならテキストのままである。インラインコードとコードブロックの中の URL は、テキストのままである。note は埋め込まない。`created_at` が無い、またはその東京の日付より前のエントリは、投稿を埋め込まない。Markdown リンクはアンカーのままである。裸の URL はテキストのままである。
+
 公開 HTML のページでは、href が `http://` または `https://` で始まるアンカーの下線を点線にし、背景を黄色にする。比較は大小文字を無視する。このホストの絶対 URL も、そのスキームなら点線で、背景は黄色である。href がこのホストのパスであるアンカーの下線は実線のままである。背景は付けない。文字の色は変えない。新しい閲覧コンテキストは開かない。href と表示の文字は変えない。アンカーが画像または動画を含むときは、下線を付けず、その画像または動画の周りを点線で囲む。そのアンカーの背景も黄色である。フィードの HTML 断片はクラスを足さない。保存された本文も変えない。
 
 note の公開 HTML は、保存された行を残す。
 
-bookmark の閲覧用パスと正規 URL では、メディアの埋め込みでない外部 URL をタイトルの横に出す。値が上の規則の YouTube または Spotify のメディア URL である `http` または `https`、またはプレーヤーが分かっている Speaker Deck の URL なら、その埋め込みであり、アンカーではない。記事は、その埋め込みを見出しのあとに含み、見出しは iframe を含まない。それ以外の `http` または `https` は、テキストをその URL とした外部リンクであり、タイトルの横に出す。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。
+bookmark の閲覧用パスと正規 URL では、メディアの埋め込みでない外部 URL をタイトルの横に出す。値が上の規則の YouTube または Spotify のメディア URL である `http` または `https`、またはプレーヤーが分かっている Speaker Deck の URL、または bookmark の東京の作成日が `2026-11-27` 以降であるときの上の規則の X の投稿 URL なら、その埋め込みであり、アンカーではない。記事は、その埋め込みを見出しのあとに含み、見出しは iframe を含まない。それ以外の `http` または `https` は、テキストをその URL とした外部リンクであり、タイトルの横に出す。それ以外の空でない値は、リンクではないテキストである。この URL を、保存された本文へは挿入しない。
 
 所有者として確認できた要求では、公開 article、公開 bookmark、公開 page の閲覧用パスと正規 URL が、エントリのあとにリンクを出す。表示は `edit` である。行き先は、そのエントリの GET `/edit/{id}` である。確認できていない要求は、そのリンクを出さない。公開の note は出さない。保存された本文は変えない。リンク先の編集画面は、所有者の書き込みが定める。
 

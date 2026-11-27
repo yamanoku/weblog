@@ -52,6 +52,7 @@ async function renderedEntry(stored: StoredEntry) {
     kind: stored.kind,
     body: stored.body,
     bookmarkUrl: stored.bookmarkUrl,
+    createdAt: stored.createdAt,
     images,
     gyazo,
     icons,
