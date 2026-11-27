@@ -8,8 +8,14 @@
   let { presetTitle = "", diaryTitle = "" } = $props();
 
   const diaryForm = useForm("/edit?diary", { title: diaryTitle, body: "", visibility: "public" });
-  const articleForm = useForm("/edit", { title: presetTitle, body: "", visibility: "public" });
-  const bookmarkForm = useForm("/edit?bookmark", { title: "", body: "", bookmarkUrl: "", visibility: "public" });
+  const articleForm = useForm("/edit", { title: presetTitle, body: "", visibility: "public", posted: "" });
+  const bookmarkForm = useForm("/edit?bookmark", {
+    title: "",
+    body: "",
+    bookmarkUrl: "",
+    visibility: "public",
+    posted: "",
+  });
   let createTab = $state<"diary" | "entry" | "bookmark" | "note">(
     presetTitle.trim().length > 0 ? "entry" : "diary",
   );
@@ -44,6 +50,7 @@
         title: articleForm.data.title,
         body: articleForm.data.body,
         visibility: articleForm.data.visibility,
+        posted: articleForm.data.posted,
         entryImages: articleImages.payload(),
       },
     });
@@ -60,6 +67,7 @@
         body: bookmarkForm.data.body,
         bookmarkUrl: bookmarkForm.data.bookmarkUrl,
         visibility: bookmarkForm.data.visibility,
+        posted: bookmarkForm.data.posted,
         entryImages: bookmarkImages.payload(),
       },
     });
@@ -243,6 +251,27 @@
             serverCode={articleForm.errors.entryImages ?? ""}
           />
           <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="article-posted">Posted</label>
+            <p id="article-posted-hint" class="dads-form-control-label__support-text">空欄のときは保存した時刻</p>
+            <div class="dads-form-control-label__field">
+              <span class="dads-input-text">
+                <input
+                  id="article-posted"
+                  class="dads-input-text__input"
+                  name="posted"
+                  type="date"
+                  data-size="md"
+                  bind:value={articleForm.data.posted}
+                  aria-invalid={articleForm.errors.posted ? "true" : undefined}
+                  aria-describedby={articleForm.errors.posted ? "article-posted-hint article-posted-error" : "article-posted-hint"}
+                />
+                {#if articleForm.errors.posted}
+                  <span id="article-posted-error" class="dads-input-text__error-text" role="alert">日付を確認してください</span>
+                {/if}
+              </span>
+            </div>
+          </div>
+          <div class="dads-form-control-label" data-size="md">
             <label class="dads-form-control-label__label" for="article-visibility">Visibility</label>
             <div class="dads-form-control-label__field">
               <span class="dads-select">
@@ -308,6 +337,27 @@
             register={(api) => (bookmarkImages = api)}
             serverCode={bookmarkForm.errors.entryImages ?? ""}
           />
+          <div class="dads-form-control-label" data-size="md">
+            <label class="dads-form-control-label__label" for="bookmark-posted">Posted</label>
+            <p id="bookmark-posted-hint" class="dads-form-control-label__support-text">空欄のときは保存した時刻</p>
+            <div class="dads-form-control-label__field">
+              <span class="dads-input-text">
+                <input
+                  id="bookmark-posted"
+                  class="dads-input-text__input"
+                  name="posted"
+                  type="date"
+                  data-size="md"
+                  bind:value={bookmarkForm.data.posted}
+                  aria-invalid={bookmarkForm.errors.posted ? "true" : undefined}
+                  aria-describedby={bookmarkForm.errors.posted ? "bookmark-posted-hint bookmark-posted-error" : "bookmark-posted-hint"}
+                />
+                {#if bookmarkForm.errors.posted}
+                  <span id="bookmark-posted-error" class="dads-input-text__error-text" role="alert">日付を確認してください</span>
+                {/if}
+              </span>
+            </div>
+          </div>
           <div class="dads-form-control-label" data-size="md">
             <label class="dads-form-control-label__label" for="bookmark-visibility">Visibility</label>
             <div class="dads-form-control-label__field">

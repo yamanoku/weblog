@@ -1,11 +1,14 @@
 // Turns the create form into an article. The body stays the markdown the owner typed.
 
+import { postedDateFromField } from "./posted-date.ts";
+
 export type ArticleVisibility = "draft" | "public";
 
 export type EditArticleForm = {
   title: string;
   body: string;
   visibility: string;
+  posted?: string;
 };
 
 export type ArticleEditForm = {
@@ -15,8 +18,14 @@ export type ArticleEditForm = {
 };
 
 export type ArticleCreate =
-  | { kind: "article" | "diary"; title: string; body: string; visibility: ArticleVisibility }
-  | { error: "invalid_visibility" | "empty_body" };
+  | {
+      kind: "article" | "diary";
+      title: string;
+      body: string;
+      visibility: ArticleVisibility;
+      postedAt: string | null;
+    }
+  | { error: "invalid_visibility" | "empty_body" | "invalid_posted_date" };
 
 export type ArticleUpdate =
   | { title: string; body: string; visibility: ArticleVisibility }
@@ -30,17 +39,20 @@ export function articleFromEditForm(form: EditArticleForm): ArticleCreate {
   if (form.visibility === "public" && form.body === "") {
     return { error: "empty_body" };
   }
+  const posted = postedDateFromField(form.posted);
+  if ("error" in posted) return posted;
   return {
     kind: "article",
     title: form.title,
     body: form.body,
     visibility: form.visibility,
+    postedAt: "at" in posted ? posted.at : null,
   };
 }
 
 // The diary form uses the same visibility rules as an article.
 export function diaryFromEditForm(form: EditArticleForm): ArticleCreate {
-  const article = articleFromEditForm(form);
+  const article = articleFromEditForm({ ...form, posted: undefined });
   if ("error" in article) return article;
   return { ...article, kind: "diary" };
 }

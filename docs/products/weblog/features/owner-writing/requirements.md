@@ -225,7 +225,7 @@ Scenario: When the owner uses the article form, the host stores the selected vis
 
 - Given: The request is verified as the owner. The article create form shows a visibility select. The options are Public and Draft. Public is selected.
 - When: The owner submits a title and a non-empty body and leaves visibility public.
-- Then: One entry is stored with kind article and visibility public. `publishedAt` is the commit time. The view path follows the same title rule as an article update. No note is created. The response redirects with 302 to that view path when one exists, and otherwise to GET `/e/{id}`. It does not stay on the create form.
+- Then: One entry is stored with kind article and visibility public. The posted date was empty, so `publishedAt` and `created_at` are the commit time. `updated_at` is that same time. The view path follows the same title rule as an article update. No note is created. The response redirects with 302 to that view path when one exists, and otherwise to GET `/e/{id}`. It does not stay on the create form.
 
 Scenario: When the owner selects draft on the article form, the host stores a draft article
 
@@ -238,6 +238,24 @@ Scenario: When the article form is public and the body is empty, the host stores
 - Given: The request is verified as the owner.
 - When: The owner submits visibility public and an empty body from the article create form.
 - Then: The host stores no entry. The response lets the owner distinguish that the refusal is the empty body. A body of only whitespace is not empty.
+
+Scenario: When the entry form names a posted day, the host stores that midnight in Tokyo
+
+- Given: The request is verified as the owner. The entry create form shows a date input labeled Posted. It starts empty. It is not required. The hint says that an empty field uses the time of the save.
+- When: The owner submits a title, a non-empty body, visibility public, and the date `2026-11-26`.
+- Then: One entry is stored with kind article and visibility public. `created_at` and `publishedAt` are `2026-11-25T15:00:00.000Z`, which is 00:00:00 on that day in `Asia/Tokyo`. `updated_at` is the commit time. The Tokyo date of `created_at` is `2026-11-26`. The response redirects with 302 to the view path when one exists, and otherwise to GET `/e/{id}`.
+
+Scenario: When the entry form names a future day and draft, the host keeps that day and publishes later at the commit time
+
+- Given: The request is verified as the owner.
+- When: The owner submits visibility draft, a title, and the date `2099-01-01` from the entry create form. The body may be empty.
+- Then: One entry is stored with kind article and visibility draft. `created_at` is `2098-12-31T15:00:00.000Z`. It has no `publishedAt` and no view path. A later save that makes this entry public sets `publishedAt` to that later commit time and leaves `created_at` unchanged.
+
+Scenario: When the entry form names a day that is not on the calendar, the host stores nothing
+
+- Given: The request is verified as the owner.
+- When: The owner submits a title, a non-empty body, and the date `2026-02-31` from the entry create form.
+- Then: The host stores no entry. The response lets the owner distinguish that the refusal is `invalid_posted_date`. A date of only whitespace is empty, and the host uses the commit time.
 
 ### Post a diary
 
@@ -555,7 +573,7 @@ Scenario: When the bookmark form has a title and an external URL, the host store
 
 - Given: The request is verified as the owner. The bookmark create form shows a visibility select. The options are Public and Draft. Public is selected.
 - When: The owner submits a title, an external URL, and a body, and leaves visibility public.
-- Then: One entry is stored with kind bookmark, visibility public, the submitted title, the submitted body, and that external URL. `publishedAt` is the commit time. The view path follows the same title rule as an article update. The body does not gain the URL. An empty body is stored. No article and no note are created. The bookmark is not in the article list or the notes list. It is in the bookmark list. The response redirects with 302 to that view path when one exists, and otherwise to GET `/e/{id}`.
+- Then: One entry is stored with kind bookmark, visibility public, the submitted title, the submitted body, and that external URL. The posted date was empty, so `publishedAt` and `created_at` are the commit time. `updated_at` is that same time. The view path follows the same title rule as an article update. The body does not gain the URL. An empty body is stored. No article and no note are created. The bookmark is not in the article list or the notes list. It is in the bookmark list. The response redirects with 302 to that view path when one exists, and otherwise to GET `/e/{id}`.
 
 Scenario: When the owner selects draft on the bookmark form, the host stores a draft bookmark
 
@@ -574,6 +592,12 @@ Scenario: When the bookmark form has no external URL, the host stores nothing
 - Given: The request is verified as the owner.
 - When: The owner submits a title and a body from the bookmark create form and does not submit an external URL. A URL of surrounding whitespace only is missing.
 - Then: The host stores no entry. The response lets the owner distinguish that the refusal is the missing external URL.
+
+Scenario: When the bookmark form names a posted day, the host stores that midnight in Tokyo
+
+- Given: The request is verified as the owner. The bookmark create form shows a date input labeled Posted. It starts empty. It is not required.
+- When: The owner submits a title, an external URL, visibility public, and the date `2026-11-26`. The body may be empty.
+- Then: One entry is stored with kind bookmark and visibility public. `created_at` and `publishedAt` are `2026-11-25T15:00:00.000Z`. `updated_at` is the commit time. The body does not gain the URL. A draft bookmark with the date `2099-01-01` stores `created_at` as `2098-12-31T15:00:00.000Z` and has no `publishedAt`. The date `2026-02-31` stores nothing, and the refusal is `invalid_posted_date`.
 
 Scenario: The new screen shows one create form at a time
 
@@ -718,7 +742,7 @@ The parent product sets no percentage target for availability or delivery succes
 
 **Overview:** The browser and the CLI use the same write rules. One write submits kind, title, body, and visibility. A bookmark write also submits an external URL. The write that commits later becomes the new state of these fields.
 
-**Input:** A request verified as the owner. The fields are kind, title, body, visibility, and a bookmark's external URL. The CLI accepts the body from a file for create and update. Create, update, publish, delete, get, and list stay available on that same CLI. The fields stay the ones in this section.
+**Input:** A request verified as the owner. The fields are kind, title, body, visibility, and a bookmark's external URL. An article create and a bookmark create may also name a posted date. The CLI accepts the body from a file for create and update. Create, update, publish, delete, get, and list stay available on that same CLI. The fields stay the ones in this section.
 
 **Output:** The committed entry, or the reason for refusal. On refusal, the entry and its edges stay unchanged.
 
@@ -728,7 +752,9 @@ The parent product sets no percentage target for availability or delivery succes
 
 Create and update submit kind, title, body, and visibility together. A bookmark update also submits the external URL. After normalization, the submitted fields become the entry's current values. A field replacement does not remove the immutable ID, created time, past titles, Cosense page ID, or delivered record. The host adds the old title to the past titles only when the normalized title changes.
 
-The created time is when the create commits. The updated time is when a later write commits.
+The created time is when the create commits, except an article or bookmark create that names a posted date. That value is a calendar day, `YYYY-MM-DD`. The host stores 00:00:00 in `Asia/Tokyo` on that day as `created_at`. A missing value, or a value of only whitespace, leaves `created_at` at the commit time. A value that is not a real calendar day stores nothing. The refusal is `invalid_posted_date`. A future day is stored. A diary create, a note create, and an update do not read this date. An update does not change `created_at`.
+
+The updated time is when a write commits. A posted date does not change it.
 
 ##### Kinds
 
@@ -752,7 +778,7 @@ Visibility is draft or public. Any other value is refused and stored nowhere.
 
 A deliverable entry has kind article, note, or bookmark, and visibility public. A note that replies to another note is not deliverable. That note is public at its canonical URL and has no publishedAt. A page is not deliverable even when public. A draft is not deliverable.
 
-publishedAt is the time the entry became deliverable. An entry that is not deliverable has no publishedAt. An update of an entry that is already deliverable does not change publishedAt. When an entry stops being deliverable and later becomes deliverable again, publishedAt becomes that later time.
+publishedAt is the time the entry became deliverable. On a public article or bookmark create that names a posted date, that time is the same Tokyo midnight as `created_at`. Otherwise it is the commit time. An entry that is not deliverable has no publishedAt. A draft article or bookmark create that names a posted date still stores that midnight as `created_at`. An update of an entry that is already deliverable does not change publishedAt or `created_at`. When an entry stops being deliverable and later becomes deliverable again, publishedAt becomes that later commit time.
 
 ##### View paths
 

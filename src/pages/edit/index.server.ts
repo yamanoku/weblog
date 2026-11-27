@@ -74,11 +74,15 @@ export const actions = {
         title: postedText(posted.title),
         body: postedText(posted.body),
         visibility: postedText(posted.visibility),
+        posted: postedText(posted.posted),
       },
       images && "images" in images ? images.images : null,
       noteImageObjects,
     );
     if ("error" in result) {
+      if (result.error === "invalid_posted_date") {
+        throw new ValidationError({ posted: result.error });
+      }
       if (result.error === "empty_body" || result.error === "invalid_visibility") {
         throw new HTTPException(422, { message: result.error });
       }
@@ -180,11 +184,15 @@ export const actions = {
         body: postedText(posted.body),
         bookmarkUrl: postedText(posted.bookmarkUrl),
         visibility: postedText(posted.visibility),
+        posted: postedText(posted.posted),
       },
       images && "images" in images ? images.images : null,
       noteImageObjects,
     );
     if ("error" in result) {
+      if (result.error === "invalid_posted_date") {
+        throw new ValidationError({ posted: result.error });
+      }
       if (result.error === "image_store" || result.error === "image_type" || result.error === "image_alt_length") {
         imageFailure(result.error);
       }

@@ -117,6 +117,51 @@ test("the bookmark form stores a draft and leaves articles and notes out of that
   assert.equal(published.bookmarkUrl, "https://example.com/open");
   assert.equal(published.publishedAt !== null, true);
   assert.equal(published.viewPath, "Open_clip");
+
+  const dated = await submitBookmarkFromEdit(database, {
+    title: "Old clip",
+    body: "note",
+    bookmarkUrl: "https://example.com/old",
+    visibility: "public",
+    posted: "2026-11-26",
+  });
+  assert.equal("error" in dated, false);
+  if ("error" in dated) return;
+  assert.equal(dated.createdAt, "2026-11-25T15:00:00.000Z");
+  assert.equal(dated.publishedAt, dated.createdAt);
+  const datedRow = await database.select().from(entries).where(eq(entries.id, dated.id));
+  assert.notEqual(datedRow[0]?.updatedAt, dated.createdAt);
+  const draftDated = await submitBookmarkFromEdit(database, {
+    title: "Future clip",
+    body: "",
+    bookmarkUrl: "https://example.com/future",
+    visibility: "draft",
+    posted: "2099-01-01",
+  });
+  assert.equal("error" in draftDated, false);
+  if ("error" in draftDated) return;
+  assert.equal(draftDated.publishedAt, null);
+  assert.equal(draftDated.createdAt, "2098-12-31T15:00:00.000Z");
+  const draftRow = await database.select().from(entries).where(eq(entries.id, draftDated.id));
+  assert.notEqual(draftRow[0]?.updatedAt, draftDated.createdAt);
+  const badDay = await submitBookmarkFromEdit(database, {
+    title: "Nope",
+    body: "",
+    bookmarkUrl: "https://example.com/nope",
+    visibility: "public",
+    posted: "2026-02-31",
+  });
+  assert.deepEqual(badDay, { error: "invalid_posted_date" });
+  const kept = await updateBookmarkFromEdit(database, dated.id, {
+    title: "Old clip",
+    body: "rewritten",
+    bookmarkUrl: "https://example.com/old",
+    visibility: "public",
+  });
+  assert.equal("entry" in kept, true);
+  if (!("entry" in kept)) return;
+  assert.equal(kept.entry.createdAt, "2026-11-25T15:00:00.000Z");
+  assert.equal(kept.entry.publishedAt, "2026-11-25T15:00:00.000Z");
   sqlite.close();
 });
 
@@ -343,6 +388,7 @@ test("the edit screen posts a bookmark form and opens bookmark edit", () => {
   assert.match(field, /multiple/);
   assert.match(edit, /entry\.kind === "bookmark"/);
   assert.match(edit, /name="bookmarkUrl"/);
+  assert.equal(edit.includes('name="posted"'), false);
   assert.match(edit, /EntryImages/);
   assert.equal(edit.includes("{@html"), false);
   const editServer = readFileSync(join(rootDir, "pages/edit/[id].server.ts"), "utf8");

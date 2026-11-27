@@ -15,7 +15,11 @@
 // A deliverable entry is a public article, diary, note, or bookmark that is
 // not a reply. A page is never deliverable. A reply is a public note with no
 // publishedAt. publishedAt is set when the entry becomes deliverable, kept
-// while it stays deliverable, and cleared when it stops. The delivered flag
+// while it stays deliverable, and cleared when it stops. An article or
+// bookmark create may name a positive posted instant. That instant becomes
+// publishedAt when the create is public, and it may be ahead of the clock.
+// A later publish uses the clock. chosenAt records that named instant.
+// The delivered flag
 // stays across draft, kind changes, and delete. A deleted id is not reused.
 // No delivered record means the public get is a miss. A delivered delete keeps
 // the id with an empty body. A draft body is not publicly readable.
@@ -52,6 +56,7 @@ module ownerWriting {
     body: int,
     url: int,
     publishedAt: int,
+    chosenAt: int,
     replyTo: Slot,
     cosenseId: int,
     edges: int,
@@ -82,6 +87,7 @@ module ownerWriting {
     body: 0,
     url: 0,
     publishedAt: 0,
+    chosenAt: 0,
     replyTo: 0,
     cosenseId: 0,
     edges: 0,
@@ -128,6 +134,7 @@ module ownerWriting {
       and a.body == b.body
       and a.url == b.url
       and a.publishedAt == b.publishedAt
+      and a.chosenAt == b.chosenAt
       and a.replyTo == b.replyTo
       and a.cosenseId == b.cosenseId
       and a.edges == b.edges
@@ -139,7 +146,7 @@ module ownerWriting {
       and not(Set(1, 2).exists(other =>
         other != id and es.get(other).present and es.get(other).visibility == Public and es.get(other).title == es.get(id).title))
 
-  pure def written(e: Entry, id: Slot, kind: Kind, title: int, body: int, vis: Visibility, url: int, replyTo: Slot, now: int): Entry = {
+  pure def written(e: Entry, id: Slot, kind: Kind, title: int, body: int, vis: Visibility, url: int, replyTo: Slot, now: int, posted: int, creating: bool): Entry = {
     present: true,
     deleted: false,
     delivered: e.delivered,
@@ -151,7 +158,9 @@ module ownerWriting {
     url: if (kind == Bookmark) url else 0,
     publishedAt: if (not(willDeliver(kind, vis, replyTo))) 0
                  else if (deliverable(e)) e.publishedAt
+                 else if (creating and posted > 0) posted
                  else now,
+    chosenAt: if (creating) posted else e.chosenAt,
     replyTo: replyTo,
     cosenseId: if (e.present) e.cosenseId else if (kind == PageKind) id else 0,
     edges: body,
@@ -181,9 +190,9 @@ module ownerWriting {
     trace' = NO_TRACE,
   }
 
-  action store(id: Slot, kind: Kind, title: int, body: int, vis: Visibility, url: int, replyTo: Slot, creating: bool): bool = {
+  action store(id: Slot, kind: Kind, title: int, body: int, vis: Visibility, url: int, replyTo: Slot, creating: bool, posted: int): bool = {
     val before = entries.get(id)
-    val after = written(before, id, kind, title, body, vis, url, replyTo, clock)
+    val after = written(before, id, kind, title, body, vis, url, replyTo, clock, posted, creating)
     val becomes = not(deliverable(before)) and willDeliver(kind, vis, replyTo)
     all {
       Set(1, 2).contains(id),
@@ -207,25 +216,37 @@ module ownerWriting {
   }
 
   action createArticle(id: Slot, title: int, body: int, vis: Visibility): bool =
-    store(id, Article, title, body, vis, 0, 0, true)
+    store(id, Article, title, body, vis, 0, 0, true, 0)
+
+  action createArticleAt(id: Slot, title: int, body: int, vis: Visibility, posted: int): bool =
+    all {
+      posted > 0,
+      store(id, Article, title, body, vis, 0, 0, true, posted),
+    }
 
   action createDiary(id: Slot, title: int, body: int, vis: Visibility): bool =
-    store(id, Diary, title, body, vis, 0, 0, true)
+    store(id, Diary, title, body, vis, 0, 0, true, 0)
 
   action createNote(id: Slot, title: int, body: int, vis: Visibility): bool =
-    store(id, Note, title, body, vis, 0, 0, true)
+    store(id, Note, title, body, vis, 0, 0, true, 0)
 
   action createBookmark(id: Slot, title: int, body: int, vis: Visibility, url: int): bool =
-    store(id, Bookmark, title, body, vis, url, 0, true)
+    store(id, Bookmark, title, body, vis, url, 0, true, 0)
+
+  action createBookmarkAt(id: Slot, title: int, body: int, vis: Visibility, url: int, posted: int): bool =
+    all {
+      posted > 0,
+      store(id, Bookmark, title, body, vis, url, 0, true, posted),
+    }
 
   action createPage(id: Slot, title: int, body: int, vis: Visibility): bool =
-    store(id, PageKind, title, body, vis, 0, 0, true)
+    store(id, PageKind, title, body, vis, 0, 0, true, 0)
 
   action createReply(id: Slot, target: Slot, body: int): bool =
-    store(id, Note, 0, body, Public, 0, target, true)
+    store(id, Note, 0, body, Public, 0, target, true, 0)
 
   action write(id: Slot, kind: Kind, title: int, body: int, vis: Visibility, url: int): bool =
-    store(id, kind, title, body, vis, url, entries.get(id).replyTo, false)
+    store(id, kind, title, body, vis, url, entries.get(id).replyTo, false, 0)
 
   action markDelivered(id: Slot): bool = {
     val before = entries.get(id)
@@ -251,6 +272,7 @@ module ownerWriting {
         url: 0,
         edges: 0,
         publishedAt: 0,
+        chosenAt: 0,
         past: Set(),
       }),
       clock' = clock,
@@ -276,6 +298,9 @@ module ownerWriting {
       createNote(id, n, m, Public),
       createBookmark(id, u, 0, Public, u),
       createBookmark(id, u, m, Draft, u),
+      createArticleAt(id, u, m, Public, 5),
+      createArticleAt(id, u, m, Draft, 5),
+      createBookmarkAt(id, u, 0, Public, u, 5),
       createPage(id, u, m, Public),
       createReply(id, other, u),
       write(id, Article, u, m, Public, 0),
@@ -334,7 +359,9 @@ module ownerWriting {
 
   val stampsFitTheClock: bool =
     clock >= 1 and Set(1, 2).forall(id =>
-      entries.get(id).publishedAt == 0 or entries.get(id).publishedAt < clock)
+      entries.get(id).publishedAt == 0
+        or entries.get(id).chosenAt > 0
+        or entries.get(id).publishedAt < clock)
 
   val safety: bool = and {
     publishedAtMatchesDeliverable,

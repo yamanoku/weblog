@@ -6,8 +6,9 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { test } from "vitest";
 import { asc, eq } from "void/db";
-import { noteImages, pathRedirects } from "../db/schema.ts";
+import { entries, noteImages, pathRedirects } from "../db/schema.ts";
 import { diaryFromEditForm, publicArticleFields } from "../domain/edit-article.ts";
+import { postedDateFromField } from "../domain/posted-date.ts";
 import { tokyoDateTitle } from "../domain/tokyo-date.ts";
 import { entryImageMarkdown, entryImagesFromField } from "../domain/entry-image.ts";
 import {
@@ -149,7 +150,14 @@ test("the create form posts the markdown body to the article submit", () => {
     /submitArticleFromEdit\([\s\S]*title:\s*postedText\(\s*posted\.title\s*\)[\s\S]*body:\s*postedText\(\s*posted\.body\s*\)[\s\S]*visibility:\s*postedText\(\s*posted\.visibility\s*\)/,
   );
   assert.match(page, /id="article-visibility"/);
+  assert.match(page, /id="article-posted"/);
+  assert.match(page, /id="bookmark-posted"/);
   assert.match(page, /id="bookmark-visibility"/);
+  assert.match(page, /type="date"/);
+  assert.equal(page.includes('id="diary-posted"'), false);
+  const diaryFields = server.match(/submitDiaryFromEdit\(\s*editArticleDatabase\(\),\s*\{([^}]*)\}/);
+  assert.equal(/\bposted\s*:/.test(diaryFields?.[1] ?? ""), false);
+  assert.match(server, /posted:\s*postedText\(\s*posted\.posted\s*\)/);
   assert.match(page, /visibility:\s*"public"/);
   assert.match(page, /visibility:\s*articleForm\.data\.visibility/);
   assert.match(page, /visibility:\s*bookmarkForm\.data\.visibility/);
@@ -424,7 +432,7 @@ test("a missing title links the owner to a new article with that title", () => {
   );
   assert.match(
     created,
-    /useForm\("\/edit", \{ title: presetTitle, body: "", visibility: "public" \}\)/,
+    /useForm\("\/edit", \{ title: presetTitle, body: "", visibility: "public", posted: "" \}\)/,
   );
   assert.match(created, /presetTitle\.trim\(\)\.length > 0 \? "entry" : "diary"/);
   const createdLoader = readRoot("pages/new/index.server.ts");
@@ -774,6 +782,108 @@ test("an article stores many images, allows an empty alt, and can place one in t
   const left = await database.select().from(noteImages).where(eq(noteImages.entryId, saved.id));
   assert.equal(left.length, 1);
   assert.equal(left[0]?.id, secondImage);
+  sqlite.close();
+});
+
+test("an entry create can name a posted day", async () => {
+  assert.deepEqual(postedDateFromField(undefined), { absent: true });
+  assert.deepEqual(postedDateFromField("  "), { absent: true });
+  assert.deepEqual(postedDateFromField("2026-11-26"), { at: "2026-11-25T15:00:00.000Z" });
+  assert.equal(tokyoDateTitle(new Date("2026-11-25T15:00:00.000Z")), "2026-11-26");
+  assert.deepEqual(postedDateFromField("2099-01-01"), { at: "2098-12-31T15:00:00.000Z" });
+  assert.deepEqual(postedDateFromField("2024-02-29"), { at: "2024-02-28T15:00:00.000Z" });
+  assert.deepEqual(postedDateFromField("2026-02-29"), { error: "invalid_posted_date" });
+  assert.deepEqual(postedDateFromField("2026-02-31"), { error: "invalid_posted_date" });
+  assert.deepEqual(postedDateFromField("2026-1-01"), { error: "invalid_posted_date" });
+  assert.deepEqual(
+    diaryFromEditForm({
+      title: "2026-11-26",
+      body: "today",
+      visibility: "public",
+      posted: "2026-02-31",
+    }),
+    {
+      kind: "diary",
+      title: "2026-11-26",
+      body: "today",
+      visibility: "public",
+      postedAt: null,
+    },
+  );
+
+  const sqlite = applyShippedMigrations();
+  const database = drizzle(sqlite);
+  const refused = await submitArticleFromEdit(database, {
+    title: "Bad day",
+    body: "text",
+    visibility: "public",
+    posted: "2026-02-31",
+  });
+  assert.deepEqual(refused, { error: "invalid_posted_date" });
+  assert.equal((await listArticlesForEdit(database)).length, 0);
+
+  const dated = await submitArticleFromEdit(database, {
+    title: "Backdated",
+    body: "text",
+    visibility: "public",
+    posted: "2026-11-26",
+  });
+  assert.equal("error" in dated, false);
+  if ("error" in dated) return;
+  assert.equal(dated.createdAt, "2026-11-25T15:00:00.000Z");
+  assert.equal(dated.publishedAt, "2026-11-25T15:00:00.000Z");
+  const datedRow = await database.select().from(entries).where(eq(entries.id, dated.id));
+  assert.notEqual(datedRow[0]?.updatedAt, dated.createdAt);
+
+  const draft = await submitArticleFromEdit(database, {
+    title: "Later",
+    body: "",
+    visibility: "draft",
+    posted: "2099-01-01",
+  });
+  assert.equal("error" in draft, false);
+  if ("error" in draft) return;
+  assert.equal(draft.createdAt, "2098-12-31T15:00:00.000Z");
+  assert.equal(draft.publishedAt, null);
+  const draftRow = await database.select().from(entries).where(eq(entries.id, draft.id));
+  assert.notEqual(draftRow[0]?.updatedAt, draft.createdAt);
+  const published = await updateArticleFromEdit(database, draft.id, {
+    title: "Later",
+    body: "now public",
+    visibility: "public",
+  });
+  assert.equal("entry" in published, true);
+  if (!("entry" in published)) return;
+  assert.equal(published.entry.createdAt, "2098-12-31T15:00:00.000Z");
+  assert.notEqual(published.entry.publishedAt, published.entry.createdAt);
+  assert.equal(typeof published.entry.publishedAt, "string");
+
+  const edited = await updateArticleFromEdit(database, dated.id, {
+    title: "Backdated",
+    body: "rewritten",
+    visibility: "public",
+  });
+  assert.equal("entry" in edited, true);
+  if (!("entry" in edited)) return;
+  assert.equal(edited.entry.createdAt, "2026-11-25T15:00:00.000Z");
+  assert.equal(edited.entry.publishedAt, "2026-11-25T15:00:00.000Z");
+
+  const blank = await submitArticleFromEdit(database, {
+    title: "Today",
+    body: "text",
+    visibility: "public",
+    posted: "",
+  });
+  assert.equal("error" in blank, false);
+  if ("error" in blank) return;
+  const blankRow = await database.select().from(entries).where(eq(entries.id, blank.id));
+  assert.equal(blankRow[0]?.createdAt, blank.publishedAt);
+  assert.equal(blankRow[0]?.createdAt, blankRow[0]?.updatedAt);
+  const listed = await listArticlesForEdit(database);
+  assert.deepEqual(
+    listed.map((entry) => entry.title),
+    ["Later", "Today", "Backdated"],
+  );
   sqlite.close();
 });
 

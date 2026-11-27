@@ -135,6 +135,25 @@ module ownerWritingTest {
       .then(write(2, Article, 2, 1, Public, 0))
       .expect(hasViewPath(entries, 1) and hasViewPath(entries, 2))
 
+  run postedDateSetsPublishedAtTest =
+    init
+      .then(createArticleAt(1, 1, 1, Public, 5))
+      .expect(entries.get(1).publishedAt == 5 and entries.get(1).chosenAt == 5 and clock == 2)
+      .then(write(1, Article, 1, 2, Public, 0))
+      .expect(entries.get(1).publishedAt == 5 and entries.get(1).chosenAt == 5 and entries.get(1).body == 2)
+
+  run postedDraftPublishesAtTheClockTest =
+    init
+      .then(createArticleAt(1, 1, 1, Draft, 5))
+      .expect(entries.get(1).publishedAt == 0 and entries.get(1).chosenAt == 5 and clock == 1)
+      .then(write(1, Article, 1, 1, Public, 0))
+      .expect(entries.get(1).publishedAt == 1 and entries.get(1).chosenAt == 5)
+
+  run postedBookmarkSetsPublishedAtTest =
+    init
+      .then(createBookmarkAt(1, 1, 0, Public, 2, 5))
+      .expect(entries.get(1).publishedAt == 5 and entries.get(1).kind == Bookmark and entries.get(1).url == 2)
+
   run updateDoesNotChangeTheOtherBodyTest =
     init
       .then(createArticle(1, 1, 1, Draft))

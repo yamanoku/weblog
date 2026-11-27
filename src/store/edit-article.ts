@@ -34,7 +34,9 @@ export type ArticleEditResult =
   | { entry: StoredEntry }
   | { error: "not_found" | "invalid_visibility" | "empty_body" | ArticleImageError };
 
-export type ArticleCreateResult = StoredEntry | { error: "invalid_visibility" | "empty_body" | ArticleImageError };
+export type ArticleCreateResult =
+  | StoredEntry
+  | { error: "invalid_visibility" | "empty_body" | "invalid_posted_date" | ArticleImageError };
 
 // commitEntry speaks drizzle's sqlite API. Requests use D1; tests pass better-sqlite3.
 export function editArticleDatabase(): BetterSQLite3Database {
@@ -51,6 +53,7 @@ export async function submitArticleFromEdit(
   const article = articleFromEditForm(form);
   if ("error" in article) return article;
   const now = new Date().toISOString();
+  const stamped = article.postedAt ?? now;
   const id = crypto.randomUUID();
   const saved = await commitEntry(database, {
     id,
@@ -58,9 +61,9 @@ export async function submitArticleFromEdit(
     title: article.title,
     body: article.body,
     visibility: article.visibility,
-    publishedAt: article.visibility === "public" ? now : null,
+    publishedAt: article.visibility === "public" ? stamped : null,
     viewPath: await articleViewPath(database, id, article.title, article.visibility),
-    createdAt: now,
+    createdAt: stamped,
     updatedAt: now,
   });
   if (!images) return saved;

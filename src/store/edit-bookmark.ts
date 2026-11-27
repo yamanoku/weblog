@@ -76,11 +76,20 @@ export async function submitBookmarkFromEdit(
   images: EntryImageDraft[] | null = null,
   objects: EntryImageObjects | null = null,
 ): Promise<
-  StoredEntry | { error: "missing_title" | "missing_bookmark_url" | "invalid_visibility" | BookmarkImageError }
+  | StoredEntry
+  | {
+      error:
+        | "missing_title"
+        | "missing_bookmark_url"
+        | "invalid_visibility"
+        | "invalid_posted_date"
+        | BookmarkImageError;
+    }
 > {
   const bookmark = bookmarkFromEditForm(form);
   if ("error" in bookmark) return bookmark;
   const now = new Date().toISOString();
+  const stamped = bookmark.postedAt ?? now;
   const id = crypto.randomUUID();
   await database.insert(entries).values({
     id,
@@ -89,8 +98,8 @@ export async function submitBookmarkFromEdit(
     body: bookmark.body,
     visibility: bookmark.visibility,
     bookmarkUrl: bookmark.bookmarkUrl,
-    publishedAt: bookmark.visibility === "public" ? now : null,
-    createdAt: now,
+    publishedAt: bookmark.visibility === "public" ? stamped : null,
+    createdAt: stamped,
     updatedAt: now,
     viewPath: await bookmarkViewPath(database, id, bookmark.title, bookmark.visibility),
   });
